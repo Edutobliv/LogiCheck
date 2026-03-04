@@ -1,0 +1,1 @@
+# LogiCheck Core Module
