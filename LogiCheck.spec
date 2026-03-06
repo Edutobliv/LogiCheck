@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# LogiCheck v1.0 Beta — PyInstaller spec file
+# LogiCheck v1.1 — PyInstaller spec file
 
 import os
 from pathlib import Path
@@ -17,17 +17,27 @@ a = Analysis(
         # Módulos del core
         ('core/__init__.py',          'core'),
         ('core/invoice_parser.py',    'core'),
-        # Base de datos Excel (referencia)
+        ('core/auth.py',              'core'),
+        ('core/permissions.py',       'core'),
+        ('core/logger.py',            'core'),
+        # Módulos de la UI
+        ('ui/__init__.py',            'ui'),
+        ('ui/login_dialog.py',        'ui'),
+        ('ui/users_page.py',          'ui'),
+        ('ui/logs_page.py',           'ui'),
+        # Base de datos Excel (referencia materiales/vehículos)
         ('BaseDatos_Ferreteria.xlsx', '.'),
     ],
     hiddenimports=[
         'PySide6.QtCore',
         'PySide6.QtGui',
         'PySide6.QtWidgets',
+        'PySide6.QtSvg',
         'fitz',           # PyMuPDF
-        'fitz.fitz',
         'openpyxl',
         'pandas',
+        'sqlite3',        # Base de datos de usuarios
+        'hashlib',
     ],
     hookspath=[],
     hooksconfig={},

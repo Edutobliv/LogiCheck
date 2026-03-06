@@ -10,6 +10,15 @@ import datetime
 import os
 import sys
 
+# Permisos por rol
+_base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _base_path not in sys.path:
+    sys.path.insert(0, _base_path)
+from core.permissions import can_access_page, can_do_action, get_role_display, ROLE_ICONS
+from core import logger as app_logger
+from ui.users_page import UsersPage
+from ui.logs_page import LogsPage
+
 
 class AnimatedToggle(QWidget):
     """Toggle switch animado para cambiar entre modo oscuro y claro."""
@@ -148,7 +157,9 @@ class NavButton(QPushButton):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    logout_requested = Signal()  # Emitida al cerrar sesión
+
+    def __init__(self, user_data: dict = None):
         super().__init__()
         self.setWindowTitle("LogiCheck — Auditoría Logística Inteligente")
         self.setMinimumSize(1100, 700)
@@ -156,6 +167,10 @@ class MainWindow(QMainWindow):
         
         self._is_dark = True
         self._current_invoice = None  # Stores last InvoiceData
+
+        # Sesión activa
+        self._user = user_data or {"username": "admin", "role": "admin", "full_name": "Administrador"}
+        self._role = self._user.get("role", "admin")
         
         # Try to import the invoice parser
         try:
@@ -214,7 +229,7 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(section_label)
         sidebar_layout.addSpacing(5)
         
-        # Nav buttons — Flujo del proceso: Factura → Video → Asignación → Reportes
+        # Nav buttons — orden del flujo lógico
         self.nav_buttons = []
         nav_items = [
             ("📊", "Dashboard"),
@@ -222,6 +237,8 @@ class MainWindow(QMainWindow):
             ("📹", "Análisis de Video"),
             ("🚛", "Asignación Vehicular"),
             ("📋", "Reportes"),
+            ("📜", "Actividad"),
+            ("👥", "Gestión de Usuarios"),
         ]
         
         for icon, text in nav_items:
@@ -254,28 +271,38 @@ class MainWindow(QMainWindow):
         
         sidebar_layout.addSpacing(10)
         
-        # User card
+        # User card — datos dinámicos desde la sesión
         user_card = QFrame()
         user_card.setObjectName("userCard")
         user_layout = QHBoxLayout(user_card)
         user_layout.setContentsMargins(10, 8, 10, 8)
-        avatar = QLabel("👤")
+        _role_icon = ROLE_ICONS.get(self._role, "👤")
+        avatar = QLabel(_role_icon)
         avatar.setStyleSheet("font-size: 20px; background: transparent;")
         user_layout.addWidget(avatar)
         user_info = QVBoxLayout()
         user_info.setSpacing(0)
-        user_name = QLabel("Administrador")
+        user_name = QLabel(self._user.get("full_name", "Usuario"))
         user_name.setObjectName("userName")
-        user_role = QLabel("Ferretería Durán, Apulo")
-        user_role.setObjectName("userRole")
+        user_role_lbl = QLabel(get_role_display(self._role))
+        user_role_lbl.setObjectName("userRole")
         user_info.addWidget(user_name)
-        user_info.addWidget(user_role)
+        user_info.addWidget(user_role_lbl)
         user_layout.addLayout(user_info)
         user_layout.addStretch()
         sidebar_layout.addWidget(user_card)
-        
+
+        # Botón cerrar sesión
+        self.btn_logout = QPushButton("  🔒  Cerrar Sesión")
+        self.btn_logout.setObjectName("logoutBtn")
+        self.btn_logout.setFixedHeight(38)
+        self.btn_logout.setCursor(Qt.PointingHandCursor)
+        self.btn_logout.clicked.connect(self._do_logout)
+        sidebar_layout.addSpacing(6)
+        sidebar_layout.addWidget(self.btn_logout)
+
         root_layout.addWidget(self.sidebar)
-        
+
         # ============================================================
         # MAIN CONTENT AREA
         # ============================================================
@@ -332,7 +359,7 @@ class MainWindow(QMainWindow):
         
         # Page 0: Dashboard
         self.stacked.addWidget(self._create_dashboard_page())
-        # Page 1: Factura PDF (primero — el flujo comienza aqui)
+        # Page 1: Factura PDF
         self.stacked.addWidget(self._create_invoice_page())
         # Page 2: Análisis de Video
         self.stacked.addWidget(self._create_video_page())
@@ -340,14 +367,24 @@ class MainWindow(QMainWindow):
         self.stacked.addWidget(self._create_vehicle_page())
         # Page 4: Reportes
         self.stacked.addWidget(self._create_reports_page())
+        # Page 5: Actividad / Logs (todos los roles, filtrado por rol)
+        self._logs_page = LogsPage(user_data=self._user)
+        self.stacked.addWidget(self._logs_page)
+        # Page 6: Gestión de Usuarios (solo Admin)
+        self._users_page = UsersPage(admin_user_data=self._user)
+        self.stacked.addWidget(self._users_page)
         
         root_layout.addWidget(self.content_area)
         
         # --- Status bar ---
         status = QStatusBar()
         status.setObjectName("statusBar")
-        status.showMessage("  ✅ Sistema listo  |  LogiCheck v1.0  |  Modelo YOLO: No cargado")
+        _role_display = get_role_display(self._role)
+        status.showMessage(f"  ✅ Sistema listo  |  LogiCheck v1.0  |  Usuario: {self._user.get('full_name', '')}  |  Rol: {_role_display}")
         self.setStatusBar(status)
+
+        # ── Aplicar permisos según el rol activo ──────────────
+        self._apply_role_permissions()
     
     # ----------------------------------------------------------------
     # PAGE BUILDERS
@@ -501,11 +538,13 @@ class MainWindow(QMainWindow):
         self.btn_start_analysis = QPushButton("▶  Iniciar Análisis YOLO")
         self.btn_start_analysis.setObjectName("successBtn")
         self.btn_start_analysis.setCursor(Qt.PointingHandCursor)
+        self.btn_start_analysis.clicked.connect(self._on_video_start)
         controls_layout.addWidget(self.btn_start_analysis)
         
         self.btn_stop_analysis = QPushButton("⏹  Detener")
         self.btn_stop_analysis.setObjectName("dangerBtn")
         self.btn_stop_analysis.setCursor(Qt.PointingHandCursor)
+        self.btn_stop_analysis.clicked.connect(self._on_video_stop)
         controls_layout.addWidget(self.btn_stop_analysis)
         
         controls_layout.addStretch()
@@ -858,20 +897,84 @@ class MainWindow(QMainWindow):
         return page
     
     # ----------------------------------------------------------------
+    # PERMISOS POR ROL
+    # ----------------------------------------------------------------
+    def _apply_role_permissions(self):
+        """
+        Oculta/deshabilita nav buttons y botones de acción
+        según el rol del usuario autenticado.
+        """
+        role = self._role
+
+        # Mapa: nombre de página → índice en nav_buttons (mismo orden)
+        page_names = [
+            "Dashboard",
+            "Factura PDF",
+            "Análisis de Video",
+            "Asignación Vehicular",
+            "Reportes",
+            "Actividad",
+            "Gestión de Usuarios",
+        ]
+
+        for i, (btn, page) in enumerate(zip(self.nav_buttons, page_names)):
+            allowed = can_access_page(role, page)
+            btn.setVisible(allowed)
+            btn.setEnabled(allowed)
+
+        # ── Acciones individuales en páginas ──────────────────
+
+        # Factura PDF: solo Op. Factura y Admin pueden cargar
+        if hasattr(self, "btn_load_invoice"):
+            self.btn_load_invoice.setVisible(can_do_action(role, "factura.cargar"))
+
+        # Análisis de Video: iniciar/detener solo Op. Video y Admin
+        if hasattr(self, "btn_start_analysis"):
+            can_video = can_do_action(role, "video.iniciar")
+            self.btn_start_analysis.setVisible(can_video)
+            self.btn_stop_analysis.setVisible(can_video)
+            self.btn_load_video.setVisible(can_video)
+
+        # Si el rol no puede ver la primera página activa, ir al Dashboard
+        if not can_access_page(role, "Dashboard"):
+            # En principio todos ven el dashboard, pero por seguridad:
+            self.stacked.setCurrentIndex(0)
+
+    # ----------------------------------------------------------------
     # NAVIGATION
     # ----------------------------------------------------------------
     def _on_nav_click(self, page_name):
+        # Verificar permiso antes de navegar
+        if not can_access_page(self._role, page_name):
+            app_logger.log_action(self._user, app_logger.ACCESO_DENEGADO,
+                                  f"Intentó acceder a '{page_name}' | Rol: {self._role}")
+            QMessageBox.warning(
+                self,
+                "Acceso denegado",
+                f"Tu rol ({get_role_display(self._role)}) no tiene acceso a esta sección."
+            )
+            return
+
         page_map = {
             "Dashboard": 0,
             "Factura PDF": 1,
             "Análisis de Video": 2,
             "Asignación Vehicular": 3,
             "Reportes": 4,
+            "Actividad": 5,
+            "Gestión de Usuarios": 6,
         }
-        
-        icons = ["📊", "📄", "📹", "🚛", "📋"]
+
+        icons = ["📊", "📄", "📹", "🚛", "📋", "📜", "👥"]
+
+        # Refrescar páginas al navegar a ellas
+        if page_name == "Gestión de Usuarios" and hasattr(self, "_users_page"):
+            self._users_page.refresh_table()
+        if page_name == "Actividad" and hasattr(self, "_logs_page"):
+            self._logs_page.refresh()
+
         idx = page_map.get(page_name, 0)
-        
+
         # Don't animate if clicking the same page
         if self.stacked.currentIndex() == idx:
             return
@@ -986,7 +1089,23 @@ class MainWindow(QMainWindow):
     # ----------------------------------------------------------------
     def _update_time(self):
         now = datetime.datetime.now()
-        self.datetime_label.setText(now.strftime("📅 %d/%m/%Y   🕐 %H:%M:%S"))
+        self.datetime_label.setText(f"📅 {now.strftime('%d/%m/%Y')}   🕐 {now.strftime('%H:%M:%S')}")
+
+    def _do_logout(self):
+        """Confirma y cierra sesión volviendo al login."""
+        reply = QMessageBox.question(
+            self,
+            "Cerrar Sesión",
+            f"¿Deseas cerrar la sesión de '{self._user.get('full_name', '')}'?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply == QMessageBox.Yes:
+            app_logger.log_action(self._user, app_logger.LOGOUT,
+                                  f"Sesión cerrada por el usuario")
+            self.logout_requested.emit()
+            self.close()
+
 
     # ----------------------------------------------------------------
     # PDF INVOICE LOGIC
@@ -1030,9 +1149,15 @@ class MainWindow(QMainWindow):
                 )
 
             self._populate_invoice_ui(invoice)
+            # Log de factura cargada
+            import os as _os
+            app_logger.log_action(self._user, app_logger.FACTURA_CARGADA,
+                                  f"Archivo: {_os.path.basename(path)}")
 
         except Exception as e:
             QMessageBox.critical(self, "Error al leer PDF", str(e))
+            app_logger.log_action(self._user, app_logger.FACTURA_CARGADA,
+                                  f"ERROR al leer: {os.path.basename(path)} — {e}")
         finally:
             self._reset_load_button()
 
@@ -1102,3 +1227,86 @@ class MainWindow(QMainWindow):
 
         # Update dashboard counter with yolo items found
         self.stat_despachos.set_value(invoice.total_yolo_items)
+
+    # ----------------------------------------------------------------
+    # VIDEO ANALYSIS LOGGING
+    # ----------------------------------------------------------------
+    def _on_video_start(self):
+        """Registra el inicio del análisis de video."""
+        video_name = self.lbl_video_name.text()
+        app_logger.log_action(
+            self._user, app_logger.VIDEO_INICIADO,
+            f"Video: {video_name}"
+        )
+
+    def _on_video_stop(self):
+        """
+        Registra la detención del análisis, captura los conteos actuales
+        de la tabla y los compara con la factura cargada para detectar discrepancias.
+        """
+        # Leer conteos de la tabla en tiempo real
+        conteos = {}
+        for row in range(self.table_conteo.rowCount()):
+            material_item = self.table_conteo.item(row, 0)
+            conteo_item   = self.table_conteo.item(row, 1)
+            if material_item and conteo_item:
+                conteos[material_item.text()] = conteo_item.text()
+
+        conteo_desc = " | ".join(f"{mat}: {cnt}" for mat, cnt in conteos.items())
+
+        app_logger.log_action(
+            self._user, app_logger.VIDEO_DETENIDO,
+            f"Análisis detenido — {conteo_desc}"
+        )
+
+        # Registrar resultado formal
+        app_logger.log_action(
+            self._user, app_logger.VIDEO_RESULTADO,
+            f"Conteo final — {conteo_desc}"
+        )
+
+        # ── Comparar con factura cargada para detectar discrepancias ──
+        if self._current_invoice is None:
+            return  # Sin factura cargada, no hay comparación posible
+
+        # Mapa: categoría YOLO → cantidad en factura
+        factura_map = {}
+        for item in self._current_invoice.yolo_items:
+            cat = item.categoria  # "cemento" | "tuberia_presion" | "tuberia_sanitaria"
+            factura_map[cat] = factura_map.get(cat, 0) + item.cantidad
+
+        # Mapa de nombres legibles para comparar con la tabla
+        cat_display = {
+            "Cemento":           "cemento",
+            "Tubería Presión":   "tuberia_presion",
+            "Tubería Sanitaria": "tuberia_sanitaria",
+        }
+
+        discrepancias = []
+        for display_name, cat_key in cat_display.items():
+            try:
+                contado = int(conteos.get(display_name, "0"))
+            except ValueError:
+                contado = 0
+            esperado = factura_map.get(cat_key, 0)
+            if esperado > 0 and contado != esperado:
+                diferencia = contado - esperado
+                signo = "+" if diferencia > 0 else ""
+                discrepancias.append(
+                    f"{display_name}: Factura={esperado}, Video={contado} ({signo}{diferencia})"
+                )
+
+        if discrepancias:
+            desc = " | ".join(discrepancias)
+            app_logger.log_action(
+                self._user, app_logger.DISCREPANCIA,
+                f"ALERTA: Diferencia entre factura y video — {desc}"
+            )
+            from PySide6.QtWidgets import QMessageBox as _QMB
+            _QMB.warning(
+                self,
+                "⚠️  Discrepancia Detectada",
+                f"El conteo del video NO coincide con la factura:\n\n{chr(10).join(discrepancias)}\n\n"
+                "Este evento ha sido registrado en el log de auditoría."
+            )
+
