@@ -2,8 +2,10 @@ import sys
 import os
 import subprocess
 from PySide6.QtWidgets import QApplication
-from ui.login_dialog import LoginDialog
-from ui.main_window import MainWindow
+from PySide6.QtCore    import QEventLoop
+from ui.login_dialog   import LoginDialog
+from ui.main_window    import MainWindow
+from ui.splash_screen  import SplashScreen
 from core import logger as app_logger
 
 
@@ -19,6 +21,22 @@ def main():
             app.setStyleSheet(f.read())
     except FileNotFoundError:
         print("Advertencia: No se encontró style.qss")
+
+    # ── Splash Screen ──────────────────────────────────────
+    splash = SplashScreen()
+    splash.show()
+    app.processEvents()
+
+    # Esperar a que el splash termine (hilo de init + fade-out)
+    loop = QEventLoop()
+    splash.ready.connect(loop.quit)       # Sale del loop cuando la init termina
+    loop.exec()                           # Bloc hasta que ready se emita
+
+    # Dar tiempo al fade-out antes de mostrar el login
+    from PySide6.QtCore import QTimer
+    _finish_loop = QEventLoop()
+    QTimer.singleShot(550, _finish_loop.quit)
+    _finish_loop.exec()
 
     # ── Pantalla de Login ──────────────────────────────────
     login = LoginDialog()
@@ -52,4 +70,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

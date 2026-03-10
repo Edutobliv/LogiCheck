@@ -829,6 +829,18 @@ class MainWindow(QMainWindow):
         details_layout.addWidget(self.table_vehicles)
         
         layout.addWidget(details_card)
+
+        # --- Botón de asignación ---
+        assign_row = QHBoxLayout()
+        self.btn_assign_vehicle = QPushButton("🚛  Confirmar Asignación Vehicular")
+        self.btn_assign_vehicle.setObjectName("successBtn")
+        self.btn_assign_vehicle.setFixedHeight(44)
+        self.btn_assign_vehicle.setCursor(Qt.PointingHandCursor)
+        self.btn_assign_vehicle.clicked.connect(self._on_vehicle_assigned)
+        assign_row.addStretch()
+        assign_row.addWidget(self.btn_assign_vehicle)
+        layout.addLayout(assign_row)
+
         layout.addStretch()
         
         return page
@@ -861,11 +873,13 @@ class MainWindow(QMainWindow):
         self.btn_export_pdf = QPushButton("📄  Exportar a PDF")
         self.btn_export_pdf.setObjectName("primaryBtn")
         self.btn_export_pdf.setCursor(Qt.PointingHandCursor)
+        self.btn_export_pdf.clicked.connect(lambda: self._log_export("PDF"))
         btns_row.addWidget(self.btn_export_pdf)
         
         self.btn_export_excel = QPushButton("📊  Exportar a Excel")
         self.btn_export_excel.setObjectName("successBtn")
         self.btn_export_excel.setCursor(Qt.PointingHandCursor)
+        self.btn_export_excel.clicked.connect(lambda: self._log_export("Excel"))
         btns_row.addWidget(self.btn_export_excel)
         
         btns_row.addStretch()
@@ -1058,9 +1072,13 @@ class MainWindow(QMainWindow):
         if self._is_dark:
             self.theme_label.setText("🌙 Modo Oscuro")
             self._apply_dark_theme()
+            app_logger.log_action(self._user, app_logger.TEMA_CAMBIADO,
+                                  "Cambió a Modo Oscuro")
         else:
             self.theme_label.setText("☀️ Modo Claro")
             self._apply_light_theme()
+            app_logger.log_action(self._user, app_logger.TEMA_CAMBIADO,
+                                  "Cambió a Modo Claro")
     
     def _apply_dark_theme(self):
         try:
@@ -1185,6 +1203,14 @@ class MainWindow(QMainWindow):
             self.lbl_invoice_status.setStyleSheet(
                 "font-size: 13px; background: transparent; border: none; color: #f9e2af;"
             )
+            # Log de factura sin productos detectables
+            app_logger.log_action(self._user, app_logger.FACTURA_ADVERTENCIA,
+                                  f"⚠️ Sin productos YOLO detectables en '{filename}'")
+
+        # Log de error de parseo (si lo hay)
+        if invoice.parse_error:
+            app_logger.log_action(self._user, app_logger.FACTURA_ADVERTENCIA,
+                                  f"Error al parsear '{filename}': {invoice.parse_error}")
 
         # Metadata labels
         self.lbl_factura_no.setText(f"Nro. Factura:  {invoice.numero_factura}")
@@ -1310,3 +1336,45 @@ class MainWindow(QMainWindow):
                 "Este evento ha sido registrado en el log de auditoría."
             )
 
+    # ----------------------------------------------------------------
+    # REPORTES — LOG DE EXPORTACIÓN
+    # ----------------------------------------------------------------
+    def _log_export(self, formato: str):
+        """Registra cuando el usuario exporta un reporte."""
+        factura_info = "Sin factura cargada"
+        if self._current_invoice:
+            factura_info = (f"Factura {self._current_invoice.numero_factura} | "
+                            f"Cliente: {self._current_invoice.cliente}")
+        app_logger.log_action(
+            self._user, app_logger.REPORTE_EXPORTADO,
+            f"Formato: {formato} | {factura_info}"
+        )
+
+    # ----------------------------------------------------------------
+    # ASIGNACIÓN VEHICULAR
+    # ----------------------------------------------------------------
+    def _on_vehicle_assigned(self):
+        """Registra la confirmación de una asignación vehicular."""
+        # Leer datos actuales del despacho desde las stat cards
+        peso     = getattr(self.card_peso,     "value_label", None)
+        volumen  = getattr(self.card_volumen,  "value_label", None)
+        vehiculo = getattr(self.card_vehiculo, "value_label", None)
+
+        peso_txt     = self.card_peso._val_lbl.text()     if hasattr(self.card_peso,     "_val_lbl") else "—"
+        volumen_txt  = self.card_volumen._val_lbl.text()  if hasattr(self.card_volumen,  "_val_lbl") else "—"
+        vehiculo_txt = self.card_vehiculo._val_lbl.text() if hasattr(self.card_vehiculo, "_val_lbl") else "—"
+
+        factura_info = "Sin factura"
+        if self._current_invoice:
+            factura_info = f"Factura {self._current_invoice.numero_factura}"
+
+        desc = (f"Vehículo: {vehiculo_txt} | Peso: {peso_txt} | "
+                f"Volumen: {volumen_txt} | {factura_info}")
+
+        app_logger.log_action(self._user, app_logger.ASIGNACION_CREADA, desc)
+
+        QMessageBox.information(
+            self,
+            "Asignación Registrada",
+            f"✅ La asignación vehicular fue confirmada y registrada en el log de auditoría.\n\n{desc}"
+        )

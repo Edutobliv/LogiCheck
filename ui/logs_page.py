@@ -32,6 +32,7 @@ ACTION_COLORS = {
     "Cierre de Sesión":           "#fab387",   # naranja
     "Acceso Denegado":            "#f38ba8",   # rojo
     "Factura Cargada":            "#89b4fa",   # azul
+    "Factura con Advertencia":    "#f9e2af",   # amarillo
     "Factura Procesada":          "#74c7ec",   # azul claro
     "Video Iniciado":             "#cba6f7",   # púrpura
     "Video Detenido":             "#fab387",   # naranja
@@ -39,6 +40,7 @@ ACTION_COLORS = {
     "Discrepancia Detectada":     "#f38ba8",   # rojo — crítico
     "Asignación Vehicular":       "#f9e2af",   # amarillo
     "Reporte Exportado":          "#94e2d5",   # teal
+    "Cambio de Tema":             "#585b70",   # gris suave
     "Usuario Creado":             "#a6e3a1",   # verde
     "Usuario Editado":            "#89b4fa",   # azul
     "Usuario Desactivado":        "#f38ba8",   # rojo

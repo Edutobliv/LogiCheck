@@ -25,6 +25,7 @@ a = Analysis(
         ('ui/login_dialog.py',        'ui'),
         ('ui/users_page.py',          'ui'),
         ('ui/logs_page.py',           'ui'),
+        ('ui/splash_screen.py',       'ui'),
         # Base de datos Excel (referencia materiales/vehículos)
         ('BaseDatos_Ferreteria.xlsx', '.'),
     ],
