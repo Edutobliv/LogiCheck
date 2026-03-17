@@ -2,7 +2,7 @@ import sys
 import os
 import subprocess
 from PySide6.QtWidgets import QApplication
-from PySide6.QtCore    import QEventLoop
+from PySide6.QtCore    import QEventLoop, Qt
 from ui.login_dialog   import LoginDialog
 from ui.main_window    import MainWindow
 from ui.splash_screen  import SplashScreen
@@ -40,6 +40,15 @@ def main():
 
     # ── Pantalla de Login ──────────────────────────────────
     login = LoginDialog()
+    
+    # Forzar al SO a mostrarla en el frente (sin anclarla como siempre visible)
+    login.setWindowFlags(login.windowFlags() | Qt.WindowStaysOnTopHint)
+    login.show()
+    login.setWindowFlags(login.windowFlags() & ~Qt.WindowStaysOnTopHint)
+    login.show()
+    login.activateWindow()
+    login.raise_()
+
     if login.exec() != LoginDialog.Accepted:
         sys.exit(0)
 
@@ -63,7 +72,8 @@ def main():
     exit_code = app.exec()
 
     if _logout_requested[0]:
-        subprocess.Popen([sys.executable] + sys.argv[1:])
+        # Reiniciar la aplicación ejecutando el mismo comando original
+        subprocess.Popen([sys.executable] + sys.argv)
 
     sys.exit(exit_code)
 

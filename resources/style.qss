@@ -10,12 +10,17 @@ QMainWindow {
     font-size: 13px;
 }
 
-/* Force transparency on all child widgets to prevent white boxes */
+/* Base Widget */
 QWidget {
-    background: transparent;
     font-family: 'Segoe UI', 'Inter', Arial, sans-serif;
     color: #cdd6f4;
     font-size: 13px;
+    background: transparent; /* Volvemos a transparent por defecto para el layout */
+}
+
+/* Regla específica para que no todo herede la transparencia del QWidget */
+#contentArea, QMainWindow, QDialog {
+    background-color: #1e1e2e;
 }
 
 QLabel {
@@ -144,7 +149,8 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 
 /* --- Content Area --- */
 #contentArea {
-    background-color: #1e1e2e;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, 
+                stop:0 #1e1e2e, stop:1 #11111b);
 }
 
 /* --- Glow Cards --- */
@@ -205,6 +211,33 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     color: #cdd6f4;
     padding: 4px 0;
 }
+
+/* --- Usuarios StatCards (Dark Mode overrides) --- */
+#statValue[card_id="total"]       { color: #89b4fa !important; }
+#statValue[card_id="active"]      { color: #a6e3a1 !important; }
+#statValue[card_id="inactive"]    { color: #f38ba8 !important; }
+#statValue[card_id="roles"]       { color: #cba6f7 !important; }
+
+#statIcon[card_id="total"]        { color: #89b4fa !important; }
+#statIcon[card_id="active"]       { color: #a6e3a1 !important; }
+#statIcon[card_id="inactive"]     { color: #f38ba8 !important; }
+#statIcon[card_id="roles"]        { color: #cba6f7 !important; }
+
+/* --- Table Action Buttons --- */
+QPushButton#btnTableEdit { background: rgba(137, 180, 250, 0.15); color: #89b4fa; border: 1px solid rgba(137, 180, 250, 0.35); border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 10px; }
+QPushButton#btnTableEdit:hover { background: rgba(137, 180, 250, 0.28); }
+
+QPushButton#btnTablePass { background: rgba(203, 166, 247, 0.15); color: #cba6f7; border: 1px solid rgba(203, 166, 247, 0.35); border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 10px; }
+QPushButton#btnTablePass:hover { background: rgba(203, 166, 247, 0.28); }
+
+QPushButton#btnTableToggleOff { background: rgba(243, 139, 168, 0.15); color: #f38ba8; border: 1px solid rgba(243, 139, 168, 0.35); border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 10px; }
+QPushButton#btnTableToggleOff:hover { background: rgba(243, 139, 168, 0.28); }
+
+QPushButton#btnTableToggleOn { background: rgba(166, 227, 161, 0.15); color: #a6e3a1; border: 1px solid rgba(166, 227, 161, 0.35); border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 10px; }
+QPushButton#btnTableToggleOn:hover { background: rgba(166, 227, 161, 0.28); }
+
+QPushButton#btnTableClone { background: rgba(166, 227, 161, 0.15); color: #a6e3a1; border: 1px solid rgba(166, 227, 161, 0.35); border-radius: 6px; font-size: 11px; font-weight: 700; padding: 0 10px; }
+QPushButton#btnTableClone:hover { background: rgba(166, 227, 161, 0.28); }
 
 /* --- Buttons --- */
 QPushButton#primaryBtn {
@@ -349,4 +382,91 @@ QStatusBar {
 }
 #logoutBtn:pressed {
     background: rgba(243, 139, 168, 0.22);
+}
+/* --- Inputs & Combos --- */
+QLineEdit, QComboBox, QDateTimeEdit {
+    background-color: #11111b;
+    border: 1px solid #313244;
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: #cdd6f4;
+    selection-background-color: #313244;
+}
+
+QLineEdit:focus, QComboBox:focus, QDateTimeEdit:focus {
+    border-color: #89b4fa;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 30px;
+}
+
+QComboBox::down-arrow {
+    image: none;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid #a6adc8;
+    margin-right: 10px;
+}
+
+/* Fix for transparent dropdown backgrounds */
+QComboBox QAbstractItemView {
+    background-color: #181825 !important; /* Forzar fondo sólido */
+    border: 1px solid #45475a;
+    border-radius: 8px;
+    selection-background-color: #313244;
+    color: #cdd6f4;
+    outline: none;
+}
+
+/* Tooltips y Menús */
+QToolTip {
+    background-color: #181825;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    padding: 4px;
+}
+
+/* Dialogs */
+QDialog {
+    background-color: #1e1e2e;
+}
+
+/* --- Panel de Permisos (Gestión de Usuarios) --- */
+#permScroll { 
+    border: 1px solid #313244; 
+    border-radius: 10px; 
+    background-color: #11111b; 
+}
+#permContainer { background: transparent; }
+#permLabel { color: #cdd6f4; font-size: 13px; }
+#inheritedLabel { color: #6c7086; font-size: 11px; }
+#inheritedLabel[has_base="true"] { color: #a6e3a1; }
+#inheritedLabel[has_base="false"] { color: #f38ba8; }
+
+/* --- Toasts --- */
+#toastNotification {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 12px;
+}
+#toastNotification[type="success"] { border-left: 6px solid #a6e3a1; }
+#toastNotification[type="error"]   { border-left: 6px solid #f38ba8; }
+#toastNotification[type="warning"] { border-left: 6px solid #f9e2af; }
+#toastNotification[type="info"]    { border-left: 6px solid #89b4fa; }
+
+#toastMsg {
+    color: #cdd6f4;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#detectionsList {
+    background-color: #11111b;
+    border: none;
+    border-radius: 8px;
+    color: #a6e3a1;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
 }

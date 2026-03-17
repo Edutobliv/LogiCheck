@@ -180,3 +180,45 @@ def get_stats_today() -> dict:
         "logins_today": logins,
         "users_active_today": users_active,
     }
+
+
+def get_dashboard_metrics() -> dict:
+    """Retorna métricas operativas del día de hoy para el Dashboard."""
+    today = datetime.date.today().isoformat()
+    metrics = {
+        "despachos": 0,
+        "discrepancias": 0,
+        "vehiculos": 0,
+        "accuracy": 100.0
+    }
+    
+    try:
+        with _get_conn() as conn:
+            # 1. Despachos (Facturas procesadas hoy)
+            metrics["despachos"] = conn.execute(
+                "SELECT COUNT(*) FROM activity_logs WHERE action = ? AND timestamp LIKE ?",
+                (FACTURA_PROCESADA, f"{today}%")
+            ).fetchone()[0]
+
+            # 2. Discrepancias detectadas hoy
+            metrics["discrepancias"] = conn.execute(
+                "SELECT COUNT(*) FROM activity_logs WHERE action = ? AND timestamp LIKE ?",
+                (DISCREPANCIA, f"{today}%")
+            ).fetchone()[0]
+
+            # 3. Vehículos procesados (Asignaciones creadas hoy)
+            metrics["vehiculos"] = conn.execute(
+                "SELECT COUNT(*) FROM activity_logs WHERE action = ? AND timestamp LIKE ?",
+                (ASIGNACION_CREADA, f"{today}%")
+            ).fetchone()[0]
+
+            # 4. Cálculo de Accuracy (100 - (discrepancias / despachos * 100))
+            if metrics["despachos"] > 0:
+                error_rate = (metrics["discrepancias"] / metrics["despachos"]) * 100
+                metrics["accuracy"] = max(0.0, 100.0 - error_rate)
+            else:
+                metrics["accuracy"] = 100.0
+    except Exception as e:
+        print(f"[LOGGER] Error calculando métricas: {e}")
+
+    return metrics

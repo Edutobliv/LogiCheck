@@ -27,6 +27,7 @@ def _hash_password(password: str) -> str:
 def init_db():
     """Crea las tablas de usuarios y logs si no existen, y siembra datos iniciales."""
     from core.logger import init_logs_table   # import tardío para evitar circular
+    # Crear tabla de usuarios con soporte para overrides
     with _get_conn() as conn:
         conn.execute("""
             CREATE TABLE IF NOT EXISTS usuarios (
@@ -36,9 +37,24 @@ def init_db():
                 role        TEXT NOT NULL,
                 full_name   TEXT NOT NULL,
                 active      INTEGER NOT NULL DEFAULT 1,
-                created_at  TEXT DEFAULT (datetime('now'))
+                created_at  TEXT DEFAULT (datetime('now')),
+                permissions_override TEXT, -- JSON con {action: bool}
+                permissions_expire_at TEXT, -- ISO8601
+                permissions_modified_by INTEGER -- ID del admin que aplicó el cambio
             )
         """)
+        
+        # Soporte para actualización de BD existente (añadir columnas si no existen)
+        try:
+            conn.execute("ALTER TABLE usuarios ADD COLUMN permissions_override TEXT")
+        except: pass
+        try:
+            conn.execute("ALTER TABLE usuarios ADD COLUMN permissions_expire_at TEXT")
+        except: pass
+        try:
+            conn.execute("ALTER TABLE usuarios ADD COLUMN permissions_modified_by INTEGER")
+        except: pass
+        
         conn.commit()
 
         # Insertar usuarios por defecto si la tabla está vacía
@@ -89,6 +105,8 @@ def authenticate(username: str, password: str) -> dict | None:
         "username":  row["username"],
         "role":      row["role"],
         "full_name": row["full_name"],
+        "overrides": row["permissions_override"],
+        "expires_at": row["permissions_expire_at"]
     }
 
 
@@ -98,7 +116,7 @@ def get_all_users() -> list[dict]:
     """Retorna todos los usuarios activos."""
     with _get_conn() as conn:
         cursor = conn.execute(
-            "SELECT id, username, role, full_name, active, created_at FROM usuarios ORDER BY id"
+            "SELECT id, username, role, full_name, active, created_at, permissions_override, permissions_expire_at FROM usuarios ORDER BY id"
         )
         return [dict(row) for row in cursor.fetchall()]
 
@@ -151,5 +169,46 @@ def reactivate_user(user_id: int) -> bool:
     """Reactiva un usuario desactivado."""
     with _get_conn() as conn:
         conn.execute("UPDATE usuarios SET active = 1 WHERE id = ?", (user_id,))
+        conn.commit()
+    return True
+
+# ── Gestión de Permisos (NUEVO) ───────────────────────────────
+
+def update_user_permissions(user_id: int, overrides: str | None, expire_at: str | None, modified_by: int) -> bool:
+    """
+    Actualiza los overrides de permisos y la fecha de expiración.
+    overrides: string JSON o None
+    expire_at: string ISO date o None
+    """
+    with _get_conn() as conn:
+        conn.execute("""
+            UPDATE usuarios 
+            SET permissions_override = ?, 
+                permissions_expire_at = ?, 
+                permissions_modified_by = ? 
+            WHERE id = ?
+        """, (overrides, expire_at, modified_by, user_id))
+        conn.commit()
+    return True
+
+def clone_permissions(from_user_id: int, to_user_id: int, modified_by: int) -> bool:
+    """Copia los permisos y el rol de un usuario a otro."""
+    with _get_conn() as conn:
+        cursor = conn.execute(
+            "SELECT role, permissions_override, permissions_expire_at FROM usuarios WHERE id = ?",
+            (from_user_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            return False
+            
+        conn.execute("""
+            UPDATE usuarios 
+            SET role = ?, 
+                permissions_override = ?, 
+                permissions_expire_at = ?,
+                permissions_modified_by = ?
+            WHERE id = ?
+        """, (row["role"], row["permissions_override"], row["permissions_expire_at"], modified_by, to_user_id))
         conn.commit()
     return True

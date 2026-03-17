@@ -3,9 +3,9 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QHeaderView, QSizePolicy, QGraphicsDropShadowEffect,
                                QGraphicsOpacityEffect,
                                QScrollArea, QStackedWidget, QToolButton, QSpacerItem,
-                               QProgressBar, QStatusBar, QFileDialog, QMessageBox)
+                               QProgressBar, QStatusBar, QFileDialog, QMessageBox, QListWidget, QListWidgetItem, QSlider)
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint, QVariantAnimation, QSequentialAnimationGroup, QParallelAnimationGroup, QThread, Signal
-from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen
+from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen, QPixmap
 import datetime
 import os
 import sys
@@ -18,6 +18,7 @@ from core.permissions import can_access_page, can_do_action, get_role_display, R
 from core import logger as app_logger
 from ui.users_page import UsersPage
 from ui.logs_page import LogsPage
+from core.yolo_manager import YoloAnalyzerWorker, VideoPlayerWorker
 
 
 class AnimatedToggle(QWidget):
@@ -131,18 +132,95 @@ class StatCard(GlowCard):
         self.value_label.setText(str(val))
         
     def animate_to(self, end_val, duration=1000):
+        # Manejo de porcentajes (si es string con %) o números
+        is_pct = False
+        if isinstance(end_val, str) and "%" in end_val:
+            is_pct = True
+            try: end_val = float(end_val.replace("%", ""))
+            except: end_val = 0
+            
         try:
-            start_val = int(self.value_label.text())
-        except ValueError:
+            val_text = self.value_label.text().replace("%", "")
+            start_val = float(val_text) if val_text not in ["—", "0"] else 0
+        except:
             start_val = 0
             
         self.anim = QVariantAnimation(self)
         self.anim.setDuration(duration)
         self.anim.setStartValue(start_val)
-        self.anim.setEndValue(int(end_val))
-        self.anim.valueChanged.connect(lambda v: self.value_label.setText(str(v)))
+        self.anim.setEndValue(float(end_val))
+        
+        def update_val(v):
+            if is_pct: self.value_label.setText(f"{v:.1f}%")
+            else: self.value_label.setText(str(int(v)))
+            
+        self.anim.valueChanged.connect(update_val)
         self.anim.setEasingCurve(QEasingCurve.OutQuart)
         self.anim.start()
+
+
+class ToastNotification(QFrame):
+    """Notificación flotante temporal (Toast) estilo Premium."""
+    def __init__(self, message, toast_type="success", parent=None):
+        super().__init__(parent)
+        self.setFixedWidth(320)
+        self.setMinimumHeight(64)
+        self.setObjectName("toastNotification")
+        self.setProperty("type", toast_type)
+        
+        # Shadow
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20); shadow.setOffset(0, 5)
+        shadow.setColor(QColor(0, 0, 0, 80))
+        self.setGraphicsEffect(shadow)
+        
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(15, 10, 15, 10)
+        lay.setSpacing(12)
+        
+        icon_map = {
+            "success": "✅",
+            "warning": "⚠️",
+            "error":   "🚫",
+            "info":    "ℹ️"
+        }
+        
+        self.lbl_icon = QLabel(icon_map.get(toast_type, "info"))
+        self.lbl_icon.setStyleSheet("font-size: 20px; background: transparent;")
+        lay.addWidget(self.lbl_icon)
+        
+        self.lbl_msg = QLabel(message)
+        self.lbl_msg.setObjectName("toastMsg")
+        self.lbl_msg.setWordWrap(True)
+        lay.addWidget(self.lbl_msg, 1)
+        
+        self._timer = QTimer(self)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(self._fade_out)
+        
+    def show_toast(self):
+        self.show()
+        # Slide in animation
+        self._anim_pos = QPropertyAnimation(self, b"pos")
+        self._anim_pos.setDuration(500)
+        self._anim_pos.setEasingCurve(QEasingCurve.OutCubic)
+        
+        p = self.window() # Use main window as reference
+        if p:
+            start_x = p.width() - self.width() - 20
+            self._anim_pos.setStartValue(QPoint(start_x, -100))
+            self._anim_pos.setEndValue(QPoint(start_x, 20))
+            self._anim_pos.start()
+            
+        self._timer.start(3500) # Dura 3.5 seg
+        
+    def _fade_out(self):
+        self._anim_out = QPropertyAnimation(self, b"pos")
+        self._anim_out.setDuration(500)
+        self._anim_out.setEasingCurve(QEasingCurve.InBack)
+        self._anim_out.setEndValue(QPoint(self.x(), -100))
+        self._anim_out.finished.connect(self.deleteLater)
+        self._anim_out.start()
 
 
 class NavButton(QPushButton):
@@ -533,10 +611,12 @@ class MainWindow(QMainWindow):
         self.btn_load_video = QPushButton("📂  Cargar Video")
         self.btn_load_video.setObjectName("primaryBtn")
         self.btn_load_video.setCursor(Qt.PointingHandCursor)
+        self.btn_load_video.clicked.connect(self._on_load_video)
         controls_layout.addWidget(self.btn_load_video)
         
         self.btn_start_analysis = QPushButton("▶  Iniciar Análisis YOLO")
         self.btn_start_analysis.setObjectName("successBtn")
+        self.btn_start_analysis.setEnabled(False)
         self.btn_start_analysis.setCursor(Qt.PointingHandCursor)
         self.btn_start_analysis.clicked.connect(self._on_video_start)
         controls_layout.addWidget(self.btn_start_analysis)
@@ -546,6 +626,28 @@ class MainWindow(QMainWindow):
         self.btn_stop_analysis.setCursor(Qt.PointingHandCursor)
         self.btn_stop_analysis.clicked.connect(self._on_video_stop)
         controls_layout.addWidget(self.btn_stop_analysis)
+        
+        controls_layout.addSpacing(15)
+        
+        # Line position slider
+        line_box = QVBoxLayout()
+        line_box.setSpacing(0)
+        line_lbl = QLabel("Línea de Conteo")
+        line_lbl.setObjectName("subtleText")
+        line_lbl.setStyleSheet("font-size: 10px; margin-bottom: 2px;")
+        line_box.addWidget(line_lbl)
+        self.slider_line = QSlider(Qt.Horizontal)
+        self.slider_line.setRange(5, 95)
+        self.slider_line.setValue(60)
+        self.slider_line.setFixedWidth(120)
+        self.slider_line.valueChanged.connect(self._on_line_slider_changed)
+        line_box.addWidget(self.slider_line)
+        controls_layout.addLayout(line_box)
+        
+        self.lbl_line_val = QLabel("60%")
+        self.lbl_line_val.setObjectName("modelValue")
+        self.lbl_line_val.setFixedWidth(35)
+        controls_layout.addWidget(self.lbl_line_val)
         
         controls_layout.addStretch()
         
@@ -571,13 +673,65 @@ class MainWindow(QMainWindow):
         self.video_frame.setMinimumHeight(400)
         video_container_layout.addWidget(self.video_frame)
         
-        # Progress bar for video
-        self.video_progress = QProgressBar()
-        self.video_progress.setValue(0)
-        self.video_progress.setFixedHeight(6)
-        self.video_progress.setTextVisible(False)
-        self.video_progress.setObjectName("videoProgress")
-        video_container_layout.addWidget(self.video_progress)
+        # Video Slider
+        self.video_slider = QSlider(Qt.Horizontal)
+        self.video_slider.setObjectName("videoSlider")
+        self.video_slider.setRange(0, 1000)
+        self.video_slider.setEnabled(False)
+        video_container_layout.addWidget(self.video_slider)
+        
+        # Player Controls Bar
+        player_bar = QHBoxLayout()
+        player_bar.setContentsMargins(10, 0, 10, 5)
+        
+        self.btn_play_pause = QPushButton("▶")
+        self.btn_play_pause.setObjectName("playerBtn")
+        self.btn_play_pause.setFixedSize(36, 36)
+        self.btn_play_pause.setEnabled(False)
+        self.btn_play_pause.clicked.connect(self._on_video_play_pause)
+        player_bar.addWidget(self.btn_play_pause)
+        
+        self.btn_prev_frame = QPushButton("Step -")
+        self.btn_prev_frame.setObjectName("playerBtn_small")
+        self.btn_prev_frame.setEnabled(False)
+        player_bar.addWidget(self.btn_prev_frame)
+        
+        self.btn_next_frame = QPushButton("Step +")
+        self.btn_next_frame.setObjectName("playerBtn_small")
+        self.btn_next_frame.setEnabled(False)
+        self.btn_next_frame.clicked.connect(self._on_video_next_frame)
+        player_bar.addWidget(self.btn_next_frame)
+        
+        player_bar.addSpacing(10)
+        
+        self.btn_rewind = QPushButton("⏪ 10s")
+        self.btn_rewind.setObjectName("playerBtn_small")
+        self.btn_rewind.setEnabled(False)
+        self.btn_rewind.clicked.connect(self._on_video_rewind)
+        player_bar.addWidget(self.btn_rewind)
+        
+        self.btn_forward = QPushButton("⏩ 10s")
+        self.btn_forward.setObjectName("playerBtn_small")
+        self.btn_forward.setEnabled(False)
+        self.btn_forward.clicked.connect(self._on_video_forward)
+        player_bar.addWidget(self.btn_forward)
+        
+        player_bar.addStretch()
+        
+        # Snapshot button
+        self.btn_snapshot = QPushButton("📸 Captura")
+        self.btn_snapshot.setObjectName("playerBtn_accent")
+        self.btn_snapshot.setEnabled(False)
+        self.btn_snapshot.clicked.connect(self._take_snapshot)
+        player_bar.addWidget(self.btn_snapshot)
+        
+        player_bar.addSpacing(15)
+        
+        self.lbl_frame_time = QLabel("00:00 / 00:00")
+        self.lbl_frame_time.setObjectName("subtleText")
+        player_bar.addWidget(self.lbl_frame_time)
+        
+        video_container_layout.addLayout(player_bar)
         
         video_row.addWidget(video_container, 3)
         
@@ -610,18 +764,15 @@ class MainWindow(QMainWindow):
         
         results_layout.addSpacing(10)
         
-        # Alertas
-        alertas_header = QLabel("🔔  Alertas")
+        # Alertas -> Registro de eventos
+        alertas_header = QLabel("🔔  Registro de Detecciones")
         alertas_header.setObjectName("cardTitle")
         results_layout.addWidget(alertas_header)
         
-        self.table_alertas = QTableWidget(0, 2)
-        self.table_alertas.setHorizontalHeaderLabels(["Hora", "Evento"])
-        self.table_alertas.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.table_alertas.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.table_alertas.verticalHeader().setVisible(False)
-        self.table_alertas.setMinimumHeight(120)
-        results_layout.addWidget(self.table_alertas)
+        self.list_detections = QListWidget()
+        self.list_detections.setObjectName("detectionsList")
+        self.list_detections.setMinimumHeight(150)
+        results_layout.addWidget(self.list_detections)
         
         video_row.addWidget(results_panel)
         
@@ -765,7 +916,7 @@ class MainWindow(QMainWindow):
         data_sub = QLabel("Solo se muestran los productos detectables por visión artificial: Cemento, Tubería Presión y Tubería Sanitaria.")
         data_sub.setObjectName("subtleText")
         data_sub.setWordWrap(True)
-        data_sub.setStyleSheet("font-size: 12px; color: #6c7086; background: transparent; border: none;")
+        data_sub.setStyleSheet("font-size: 12px; color: #0c0c0d; background: transparent; border: none;") # Changed color to black as per instruction
         data_layout.addWidget(data_sub)
         
         self.table_invoice_data = QTableWidget(0, 4)
@@ -906,6 +1057,27 @@ class MainWindow(QMainWindow):
         history_layout.addWidget(self.table_history)
         
         layout.addWidget(history_card)
+
+        # Captures History section
+        captures_card = GlowCard()
+        captures_layout = QVBoxLayout(captures_card)
+        captures_layout.setContentsMargins(20, 18, 20, 18)
+        
+        captures_header = QLabel("📸  Historial de Capturas (Evidencia Visual)")
+        captures_header.setObjectName("cardTitle")
+        captures_layout.addWidget(captures_header)
+        
+        self.list_captures = QListWidget()
+        self.list_captures.setObjectName("detectionsList") # Reusar estilo
+        self.list_captures.setMinimumHeight(150)
+        self.list_captures.setFlow(QListWidget.LeftToRight)
+        self.list_captures.setWrapping(True)
+        self.list_captures.setResizeMode(QListWidget.Adjust)
+        self.list_captures.setSpacing(10)
+        self.list_captures.setIconSize(QSize(120, 90))
+        captures_layout.addWidget(self.list_captures)
+        
+        layout.addWidget(captures_card)
         layout.addStretch()
         
         return page
@@ -1257,13 +1429,151 @@ class MainWindow(QMainWindow):
     # ----------------------------------------------------------------
     # VIDEO ANALYSIS LOGGING
     # ----------------------------------------------------------------
-    def _on_video_start(self):
-        """Registra el inicio del análisis de video."""
-        video_name = self.lbl_video_name.text()
-        app_logger.log_action(
-            self._user, app_logger.VIDEO_INICIADO,
-            f"Video: {video_name}"
+    def _on_load_video(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Seleccionar Video de Auditoría", "", "Videos (*.mp4 *.avi *.mkv *.mov)"
         )
+        if file_path:
+            self._video_path = file_path
+            self.lbl_video_name.setText(os.path.basename(file_path))
+            self.btn_start_analysis.setEnabled(can_do_action(self._user, "video.iniciar"))
+            self.show_toast("Video cargado correctamente", "info")
+
+    def _on_video_start(self):
+        """Inicia el análisis offline de YOLO."""
+        if not hasattr(self, "_video_path") or not self._video_path:
+            return
+
+        self.btn_start_analysis.setEnabled(False)
+        self.btn_load_video.setEnabled(False)
+        
+        # Clear previous state
+        for i in range(self.table_conteo.rowCount()):
+            self.table_conteo.setItem(i, 1, QTableWidgetItem("0"))
+        self.list_detections.clear()
+        
+        # Worker analysis
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Usamos el modelo entrenado con YOLO11
+        model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento2", "weights", "best.pt")
+        if not os.path.exists(model_path): # Fallback a otro entrenamiento
+            model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento", "weights", "best.pt")
+
+        self.analyzer = YoloAnalyzerWorker(self._video_path, model_path, line_pos=self.slider_line.value()/100.0)
+        self.analyzer.progress_updated.connect(self._on_analysis_progress)
+        self.analyzer.finished_analysis.connect(self._on_analysis_finished)
+        self.analyzer.start()
+        
+        app_logger.log_action(self._user, app_logger.VIDEO_INICIADO, f"Video: {os.path.basename(self._video_path)}")
+        self.show_toast("Iniciando análisis de visión artificial...", "info")
+
+    def _on_analysis_progress(self, val):
+        self.btn_start_analysis.setText(f"Analizando... {val}%")
+
+    def _on_analysis_finished(self, final_counts, count_history, tracking_data, fps):
+        self.btn_start_analysis.setText("✅ Análisis Completo")
+        self._tracking_data = tracking_data
+        self._count_history = count_history
+        self._fps = fps
+        
+        # Enable playback controls
+        self.btn_play_pause.setEnabled(True)
+        self.btn_prev_frame.setEnabled(True)
+        self.btn_next_frame.setEnabled(True)
+        self.btn_rewind.setEnabled(True)
+        self.btn_forward.setEnabled(True)
+        self.btn_snapshot.setEnabled(True)
+        self.video_slider.setEnabled(True)
+        
+        self.show_toast("Análisis finalizado. Listo para reproducción.", "success")
+        
+    def _on_video_play_pause(self):
+        if hasattr(self, "player_worker") and self.player_worker.isRunning():
+            is_paused = not self.player_worker._is_paused
+            self.player_worker.set_paused(is_paused)
+            self.btn_play_pause.setText("▶" if is_paused else "⏸")
+        else:
+            # Start player
+            self.player_worker = VideoPlayerWorker(
+                self._video_path, self._count_history, self._tracking_data, self._fps,
+                line_pos=self.slider_line.value()/100.0
+            )
+            self.player_worker.frame_ready.connect(self._on_frame_ready)
+            self.player_worker.counts_updated.connect(self._on_counts_updated)
+            self.player_worker.detection_event.connect(self._on_detection_event)
+            self.player_worker.progress_updated.connect(self._on_player_progress)
+            self.player_worker.finished.connect(self._on_playback_finished)
+            self.player_worker.start()
+            self.btn_play_pause.setText("⏸")
+
+    def _on_frame_ready(self, qimg):
+        pixmap = QPixmap.fromImage(qimg)
+        self.video_frame.setPixmap(pixmap.scaled(self.video_frame.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+    def _on_counts_updated(self, counts):
+        for i in range(self.table_conteo.rowCount()):
+            mat = self.table_conteo.item(i, 0).text()
+            if mat in counts:
+                self.table_conteo.setItem(i, 1, QTableWidgetItem(str(counts[mat])))
+
+    def _on_detection_event(self, ts, msg):
+        item = QListWidgetItem(f"[{ts}] {msg}")
+        self.list_detections.insertItem(0, item)
+        if self.list_detections.count() > 50:
+            self.list_detections.takeItem(50)
+
+    def _on_player_progress(self, pct):
+        self.video_slider.setValue(pct * 10) # range 0-1000
+
+    def _on_playback_finished(self):
+        self.btn_play_pause.setText("▶")
+        self.show_toast("Reproducción finalizada", "info")
+
+    def _on_line_slider_changed(self, val):
+        self.lbl_line_val.setText(f"{val}%")
+        if hasattr(self, "player_worker") and self.player_worker.isRunning():
+            self.player_worker.line_pos = val / 100.0
+
+    def _on_video_prev_frame(self):
+        if hasattr(self, "player_worker"):
+            self.player_worker.set_paused(True)
+            self.player_worker._step_dir = -1
+            self.btn_play_pause.setText("▶")
+
+    def _on_video_next_frame(self):
+        if hasattr(self, "player_worker"):
+            self.player_worker.set_paused(True)
+            self.player_worker._step_dir = 1
+            self.btn_play_pause.setText("▶")
+
+    def _on_video_rewind(self):
+        if hasattr(self, "player_worker"):
+            self.player_worker.seek_backward_10s()
+
+    def _on_video_forward(self):
+        if hasattr(self, "player_worker"):
+            self.player_worker.seek_forward_10s()
+
+    def _take_snapshot(self):
+        """Captura el frame actual y lo guarda en la carpeta 'captures'."""
+        if not hasattr(self, "video_frame") or self.video_frame.pixmap() is None:
+            return
+            
+        os.makedirs("captures", exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"captures/snapshot_{timestamp}.png"
+        self.video_frame.pixmap().save(filename)
+        
+        # Add to history list in Reports page
+        item = QListWidgetItem(f"Snapshot {timestamp}")
+        item.setIcon(QIcon(filename))
+        self.list_captures.insertItem(0, item)
+        
+        self.show_toast(f"Captura guardada: {os.path.basename(filename)}", "success")
+
+    def show_toast(self, message, toast_type="success"):
+        toast = ToastNotification(message, toast_type, self)
+        toast.show_toast()
 
     def _on_video_stop(self):
         """
@@ -1292,12 +1602,13 @@ class MainWindow(QMainWindow):
         )
 
         # ── Comparar con factura cargada para detectar discrepancias ──
-        if self._current_invoice is None:
+        invoice = getattr(self, "_current_invoice", None)
+        if not invoice:
             return  # Sin factura cargada, no hay comparación posible
 
         # Mapa: categoría YOLO → cantidad en factura
         factura_map = {}
-        for item in self._current_invoice.yolo_items:
+        for item in invoice.yolo_items:
             cat = item.categoria  # "cemento" | "tuberia_presion" | "tuberia_sanitaria"
             factura_map[cat] = factura_map.get(cat, 0) + item.cantidad
 
@@ -1342,9 +1653,10 @@ class MainWindow(QMainWindow):
     def _log_export(self, formato: str):
         """Registra cuando el usuario exporta un reporte."""
         factura_info = "Sin factura cargada"
-        if self._current_invoice:
-            factura_info = (f"Factura {self._current_invoice.numero_factura} | "
-                            f"Cliente: {self._current_invoice.cliente}")
+        invoice = getattr(self, "_current_invoice", None)
+        if invoice:
+            factura_info = (f"Factura {invoice.numero_factura} | "
+                            f"Cliente: {invoice.cliente}")
         app_logger.log_action(
             self._user, app_logger.REPORTE_EXPORTADO,
             f"Formato: {formato} | {factura_info}"
@@ -1365,8 +1677,9 @@ class MainWindow(QMainWindow):
         vehiculo_txt = self.card_vehiculo._val_lbl.text() if hasattr(self.card_vehiculo, "_val_lbl") else "—"
 
         factura_info = "Sin factura"
-        if self._current_invoice:
-            factura_info = f"Factura {self._current_invoice.numero_factura}"
+        invoice = getattr(self, "_current_invoice", None)
+        if invoice:
+            factura_info = f"Factura {invoice.numero_factura}"
 
         desc = (f"Vehículo: {vehiculo_txt} | Peso: {peso_txt} | "
                 f"Volumen: {volumen_txt} | {factura_info}")

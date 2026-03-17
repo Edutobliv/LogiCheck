@@ -1,0 +1,8 @@
+path: C:/Users/samuv/Desktop/Programas_mios/LogiCheck/training/dataset
+train: images/train
+val: images/val
+test:  # optional
+
+# Classes
+names:
+  0: bulto

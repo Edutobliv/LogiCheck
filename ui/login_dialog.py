@@ -84,13 +84,30 @@ class LoginDialog(QDialog):
 
         # ── Logo / Brand ──
         logo_row = QHBoxLayout()
+        logo_row.setSpacing(0)
+
         logo_icon = QLabel("🔍")
         logo_icon.setStyleSheet("font-size: 32px; background: transparent;")
         logo_row.addWidget(logo_icon)
+
         logo_label = QLabel("LogiCheck")
         logo_label.setObjectName("loginBrand")
         logo_row.addWidget(logo_label)
+
         logo_row.addStretch()
+
+        # ── Botón cerrar (X) ──
+        btn_close = QPushButton("✕")
+        btn_close.setObjectName("loginCloseBtn")
+        btn_close.setFixedSize(28, 28)
+        btn_close.setCursor(Qt.PointingHandCursor)
+        btn_close.setToolTip("Cerrar")
+        btn_close.setAutoDefault(False)
+        btn_close.setDefault(False)
+        btn_close.setFocusPolicy(Qt.NoFocus)
+        btn_close.clicked.connect(self.reject)
+        logo_row.addWidget(btn_close)
+
         card_layout.addLayout(logo_row)
 
         card_layout.addSpacing(6)
@@ -171,6 +188,8 @@ class LoginDialog(QDialog):
         self.btn_login.setObjectName("loginBtn")
         self.btn_login.setFixedHeight(46)
         self.btn_login.setCursor(Qt.PointingHandCursor)
+        self.btn_login.setDefault(True)       # Enter siempre activa este botón
+        self.btn_login.setAutoDefault(True)
         self.btn_login.clicked.connect(self._try_login)
         card_layout.addWidget(self.btn_login)
 
@@ -355,5 +374,24 @@ class LoginDialog(QDialog):
                 font-size: 11px;
                 color: #45475a;
                 background: transparent;
+            }
+
+            /* Botón cerrar X */
+            #loginCloseBtn {
+                background: transparent;
+                border: none;
+                border-radius: 6px;
+                color: #45475a;
+                font-size: 14px;
+                font-weight: 700;
+                padding: 0;
+            }
+            #loginCloseBtn:hover {
+                background: rgba(243, 139, 168, 0.18);
+                color: #f38ba8;
+            }
+            #loginCloseBtn:pressed {
+                background: rgba(243, 139, 168, 0.30);
+                color: #f38ba8;
             }
         """)

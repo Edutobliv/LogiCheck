@@ -8,10 +8,12 @@ from PySide6.QtWidgets import (
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
     QDialog, QLineEdit, QComboBox, QFormLayout, QMessageBox,
     QGraphicsDropShadowEffect, QAbstractItemView, QScrollArea,
-    QSizePolicy, QSpacerItem
+    QSizePolicy, QSpacerItem, QCheckBox, QDateTimeEdit
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QDateTime
 from PySide6.QtGui import QColor, QFont
+import json
+from datetime import datetime, timedelta
 import sys, os
 
 _base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,9 +22,13 @@ if _base not in sys.path:
 
 from core.auth import (
     get_all_users, create_user, update_user,
-    change_password, deactivate_user, reactivate_user
+    change_password, deactivate_user, reactivate_user,
+    update_user_permissions, clone_permissions
 )
-from core.permissions import ROLES, ROLE_ICONS
+from core.permissions import (
+    ROLES, ROLE_ICONS, SYSTEM_FUNCTIONS, 
+    get_role_permissions, _base_page_access, _base_action_access
+)
 from core import logger as app_logger
 
 
@@ -32,13 +38,20 @@ from core import logger as app_logger
 class UserDialog(QDialog):
     """Diálogo para crear un usuario nuevo o editar uno existente."""
 
-    def __init__(self, parent=None, user_data: dict = None):
+    def __init__(self, parent=None, user_data: dict = None, current_admin_id: int = None):
         super().__init__(parent)
         self._edit_mode = user_data is not None
         self._user_data = user_data or {}
+        self._current_admin_id = current_admin_id
+        self._overrides = {}
+        
+        if self._edit_mode and self._user_data.get("permissions_override"):
+            try:
+                self._overrides = json.loads(self._user_data["permissions_override"])
+            except: pass
 
         self.setWindowTitle("Editar Usuario" if self._edit_mode else "Nuevo Usuario")
-        self.setFixedSize(420, self._edit_mode and 340 or 420)
+        self.setMinimumWidth(500)
         self.setModal(True)
         self._build_ui()
         self._apply_styles()
@@ -87,15 +100,111 @@ class UserDialog(QDialog):
             form.addRow("Contraseña:", self.inp_password)
 
         # Rol
+        role_row = QHBoxLayout()
         self.cmb_role = QComboBox()
         self.cmb_role.setObjectName("dlgCombo")
         self.cmb_role.setFixedHeight(38)
+        self.cmb_role.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         for role_key, role_name in ROLES.items():
             icon = ROLE_ICONS.get(role_key, "")
             self.cmb_role.addItem(f"{icon}  {role_name}", role_key)
-        form.addRow("Rol:", self.cmb_role)
+            
+        self.btn_inspect_role = QPushButton("🔍")
+        self.btn_inspect_role.setFixedSize(38, 38)
+        self.btn_inspect_role.setCursor(Qt.PointingHandCursor)
+        self.btn_inspect_role.setToolTip("Ver permisos de este rol")
+        self.btn_inspect_role.setStyleSheet("""
+            QPushButton { 
+                background: #313244; border-radius: 8px; border: 1px solid #45475a; 
+                font-size: 16px; color: #cdd6f4;
+            }
+            QPushButton:hover { background: #45475a; border-color: #89b4fa; }
+        """)
+        self.btn_inspect_role.clicked.connect(self._show_role_info)
+        
+        role_row.addWidget(self.cmb_role)
+        role_row.addWidget(self.btn_inspect_role)
+        form.addRow("Rol base:", role_row)
 
         layout.addLayout(form)
+        
+        # --- Matriz de Privilegios Granulares ---
+        layout.addWidget(QLabel("🛡️  Matriz de Privilegios (Herencia y Overrides):"))
+        layout.addWidget(QLabel("<i>Configura permisos específicos sin cambiar el rol base del usuario.</i>"))
+        
+        perm_scroll = QScrollArea()
+        perm_scroll.setWidgetResizable(True)
+        perm_scroll.setMinimumHeight(250)
+        perm_scroll.setObjectName("permScroll")
+        
+        perm_container = QWidget()
+        perm_container.setObjectName("permContainer")
+        self.perm_vbox = QVBoxLayout(perm_container)
+        self.perm_vbox.setContentsMargins(10, 10, 10, 10)
+        self.perm_vbox.setSpacing(15)
+        
+        self.perm_controls = {} # Key: combo_widget
+
+        for category, functions in SYSTEM_FUNCTIONS.items():
+            cat_label = QLabel(f"<b>{category.upper()}</b>")
+            cat_label.setStyleSheet("color: #89b4fa; font-size: 11px; margin-top: 5px;")
+            self.perm_vbox.addWidget(cat_label)
+            
+            for key, label in functions.items():
+                row = QHBoxLayout()
+                lbl_func = QLabel(label)
+                lbl_func.setWordWrap(True)
+                lbl_func.setObjectName("permLabel")
+                
+                # Estado heredado (indicador visual)
+                self.lbl_inherited = QLabel("(Heredado: ?)")
+                self.lbl_inherited.setObjectName("inheritedLabel")
+                self.lbl_inherited.setProperty("key", key)
+                
+                # Selector tri-estatal
+                combo = QComboBox()
+                combo.setFixedWidth(110)
+                combo.addItem("🔗 Heredar", None)   # Nada en override
+                combo.addItem("✅ Permitir", True)  # True en override
+                combo.addItem("❌ Prohibir", False) # False en override
+                
+                # Cargar valor actual si existe
+                if key in self._overrides:
+                    current_val = self._overrides[key]
+                    idx = combo.findData(current_val)
+                    if idx >= 0: combo.setCurrentIndex(idx)
+                
+                self.perm_controls[key] = (combo, self.lbl_inherited)
+                
+                row.addWidget(lbl_func, 1)
+                row.addWidget(self.lbl_inherited)
+                row.addWidget(combo)
+                self.perm_vbox.addLayout(row)
+
+        perm_scroll.setWidget(perm_container)
+        layout.addWidget(perm_scroll)
+        
+        # Actualizar indicadores de herencia iniciales
+        self.cmb_role.currentIndexChanged.connect(self._update_inheritance_labels)
+        self._update_inheritance_labels()
+        
+        # --- NUEVO: Expiración (Delegación Temporal) ---
+        exp_lay = QHBoxLayout()
+        self.chk_expire = QCheckBox("Permisos Temporales (Expira el:)")
+        self.chk_expire.setStyleSheet("color: #a6adc8;")
+        self.date_expire = QDateTimeEdit(QDateTime.currentDateTime().addDays(7))
+        self.date_expire.setCalendarPopup(True)
+        self.date_expire.setEnabled(False)
+        self.chk_expire.toggled.connect(self.date_expire.setEnabled)
+        
+        if self._user_data.get("permissions_expire_at"):
+            self.chk_expire.setChecked(True)
+            self.date_expire.setDateTime(QDateTime.fromString(self._user_data["permissions_expire_at"], Qt.ISODate))
+            
+        exp_lay.addWidget(self.chk_expire)
+        exp_lay.addWidget(self.date_expire)
+        layout.addLayout(exp_lay)
+        
         layout.addStretch()
 
         # Botones
@@ -115,6 +224,46 @@ class UserDialog(QDialog):
         btn_row.addWidget(btn_cancel)
         btn_row.addWidget(btn_ok)
         layout.addLayout(btn_row)
+
+    def _update_inheritance_labels(self):
+        """Actualiza el texto que indica qué permisos hereda el rol seleccionado."""
+        role_key = self.cmb_role.currentData()
+        if not role_key: return
+        
+        for category, functions in SYSTEM_FUNCTIONS.items():
+            for key, label in functions.items():
+                if key not in self.perm_controls: continue
+                combo, lbl_inherit = self.perm_controls[key]
+                
+                # Determinar acceso base
+                if key.startswith("page.view."):
+                    pg_name = key.replace("page.view.", "")
+                    has_base = _base_page_access(role_key, pg_name)
+                else:
+                    has_base = _base_action_access(role_key, key)
+                
+                status_txt = "SÍ" if has_base else "NO"
+                lbl_inherit.setText(f"<i>(Rol: {status_txt})</i>")
+                
+                # Usar propiedades dinámicas para que el CSS maneje el color
+                lbl_inherit.setProperty("has_base", has_base)
+                lbl_inherit.style().unpolish(lbl_inherit)
+                lbl_inherit.style().polish(lbl_inherit)
+
+    def _show_role_info(self):
+        """Muestra los permisos detallados del rol seleccionado."""
+        role_key = self.cmb_role.currentData()
+        role_name = self.cmb_role.currentText().strip()
+        perms = get_role_permissions(role_key)
+        
+        msg = f"<b>{role_name}</b> tiene los siguientes permisos:<br><br>"
+        msg += "<b>🏢 Acceso a páginas:</b><br>• " + "<br>• ".join(perms["páginas"]) if perms["páginas"] else "Ninguna"
+        msg += "<br><br><b>⚙️ Acciones permitidas:</b><br>• " + "<br>• ".join(perms["acciones"]) if perms["acciones"] else "Ninguna"
+        
+        # El override del usuario se suma a esto
+        msg += "<br><br><i>Nota: Si activas Permisos Especiales abajo, se sumarán a estos permisos base.</i>"
+        
+        QMessageBox.information(self, "Detalles de Permisos", msg)
 
     def _fill_fields(self):
         self.inp_fullname.setText(self._user_data.get("full_name", ""))
@@ -143,76 +292,40 @@ class UserDialog(QDialog):
             self.result_username = username.lower()
             self.result_password = password
 
+        new_role = self.cmb_role.currentData()
+        
+        # Protección de Auto-Descenso: Un admin no puede quitarse su propio rol de admin
+        if self._edit_mode and self._user_data["id"] == self._current_admin_id:
+            if self._user_data["role"] == "admin" and new_role != "admin":
+                QMessageBox.critical(self, "Protección", "No puedes quitarte el rol de Administrador a ti mismo para evitar bloqueos.")
+                return
+
+        # Recoger Overrides (Granularidad Absoluta)
+        overrides = {}
+        for key, (combo, _) in self.perm_controls.items():
+            val = combo.currentData()
+            if val is not None:
+                overrides[key] = val
+        
+        self.result_overrides = json.dumps(overrides) if overrides else None
+        self.result_expire = self.date_expire.dateTime().toString(Qt.ISODate) if self.chk_expire.isChecked() else None
+        
         self.result_fullname = full_name
-        self.result_role = self.cmb_role.currentData()
+        self.result_role = new_role
         self.accept()
 
     # ── Estilos ───────────────────────────────────────────────
 
     def _apply_styles(self):
+        # El tema base se hereda de style.qss, aquí solo detalles específicos del diálogo.
+        self.setObjectName("UserDialog")
         self.setStyleSheet("""
-            QDialog {
-                background-color: #1e1e2e;
-                border: 1px solid #313244;
-                border-radius: 14px;
-            }
-            #dlgTitle {
-                font-size: 17px;
-                font-weight: 800;
-                color: #cdd6f4;
-                background: transparent;
-            }
-            QLabel {
-                color: #a6adc8;
-                font-size: 13px;
-                background: transparent;
-            }
-            #loginInput {
-                background-color: #11111b;
-                border: 1.5px solid #313244;
-                border-radius: 8px;
-                padding: 0 12px;
-                font-size: 13px;
-                color: #cdd6f4;
-            }
-            #loginInput:focus { border-color: #89b4fa; }
-            #dlgCombo {
-                background-color: #11111b;
-                border: 1.5px solid #313244;
-                border-radius: 8px;
-                padding: 0 12px;
-                font-size: 13px;
-                color: #cdd6f4;
-            }
-            #dlgCombo::drop-down { border: none; }
-            #dlgCombo QAbstractItemView {
-                background-color: #181825;
-                border: 1px solid #313244;
-                color: #cdd6f4;
-                selection-background-color: #313244;
-            }
+            #dlgTitle { font-size: 17px; font-weight: 800; color: #cdd6f4; }
             #dlgOkBtn {
-                background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                    stop:0 #89b4fa, stop:1 #74c7ec);
-                color: #11111b;
-                border: none;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 700;
+                background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #89b4fa, stop:1 #74c7ec);
+                color: #11111b; border: none; border-radius: 8px; font-weight: 700;
             }
             #dlgOkBtn:hover { background: #b4befe; }
-            #dlgCancelBtn {
-                background: transparent;
-                color: #a6adc8;
-                border: 1.5px solid #45475a;
-                border-radius: 8px;
-                font-size: 13px;
-                font-weight: 600;
-            }
-            #dlgCancelBtn:hover {
-                background: rgba(255,255,255,0.05);
-                color: #cdd6f4;
-            }
         """)
 
 
@@ -332,11 +445,14 @@ class UsersPage(QWidget):
         layout.setContentsMargins(30, 25, 30, 25)
         layout.setSpacing(20)
 
-        # ── Header ──
-        header_row = QHBoxLayout()
+        # ── Header Banner ──
+        banner = QFrame()
+        banner.setObjectName("welcomeBanner")
+        banner_layout = QHBoxLayout(banner)
+        banner_layout.setContentsMargins(24, 20, 24, 20)
 
         title_col = QVBoxLayout()
-        title_col.setSpacing(2)
+        title_col.setSpacing(4)
         lbl_title = QLabel("👥  Gestión de Usuarios")
         lbl_title.setObjectName("welcomeTitle")
         lbl_sub = QLabel("Administra los accesos al sistema. Solo el Administrador puede ver esta sección.")
@@ -345,26 +461,26 @@ class UsersPage(QWidget):
         title_col.addWidget(lbl_title)
         title_col.addWidget(lbl_sub)
 
-        header_row.addLayout(title_col)
-        header_row.addStretch()
+        banner_layout.addLayout(title_col)
+        banner_layout.addStretch()
 
         self.btn_new_user = QPushButton("➕  Nuevo Usuario")
         self.btn_new_user.setObjectName("primaryBtn")
         self.btn_new_user.setFixedHeight(42)
         self.btn_new_user.setCursor(Qt.PointingHandCursor)
         self.btn_new_user.clicked.connect(self._open_create_dialog)
-        header_row.addWidget(self.btn_new_user)
+        banner_layout.addWidget(self.btn_new_user)
 
-        layout.addLayout(header_row)
+        layout.addWidget(banner)
 
         # ── Stat cards ──
         stats_row = QHBoxLayout()
         stats_row.setSpacing(15)
 
-        self._card_total   = self._make_stat_card("👤", "0", "Usuarios Totales",  "#89b4fa")
-        self._card_active  = self._make_stat_card("✅", "0", "Usuarios Activos",  "#a6e3a1")
-        self._card_inactive= self._make_stat_card("🚫", "0", "Usuarios Inactivos","#f38ba8")
-        self._card_roles   = self._make_stat_card("🎭", "5", "Roles Disponibles", "#cba6f7")
+        self._card_total   = self._make_stat_card("👤", "0", "Usuarios Totales",  "#89b4fa", card_id="total")
+        self._card_active  = self._make_stat_card("✅", "0", "Usuarios Activos",  "#a6e3a1", card_id="active")
+        self._card_inactive= self._make_stat_card("🚫", "0", "Usuarios Inactivos","#f38ba8", card_id="inactive")
+        self._card_roles   = self._make_stat_card("🎭", "5", "Roles Disponibles", "#cba6f7", card_id="roles")
 
         stats_row.addWidget(self._card_total)
         stats_row.addWidget(self._card_active)
@@ -384,7 +500,7 @@ class UsersPage(QWidget):
         table_layout.setContentsMargins(20, 18, 20, 18)
 
         tbl_header_row = QHBoxLayout()
-        tbl_title = QLabel("📋  Lista de Usuarios")
+        tbl_title = QLabel("Lista de Usuarios Registrados")
         tbl_title.setObjectName("cardTitle")
         tbl_header_row.addWidget(tbl_title)
         tbl_header_row.addStretch()
@@ -408,8 +524,8 @@ class UsersPage(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.Fixed)
-        self.table.setColumnWidth(6, 260)
+        self.table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        # self.table.setColumnWidth(6, 450)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setAlternatingRowColors(True)
@@ -424,10 +540,13 @@ class UsersPage(QWidget):
         scroll.setWidget(page)
         outer.addWidget(scroll)
 
-    def _make_stat_card(self, icon, value, desc, color):
+    def _make_stat_card(self, icon, value, desc, color, card_id=""):
         """Crea una mini tarjeta de estadística."""
         card = QFrame()
         card.setObjectName("statCard")
+        if card_id:
+            card.setProperty("card_id", card_id)
+
         shadow = QGraphicsDropShadowEffect(card)
         shadow.setBlurRadius(20); shadow.setOffset(0, 3)
         shadow.setColor(QColor(0, 0, 0, 50))
@@ -439,13 +558,25 @@ class UsersPage(QWidget):
 
         top = QHBoxLayout()
         icon_lbl = QLabel(icon)
-        icon_lbl.setStyleSheet(f"font-size: 20px; color: {color}; background: transparent;")
+        icon_lbl.setObjectName("statIcon")
+        if card_id: icon_lbl.setProperty("card_id", card_id)
+        
+        if not card_id:
+            icon_lbl.setStyleSheet(f"font-size: 20px; color: {color}; background: transparent;")
+        else:
+            icon_lbl.setStyleSheet("font-size: 20px; background: transparent;")
         top.addWidget(icon_lbl)
         top.addStretch()
 
         val_lbl = QLabel(value)
-        val_lbl.setObjectName(f"_statval_{desc.replace(' ','_')}")
-        val_lbl.setStyleSheet(f"font-size: 24px; font-weight: 900; color: {color}; background: transparent;")
+        val_lbl.setObjectName("statValue")
+        if card_id: val_lbl.setProperty("card_id", card_id)
+        
+        if not card_id:
+            val_lbl.setStyleSheet(f"font-size: 24px; font-weight: 900; color: {color}; background: transparent;")
+        else:
+            val_lbl.setStyleSheet("font-size: 24px; font-weight: 900; background: transparent;")
+            
         top.addWidget(val_lbl)
         lay.addLayout(top)
 
@@ -483,7 +614,7 @@ class UsersPage(QWidget):
             # Username
             uname = QTableWidgetItem(user["username"])
             uname.setTextAlignment(Qt.AlignCenter)
-            uname.setForeground(QColor("#89b4fa"))
+            # Removemos setForeground para permitir que el estilo general maneje el color correctamented
             self.table.setItem(row_idx, 1, uname)
 
             # Nombre completo
@@ -502,7 +633,7 @@ class UsersPage(QWidget):
             estado_item = QTableWidgetItem("✅ Activo" if is_active else "🚫 Inactivo")
             estado_item.setTextAlignment(Qt.AlignCenter)
             estado_item.setForeground(
-                QColor("#a6e3a1") if is_active else QColor("#f38ba8")
+                QColor("#40a02b") if is_active else QColor("#d20f39")
             )
             self.table.setItem(row_idx, 4, estado_item)
 
@@ -516,63 +647,45 @@ class UsersPage(QWidget):
             action_widget = QWidget()
             action_widget.setStyleSheet("background: transparent;")
             action_layout = QHBoxLayout(action_widget)
-            action_layout.setContentsMargins(6, 4, 6, 4)
-            action_layout.setSpacing(6)
+            action_layout.setContentsMargins(4, 2, 4, 2)
+            action_layout.setSpacing(4)
 
             btn_edit = QPushButton("✏️ Editar")
-            btn_edit.setFixedHeight(32)
+            btn_edit.setFixedHeight(30)
             btn_edit.setCursor(Qt.PointingHandCursor)
-            btn_edit.setStyleSheet("""
-                QPushButton {
-                    background: rgba(137,180,250,0.15); color: #89b4fa;
-                    border: 1px solid rgba(137,180,250,0.35); border-radius: 6px;
-                    font-size: 11px; font-weight: 700; padding: 0 10px;
-                }
-                QPushButton:hover { background: rgba(137,180,250,0.28); }
-            """)
+            btn_edit.setObjectName("btnTableEdit")
             btn_edit.clicked.connect(lambda _, u=user: self._open_edit_dialog(u))
 
             btn_pass = QPushButton("🔑 Clave")
-            btn_pass.setFixedHeight(32)
+            btn_pass.setFixedHeight(30)
             btn_pass.setCursor(Qt.PointingHandCursor)
-            btn_pass.setStyleSheet("""
-                QPushButton {
-                    background: rgba(203,166,247,0.15); color: #cba6f7;
-                    border: 1px solid rgba(203,166,247,0.35); border-radius: 6px;
-                    font-size: 11px; font-weight: 700; padding: 0 10px;
-                }
-                QPushButton:hover { background: rgba(203,166,247,0.28); }
-            """)
+            btn_pass.setObjectName("btnTablePass")
             btn_pass.clicked.connect(lambda _, u=user: self._open_password_dialog(u))
 
             if is_active:
                 btn_toggle = QPushButton("🚫 Desactivar")
-                btn_toggle.setStyleSheet("""
-                    QPushButton {
-                        background: rgba(243,139,168,0.15); color: #f38ba8;
-                        border: 1px solid rgba(243,139,168,0.35); border-radius: 6px;
-                        font-size: 11px; font-weight: 700; padding: 0 10px;
-                    }
-                    QPushButton:hover { background: rgba(243,139,168,0.28); }
-                """)
+                btn_toggle.setFixedHeight(30)
+                btn_toggle.setObjectName("btnTableToggleOff")
                 btn_toggle.clicked.connect(lambda _, u=user: self._toggle_user(u, deactivate=True))
             else:
                 btn_toggle = QPushButton("✅ Activar")
-                btn_toggle.setStyleSheet("""
-                    QPushButton {
-                        background: rgba(166,227,161,0.15); color: #a6e3a1;
-                        border: 1px solid rgba(166,227,161,0.35); border-radius: 6px;
-                        font-size: 11px; font-weight: 700; padding: 0 10px;
-                    }
-                    QPushButton:hover { background: rgba(166,227,161,0.28); }
-                """)
+                btn_toggle.setFixedHeight(30)
+                btn_toggle.setObjectName("btnTableToggleOn")
                 btn_toggle.clicked.connect(lambda _, u=user: self._toggle_user(u, deactivate=False))
 
             btn_toggle.setFixedHeight(32)
             btn_toggle.setCursor(Qt.PointingHandCursor)
 
+            btn_clone = QPushButton("🛡️  Clonar")
+            btn_clone.setFixedHeight(30)
+            btn_clone.setCursor(Qt.PointingHandCursor)
+            btn_clone.setObjectName("btnTableClone")
+            btn_clone.setToolTip("Clonar permisos a otro usuario")
+            btn_clone.clicked.connect(lambda _, u=user: self._clone_user_permissions(u))
+
             action_layout.addWidget(btn_edit)
             action_layout.addWidget(btn_pass)
+            action_layout.addWidget(btn_clone)
             action_layout.addWidget(btn_toggle)
             action_layout.addStretch()
 
@@ -598,13 +711,53 @@ class UsersPage(QWidget):
                 QMessageBox.critical(self, "Error", f"El nombre de usuario '{dlg.result_username}' ya existe.")
 
     def _open_edit_dialog(self, user: dict):
-        dlg = UserDialog(self, user_data=user)
+        dlg = UserDialog(self, user_data=user, current_admin_id=self._admin.get("id"))
         if dlg.exec() == QDialog.Accepted:
+            # 1. Update basic info
             update_user(user["id"], dlg.result_fullname, dlg.result_role)
+            
+            # 2. Update Overrides (Auditoría incluida)
+            update_user_permissions(user["id"], dlg.result_overrides, dlg.result_expire, self._admin.get("id"))
+            
             app_logger.log_action(self._admin, app_logger.USUARIO_EDITADO,
-                                  f"Usuario: {user['username']} | Nuevo rol: {dlg.result_role}")
-            QMessageBox.information(self, "Éxito", "Usuario actualizado correctamente.")
+                                  f"Usuario: {user['username']} | Permisos modif. por: {self._admin['username']}")
+            
+            QMessageBox.information(self, "Éxito", "Usuario y permisos actualizados correctamente.")
             self.refresh_table()
+
+    def _clone_user_permissions(self, user: dict):
+        """Implementa la opción 5: Clonación de Privilegios."""
+        users = [u for u in get_all_users() if u["id"] != user["id"] and u["active"]]
+        if not users:
+            QMessageBox.warning(self, "Clonación", "No hay otros usuarios activos para recibir estos permisos.")
+            return
+            
+        # Diálogo simple para elegir destino
+        dest_dlg = QDialog(self)
+        dest_dlg.setObjectName("cloneDialog")
+        dest_dlg.setWindowTitle(f"Clonar permisos de {user['username']} a...")
+        dest_dlg.setFixedWidth(400)
+        dest_dlg.setStyleSheet("background-color: #1e1e2e;") # Forzar fondo para evitar transparencia
+        lay = QVBoxLayout(dest_dlg)
+        
+        combo = QComboBox()
+        for u in users:
+            combo.addItem(f"{u['username']} ({u['full_name']})", u["id"])
+        lay.addWidget(QLabel("Selecciona el usuario destino:"))
+        lay.addWidget(combo)
+        
+        btn_ok = QPushButton("Clonar Ahora")
+        btn_ok.clicked.connect(dest_dlg.accept)
+        lay.addWidget(btn_ok)
+        
+        if dest_dlg.exec() == QDialog.Accepted:
+            to_id = combo.currentData()
+            to_name = combo.currentText()
+            if clone_permissions(user["id"], to_id, self._admin.get("id")):
+                app_logger.log_action(self._admin, "PERMISOS_CLONADOS", 
+                                      f"Clonó permisos de {user['username']} a {to_name}")
+                QMessageBox.information(self, "Éxito", f"Se han clonado los privilegios a {to_name}.")
+                self.refresh_table()
 
     def _open_password_dialog(self, user: dict):
         dlg = ChangePasswordDialog(self, username=user["username"])
