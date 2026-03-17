@@ -107,6 +107,7 @@ class YoloAnalyzerWorker(QThread):
 class VideoPlayerWorker(QThread):
     frame_ready    = Signal(QImage)
     progress_updated = Signal(int)
+    position_updated = Signal(int, int)  # (current_msec, total_msec)
     counts_updated = Signal(dict)
     detection_event = Signal(str, str) # (timestamp_str, message)
     finished       = Signal()
@@ -144,6 +145,12 @@ class VideoPlayerWorker(QThread):
     def seek_to_start(self):
         self._seek_msec = 0
 
+    def seek_to_msec(self, msec: float):
+        try:
+            self._seek_msec = max(0.0, float(msec))
+        except Exception:
+            self._seek_msec = 0.0
+
     def seek_backward_10s(self):
         self._seek_offset_msec = -10000
 
@@ -167,6 +174,7 @@ class VideoPlayerWorker(QThread):
         fps           = self.fps or cap.get(cv2.CAP_PROP_FPS) or 25.0
         total_frames  = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         base_delay_ms = 1000.0 / fps
+        total_msec = int(round((total_frames / fps) * 1000.0)) if total_frames > 0 else 0
 
         self._frame_idx = 0  # Reset to beginning
 
@@ -302,6 +310,13 @@ class VideoPlayerWorker(QThread):
             h2, w2, ch = rgb.shape
             q_img = QImage(rgb.data, w2, h2, ch * w2, QImage.Format_RGB888)
             self.frame_ready.emit(q_img.copy())
+
+            # --- Accurate time position ---
+            try:
+                cur_msec = int(round(cap.get(cv2.CAP_PROP_POS_MSEC)))
+            except Exception:
+                cur_msec = int(round((self._frame_idx / fps) * 1000.0))
+            self.position_updated.emit(max(0, cur_msec), max(0, total_msec))
 
             # --- Timing ---
             elapsed_ms = (time.time() - start_time) * 1000.0

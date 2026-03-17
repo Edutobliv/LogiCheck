@@ -335,6 +335,37 @@ QTableCornerButton::section {
     font-weight: 600;
 }
 
+/* Video status pill */
+#videoStatusPill {
+    padding: 7px 12px;
+    border-radius: 999px;
+    font-weight: 900;
+    font-size: 12px;
+    border: 1.5px solid #dce0e8;
+    background-color: rgba(241, 242, 246, 0.95);
+    color: #313244;
+}
+#videoStatusPill[state="idle"] { color: #4c4f69; }
+#videoStatusPill[state="queued"] { border-color: rgba(223, 142, 29, 0.55); color: #df8e1d; }
+#videoStatusPill[state="analyzing"] { border-color: rgba(136, 57, 239, 0.55); color: #8839ef; }
+#videoStatusPill[state="ready"] { border-color: rgba(64, 160, 43, 0.55); color: #40a02b; }
+
+/* --- Player buttons --- */
+#playerBtn {
+    background-color: rgba(30, 102, 245, 0.08);
+    border: 1.5px solid rgba(30, 102, 245, 0.25);
+    border-radius: 18px;
+    color: #000000;
+    font-size: 16px;
+    font-weight: 900;
+}
+#playerBtn:hover { background-color: rgba(30, 102, 245, 0.12); border-color: rgba(30, 102, 245, 0.45); }
+#playerBtn:pressed { background-color: rgba(30, 102, 245, 0.16); }
+#playerBtn[ready="true"] {
+    border: 1.5px solid rgba(30, 102, 245, 0.60);
+    background-color: rgba(30, 102, 245, 0.16);
+}
+
 /* --- Progress Bar --- */
 #videoProgress {
     background-color: #dce0e8;
@@ -345,6 +376,103 @@ QTableCornerButton::section {
 #videoProgress::chunk {
     background-color: #1e66f5;
     border-radius: 4px;
+}
+
+/* --- Analysis Progress Bar (premium) --- */
+#analysisProgress {
+    background-color: rgba(220, 224, 232, 0.9);
+    border: 1.5px solid rgba(220, 224, 232, 1.0);
+    border-radius: 5px;
+}
+#analysisProgress::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #1e66f5, stop:0.5 #8839ef, stop:1 #40a02b);
+    border-radius: 5px;
+}
+
+/* Speed selector in player bar */
+#speedBtn {
+    background-color: rgba(30, 102, 245, 0.08);
+    color: #000000;
+    border: 1.5px solid rgba(30, 102, 245, 0.35);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-weight: 900;
+}
+#speedBtn:hover { background-color: rgba(30, 102, 245, 0.12); border-color: #1e66f5; }
+
+/* Speed panel (YouTube-like) */
+#speedPanelCard {
+    background-color: #ffffff;
+    border: 1.5px solid #dce0e8;
+    border-radius: 16px;
+}
+#speedPanelTitle {
+    font-size: 12px;
+    font-weight: 900;
+    color: #313244;
+}
+#speedPanelValue {
+    font-size: 26px;
+    font-weight: 900;
+    color: #000000;
+    padding: 2px 0 6px 0;
+}
+#speedAdjustBtn {
+    background-color: rgba(30, 102, 245, 0.08);
+    border: 1.5px solid rgba(30, 102, 245, 0.25);
+    border-radius: 18px;
+    color: #000000;
+    font-size: 16px;
+    font-weight: 900;
+}
+#speedAdjustBtn:hover { background-color: rgba(30, 102, 245, 0.12); border-color: rgba(30, 102, 245, 0.45); }
+#speedAdjustBtn:pressed { background-color: rgba(30, 102, 245, 0.16); }
+#speedAdjustBtn:focus { outline: none; }
+
+#speedPanelSlider::groove:horizontal {
+    height: 7px;
+    border-radius: 3px;
+    background: rgba(220, 224, 232, 1.0);
+}
+#speedPanelSlider::sub-page:horizontal {
+    border-radius: 3px;
+    background: #1e66f5;
+}
+#speedPanelSlider::handle:horizontal {
+    width: 14px;
+    margin: -6px 0;
+    border-radius: 7px;
+    background: #000000;
+}
+
+#speedChip {
+    background-color: rgba(76, 79, 105, 0.06);
+    border: 1.5px solid rgba(220, 224, 232, 1.0);
+    color: #000000;
+    border-radius: 999px;
+    padding: 8px 14px;
+    min-height: 34px;
+    min-width: 46px;
+    font-weight: 900;
+}
+#speedChip:checked {
+    background-color: rgba(30, 102, 245, 0.14);
+    border: 1.5px solid rgba(30, 102, 245, 0.55);
+}
+#speedChip:hover { background-color: rgba(30, 102, 245, 0.08); }
+#speedChip:pressed { background-color: rgba(30, 102, 245, 0.12); }
+#speedChip:focus { outline: none; border: 1.5px solid rgba(30, 102, 245, 0.55); }
+
+/* Scrub tooltip */
+#scrubTooltip {
+    background-color: rgba(255, 255, 255, 0.96);
+    border: 1.5px solid #dce0e8;
+    border-radius: 10px;
+    padding: 7px 10px;
+    color: #000000;
+    font-weight: 900;
+    font-size: 12px;
 }
 
 /* --- Status Bar --- */

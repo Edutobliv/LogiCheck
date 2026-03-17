@@ -3,9 +3,10 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QHeaderView, QSizePolicy, QGraphicsDropShadowEffect,
                                QGraphicsOpacityEffect,
                                QScrollArea, QStackedWidget, QToolButton, QSpacerItem,
-                               QProgressBar, QStatusBar, QFileDialog, QMessageBox, QListWidget, QListWidgetItem, QSlider)
+                               QProgressBar, QStatusBar, QFileDialog, QMessageBox, QListWidget, QListWidgetItem, QSlider,
+                               QDialog)
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint, QVariantAnimation, QSequentialAnimationGroup, QParallelAnimationGroup, QThread, Signal
-from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen, QPixmap
+from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen, QPixmap, QGuiApplication
 import datetime
 import os
 import sys
@@ -613,13 +614,29 @@ class MainWindow(QMainWindow):
         self.btn_load_video.setCursor(Qt.PointingHandCursor)
         self.btn_load_video.clicked.connect(self._on_load_video)
         controls_layout.addWidget(self.btn_load_video)
-        
+
+        # Analysis status: premium progress bar above the action button
+        analysis_box = QVBoxLayout()
+        analysis_box.setContentsMargins(0, 0, 0, 0)
+        analysis_box.setSpacing(6)
+
+        self.analysis_progress = QProgressBar()
+        self.analysis_progress.setObjectName("analysisProgress")
+        self.analysis_progress.setRange(0, 100)
+        self.analysis_progress.setValue(0)
+        self.analysis_progress.setTextVisible(False)
+        self.analysis_progress.setFixedHeight(8)
+        self.analysis_progress.setVisible(False)
+        analysis_box.addWidget(self.analysis_progress)
+
         self.btn_start_analysis = QPushButton("▶  Iniciar Análisis YOLO")
         self.btn_start_analysis.setObjectName("successBtn")
         self.btn_start_analysis.setEnabled(False)
         self.btn_start_analysis.setCursor(Qt.PointingHandCursor)
         self.btn_start_analysis.clicked.connect(self._on_video_start)
-        controls_layout.addWidget(self.btn_start_analysis)
+        analysis_box.addWidget(self.btn_start_analysis)
+
+        controls_layout.addLayout(analysis_box)
         
         self.btn_stop_analysis = QPushButton("⏹  Detener")
         self.btn_stop_analysis.setObjectName("dangerBtn")
@@ -638,13 +655,13 @@ class MainWindow(QMainWindow):
         line_box.addWidget(line_lbl)
         self.slider_line = QSlider(Qt.Horizontal)
         self.slider_line.setRange(5, 95)
-        self.slider_line.setValue(60)
+        self.slider_line.setValue(18)
         self.slider_line.setFixedWidth(120)
         self.slider_line.valueChanged.connect(self._on_line_slider_changed)
         line_box.addWidget(self.slider_line)
         controls_layout.addLayout(line_box)
         
-        self.lbl_line_val = QLabel("60%")
+        self.lbl_line_val = QLabel("18%")
         self.lbl_line_val.setObjectName("modelValue")
         self.lbl_line_val.setFixedWidth(35)
         controls_layout.addWidget(self.lbl_line_val)
@@ -665,6 +682,17 @@ class MainWindow(QMainWindow):
         video_container = GlowCard()
         video_container_layout = QVBoxLayout(video_container)
         video_container_layout.setContentsMargins(5, 5, 5, 5)
+        video_container_layout.setSpacing(6)
+
+        # Status pill (premium indicator)
+        status_row = QHBoxLayout()
+        status_row.setContentsMargins(10, 8, 10, 0)
+        self.video_status = QLabel("⏸  Sin video")
+        self.video_status.setObjectName("videoStatusPill")
+        self.video_status.setProperty("state", "idle")
+        status_row.addWidget(self.video_status, alignment=Qt.AlignLeft)
+        status_row.addStretch()
+        video_container_layout.addLayout(status_row)
         
         self.video_frame = QLabel("📹\n\nCargue un video desde la USB\npara visualizar la detección con IA")
         self.video_frame.setObjectName("videoFrame")
@@ -678,7 +706,17 @@ class MainWindow(QMainWindow):
         self.video_slider.setObjectName("videoSlider")
         self.video_slider.setRange(0, 1000)
         self.video_slider.setEnabled(False)
+        self._is_scrubbing = False
+        self.video_slider.sliderPressed.connect(self._on_video_slider_pressed)
+        self.video_slider.sliderReleased.connect(self._on_video_slider_released)
+        self.video_slider.sliderMoved.connect(self._on_video_slider_moved)
         video_container_layout.addWidget(self.video_slider)
+
+        # Scrub tooltip (timestamp)
+        self.scrub_tooltip = QLabel(video_container)
+        self.scrub_tooltip.setObjectName("scrubTooltip")
+        self.scrub_tooltip.setVisible(False)
+        self.scrub_tooltip.setAttribute(Qt.WA_TransparentForMouseEvents)
         
         # Player Controls Bar
         player_bar = QHBoxLayout()
@@ -694,6 +732,7 @@ class MainWindow(QMainWindow):
         self.btn_prev_frame = QPushButton("Step -")
         self.btn_prev_frame.setObjectName("playerBtn_small")
         self.btn_prev_frame.setEnabled(False)
+        self.btn_prev_frame.clicked.connect(self._on_video_prev_frame)
         player_bar.addWidget(self.btn_prev_frame)
         
         self.btn_next_frame = QPushButton("Step +")
@@ -717,6 +756,17 @@ class MainWindow(QMainWindow):
         player_bar.addWidget(self.btn_forward)
         
         player_bar.addStretch()
+
+        # Playback speed selector (YouTube-like menu + custom)
+        self._playback_speed = 1.0
+        self._speed_presets = [1.0, 1.25, 1.5, 2.0, 3.0]
+
+        self.btn_speed = QToolButton()
+        self.btn_speed.setObjectName("speedBtn")
+        self.btn_speed.setCursor(Qt.PointingHandCursor)
+        self._refresh_speed_button_text()
+        self.btn_speed.clicked.connect(self._open_speed_panel)
+        player_bar.addWidget(self.btn_speed)
         
         # Snapshot button
         self.btn_snapshot = QPushButton("📸 Captura")
@@ -1229,6 +1279,44 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
         if hasattr(self, '_fade_overlay'):
             self._fade_overlay.setGeometry(self.stacked.rect())
+        # Keep scrub tooltip from drifting on resize
+        if hasattr(self, "_is_scrubbing") and self._is_scrubbing and hasattr(self, "video_slider"):
+            try:
+                self._update_scrub_tooltip(self.video_slider.value())
+            except Exception:
+                pass
+
+    def keyPressEvent(self, event):
+        """Atajos de teclado estilo player (solo en Análisis de Video)."""
+        try:
+            if self.stacked.currentIndex() == 2:  # Video page
+                key = event.key()
+                if key == Qt.Key_Space:
+                    if hasattr(self, "btn_play_pause") and self.btn_play_pause.isEnabled():
+                        self._on_video_play_pause()
+                        event.accept()
+                        return
+                if key == Qt.Key_Left:
+                    if hasattr(self, "player_worker") and self.player_worker and self.player_worker.isRunning():
+                        self._on_video_rewind()
+                        event.accept()
+                        return
+                if key == Qt.Key_Right:
+                    if hasattr(self, "player_worker") and self.player_worker and self.player_worker.isRunning():
+                        self._on_video_forward()
+                        event.accept()
+                        return
+                if key == Qt.Key_Up:
+                    self._set_playback_speed(float(getattr(self, "_playback_speed", 1.0)) + 0.1)
+                    event.accept()
+                    return
+                if key == Qt.Key_Down:
+                    self._set_playback_speed(float(getattr(self, "_playback_speed", 1.0)) - 0.1)
+                    event.accept()
+                    return
+        except Exception:
+            pass
+        super().keyPressEvent(event)
     
     def _animate_dashboard_stats(self):
         # Demo data to show the animation effect
@@ -1436,16 +1524,42 @@ class MainWindow(QMainWindow):
         if file_path:
             self._video_path = file_path
             self.lbl_video_name.setText(os.path.basename(file_path))
-            self.btn_start_analysis.setEnabled(can_do_action(self._user, "video.iniciar"))
-            self.show_toast("Video cargado correctamente", "info")
+            can_start = can_do_action(self._user, "video.iniciar")
+            self.btn_start_analysis.setEnabled(can_start)
+            self.show_toast("Video cargado. Iniciando análisis…", "info")
+            self._set_video_status("queued")
+
+            # Auto-start analysis on load (if permitted and not already running)
+            if can_start:
+                if not (hasattr(self, "analyzer") and self.analyzer and self.analyzer.isRunning()):
+                    self._on_video_start()
 
     def _on_video_start(self):
         """Inicia el análisis offline de YOLO."""
         if not hasattr(self, "_video_path") or not self._video_path:
             return
+        if hasattr(self, "analyzer") and self.analyzer and self.analyzer.isRunning():
+            return
 
         self.btn_start_analysis.setEnabled(False)
         self.btn_load_video.setEnabled(False)
+        self._set_video_status("analyzing")
+
+        # Reset analysis UI
+        if hasattr(self, "analysis_progress"):
+            self.analysis_progress.setValue(0)
+            self.analysis_progress.setVisible(True)
+
+        # Reset / disable playback controls until analysis completes
+        self.btn_play_pause.setEnabled(False)
+        self.btn_prev_frame.setEnabled(False)
+        self.btn_next_frame.setEnabled(False)
+        self.btn_rewind.setEnabled(False)
+        self.btn_forward.setEnabled(False)
+        self.btn_snapshot.setEnabled(False)
+        self.video_slider.setEnabled(False)
+        self.video_slider.setValue(0)
+        self.lbl_frame_time.setText("00:00 / 00:00")
         
         # Clear previous state
         for i in range(self.table_conteo.rowCount()):
@@ -1469,12 +1583,21 @@ class MainWindow(QMainWindow):
 
     def _on_analysis_progress(self, val):
         self.btn_start_analysis.setText(f"Analizando... {val}%")
+        if hasattr(self, "analysis_progress"):
+            self.analysis_progress.setValue(max(0, min(int(val), 100)))
 
     def _on_analysis_finished(self, final_counts, count_history, tracking_data, fps):
         self.btn_start_analysis.setText("✅ Análisis Completo")
+        if hasattr(self, "analysis_progress"):
+            self.analysis_progress.setValue(100)
+            self.analysis_progress.setVisible(True)
         self._tracking_data = tracking_data
         self._count_history = count_history
         self._fps = fps
+        try:
+            self._video_total_frames = int(max(tracking_data.keys())) if tracking_data else 0
+        except Exception:
+            self._video_total_frames = 0
         
         # Enable playback controls
         self.btn_play_pause.setEnabled(True)
@@ -1484,8 +1607,56 @@ class MainWindow(QMainWindow):
         self.btn_forward.setEnabled(True)
         self.btn_snapshot.setEnabled(True)
         self.video_slider.setEnabled(True)
+
+        # Allow new analysis / load again
+        self.btn_load_video.setEnabled(True)
+        self.btn_start_analysis.setEnabled(True)
         
         self.show_toast("Análisis finalizado. Listo para reproducción.", "success")
+        self._set_video_status("ready")
+        self._animate_ready_to_play()
+
+    def _animate_ready_to_play(self):
+        """Animación premium para indicar que ya se puede reproducir."""
+        if not hasattr(self, "btn_play_pause"):
+            return
+
+        btn = self.btn_play_pause
+        btn.setProperty("ready", True)
+        btn.style().unpolish(btn)
+        btn.style().polish(btn)
+        btn.update()
+
+        # Pulse animation (geometry)
+        g0 = btn.geometry()
+        grow = 6
+        g1 = g0.adjusted(-grow, -grow, grow, grow)
+
+        anim_out = QPropertyAnimation(btn, b"geometry", self)
+        anim_out.setDuration(180)
+        anim_out.setEasingCurve(QEasingCurve.OutCubic)
+        anim_out.setStartValue(g0)
+        anim_out.setEndValue(g1)
+
+        anim_in = QPropertyAnimation(btn, b"geometry", self)
+        anim_in.setDuration(220)
+        anim_in.setEasingCurve(QEasingCurve.InOutCubic)
+        anim_in.setStartValue(g1)
+        anim_in.setEndValue(g0)
+
+        group = QSequentialAnimationGroup(self)
+        group.addAnimation(anim_out)
+        group.addAnimation(anim_in)
+        group.start()
+
+        # Remove highlight after a moment
+        def clear_ready():
+            btn.setProperty("ready", False)
+            btn.style().unpolish(btn)
+            btn.style().polish(btn)
+            btn.update()
+
+        QTimer.singleShot(1800, clear_ready)
         
     def _on_video_play_pause(self):
         if hasattr(self, "player_worker") and self.player_worker.isRunning():
@@ -1498,13 +1669,154 @@ class MainWindow(QMainWindow):
                 self._video_path, self._count_history, self._tracking_data, self._fps,
                 line_pos=self.slider_line.value()/100.0
             )
+            # Apply selected playback speed
+            try:
+                self.player_worker.set_speed(float(getattr(self, "_playback_speed", 1.0)))
+            except Exception:
+                self.player_worker.set_speed(1.0)
             self.player_worker.frame_ready.connect(self._on_frame_ready)
             self.player_worker.counts_updated.connect(self._on_counts_updated)
             self.player_worker.detection_event.connect(self._on_detection_event)
             self.player_worker.progress_updated.connect(self._on_player_progress)
+            self.player_worker.position_updated.connect(self._on_player_position)
             self.player_worker.finished.connect(self._on_playback_finished)
             self.player_worker.start()
             self.btn_play_pause.setText("⏸")
+
+    def _refresh_speed_button_text(self):
+        v = float(getattr(self, "_playback_speed", 1.0) or 1.0)
+        self.btn_speed.setText(f"⚙ {v:.1f}x")
+
+    def _set_playback_speed(self, v: float):
+        try:
+            v = float(v)
+        except Exception:
+            v = 1.0
+        v = max(0.5, min(15.0, round(v, 1)))
+        self._playback_speed = v
+        self._refresh_speed_button_text()
+        if hasattr(self, "player_worker") and self.player_worker.isRunning():
+            self.player_worker.set_speed(v)
+
+    def _open_speed_panel(self):
+        """Panel simple tipo YouTube para velocidad (slider + presets + +/-)."""
+        # Close existing panel if open
+        if hasattr(self, "_speed_panel") and self._speed_panel and self._speed_panel.isVisible():
+            self._speed_panel.close()
+
+        dlg = QDialog(self)
+        dlg.setObjectName("speedPanel")
+        dlg.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+        dlg.setAttribute(Qt.WA_TranslucentBackground, True)
+
+        # Card container
+        card = QFrame(dlg)
+        card.setObjectName("speedPanelCard")
+        shadow = QGraphicsDropShadowEffect(card)
+        shadow.setBlurRadius(30)
+        shadow.setOffset(0, 10)
+        shadow.setColor(QColor(0, 0, 0, 110))
+        card.setGraphicsEffect(shadow)
+        card.setMinimumWidth(360)
+
+        root = QVBoxLayout(dlg)
+        # give room for shadow so it doesn't clip
+        root.setContentsMargins(16, 14, 16, 18)
+        root.addWidget(card)
+
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(18, 16, 18, 16)
+        lay.setSpacing(12)
+
+        title = QLabel("Velocidad de reproducción")
+        title.setObjectName("speedPanelTitle")
+        lay.addWidget(title)
+
+        self._speed_value_lbl = QLabel(f"{float(self._playback_speed):.1f}x")
+        self._speed_value_lbl.setObjectName("speedPanelValue")
+        self._speed_value_lbl.setAlignment(Qt.AlignCenter)
+        lay.addWidget(self._speed_value_lbl)
+
+        # Slider row with - / +
+        row = QHBoxLayout()
+        row.setSpacing(12)
+
+        btn_minus = QPushButton("–")
+        btn_minus.setObjectName("speedAdjustBtn")
+        btn_minus.setFixedSize(36, 36)
+        btn_plus = QPushButton("+")
+        btn_plus.setObjectName("speedAdjustBtn")
+        btn_plus.setFixedSize(36, 36)
+
+        slider = QSlider(Qt.Horizontal)
+        slider.setObjectName("speedPanelSlider")
+        slider.setRange(5, 150)  # 0.5x..15.0x as tenths
+        slider.setSingleStep(1)
+        slider.setPageStep(5)
+        slider.setValue(int(round(float(self._playback_speed) * 10)))
+
+        def set_from_slider(v_int: int):
+            v = max(0.5, min(15.0, round(v_int / 10.0, 1)))
+            self._speed_value_lbl.setText(f"{v:.1f}x")
+            self._set_playback_speed(v)
+            refresh_chip_states(v)
+
+        slider.valueChanged.connect(set_from_slider)
+        btn_minus.clicked.connect(lambda: slider.setValue(max(slider.minimum(), slider.value() - 1)))
+        btn_plus.clicked.connect(lambda: slider.setValue(min(slider.maximum(), slider.value() + 1)))
+
+        row.addWidget(btn_minus)
+        row.addWidget(slider, 1)
+        row.addWidget(btn_plus)
+        lay.addLayout(row)
+
+        # Preset chips
+        chips = QHBoxLayout()
+        chips.setSpacing(8)
+
+        chip_buttons = []
+
+        def make_chip(label: str, speed: float):
+            b = QPushButton(label)
+            b.setObjectName("speedChip")
+            b.setCheckable(True)
+            b.setCursor(Qt.PointingHandCursor)
+            b.clicked.connect(lambda: slider.setValue(int(round(speed * 10))))
+            chip_buttons.append((b, speed))
+            return b
+
+        chips.addWidget(make_chip("Normal", 1.0))
+        for v in self._speed_presets:
+            if abs(v - 1.0) < 1e-9:
+                continue
+            chips.addWidget(make_chip(f"{v:.2g}", float(v)))
+
+        chips.addStretch()
+        lay.addLayout(chips)
+
+        def refresh_chip_states(v: float):
+            v = round(float(v), 1)
+            for b, sv in chip_buttons:
+                b.setChecked(round(float(sv), 1) == v)
+
+        refresh_chip_states(float(self._playback_speed))
+
+        # Position panel under the speed button, clamped to screen
+        anchor = self.btn_speed.mapToGlobal(QPoint(0, self.btn_speed.height()))
+        dlg.adjustSize()
+
+        screen = QGuiApplication.screenAt(anchor) or QGuiApplication.primaryScreen()
+        avail = screen.availableGeometry() if screen else None
+
+        x = anchor.x() - max(0, dlg.width() - self.btn_speed.width())
+        y = anchor.y() + 10
+        if avail is not None:
+            x = max(avail.left() + 8, min(x, avail.right() - dlg.width() - 8))
+            y = max(avail.top() + 8, min(y, avail.bottom() - dlg.height() - 8))
+        dlg.move(x, y)
+
+        self._speed_panel = dlg
+        dlg.show()
 
     def _on_frame_ready(self, qimg):
         pixmap = QPixmap.fromImage(qimg)
@@ -1523,11 +1835,90 @@ class MainWindow(QMainWindow):
             self.list_detections.takeItem(50)
 
     def _on_player_progress(self, pct):
-        self.video_slider.setValue(pct * 10) # range 0-1000
+        # While scrubbing, don't fight user input
+        if not getattr(self, "_is_scrubbing", False):
+            self.video_slider.setValue(pct * 10) # range 0-1000
+        # time label comes from worker position for accuracy
+
+    def _on_player_position(self, cur_msec: int, total_msec: int):
+        # Update time label accurately from playback position
+        self._current_msec = int(cur_msec or 0)
+        self._total_msec = int(total_msec or 0)
+        self.lbl_frame_time.setText(f"{self._fmt_msec(self._current_msec)} / {self._fmt_msec(self._total_msec)}")
+
+    def _fmt_msec(self, msec: int) -> str:
+        s = max(0, int(round((msec or 0) / 1000.0)))
+        mm = s // 60
+        ss = s % 60
+        return f"{mm:02d}:{ss:02d}"
+
+    def _on_video_slider_pressed(self):
+        self._is_scrubbing = True
+        if hasattr(self, "scrub_tooltip"):
+            self.scrub_tooltip.setVisible(True)
+
+    def _on_video_slider_moved(self, value: int):
+        # Update time label live while dragging (YouTube-like)
+        self._update_time_label_from_slider(value=value)
+        self._update_scrub_tooltip(value)
+
+    def _on_video_slider_released(self):
+        self._is_scrubbing = False
+        self._seek_player_to_slider()
+        if hasattr(self, "scrub_tooltip"):
+            QTimer.singleShot(300, lambda: self.scrub_tooltip.setVisible(False))
+
+    def _update_scrub_tooltip(self, slider_value: int):
+        if not hasattr(self, "scrub_tooltip"):
+            return
+        total_msec = int(getattr(self, "_total_msec", 0) or 0)
+        if total_msec <= 0:
+            return
+        v = int(slider_value)
+        pct = max(0.0, min(1.0, v / 1000.0))
+        cur_msec = int(round(pct * total_msec))
+        self.scrub_tooltip.setText(self._fmt_msec(cur_msec))
+        self.scrub_tooltip.adjustSize()
+
+        # Position above the slider handle
+        slider = self.video_slider
+        x = int(slider.x() + (pct * (slider.width() - 14)))  # 14 ~ handle width
+        y = int(slider.y() - self.scrub_tooltip.height() - 10)
+        # Center tooltip on handle
+        x = x - int(self.scrub_tooltip.width() / 2) + 7
+        # Clamp within video container
+        x = max(10, min(x, slider.x() + slider.width() - self.scrub_tooltip.width() - 10))
+        y = max(10, y)
+        self.scrub_tooltip.move(x, y)
+
+    def _seek_player_to_slider(self):
+        if not (hasattr(self, "player_worker") and self.player_worker.isRunning()):
+            return
+        fps = float(getattr(self, "_fps", 0) or 0)
+        total_frames = int(getattr(self, "_video_total_frames", 0) or 0)
+        if fps <= 0 or total_frames <= 0:
+            return
+        pct = float(self.video_slider.value()) / 1000.0
+        target_frame = int(round(pct * total_frames))
+        target_msec = max(0.0, (target_frame / fps) * 1000.0)
+        if hasattr(self.player_worker, "seek_to_msec"):
+            self.player_worker.seek_to_msec(target_msec)
+
+    def _update_time_label_from_slider(self, value: int | None = None):
+        # Used only for scrubbing preview (not for actual playback time)
+        total_msec = int(getattr(self, "_total_msec", 0) or 0)
+        if total_msec <= 0:
+            return
+        v = int(self.video_slider.value() if value is None else value)
+        pct = max(0.0, min(1.0, v / 1000.0))
+        cur_msec = int(round(pct * total_msec))
+        self.lbl_frame_time.setText(f"{self._fmt_msec(cur_msec)} / {self._fmt_msec(total_msec)}")
 
     def _on_playback_finished(self):
         self.btn_play_pause.setText("▶")
         self.show_toast("Reproducción finalizada", "info")
+        # keep ready state (can replay)
+        self._set_video_status("ready")
 
     def _on_line_slider_changed(self, val):
         self.lbl_line_val.setText(f"{val}%")
@@ -1577,75 +1968,95 @@ class MainWindow(QMainWindow):
 
     def _on_video_stop(self):
         """
-        Registra la detención del análisis, captura los conteos actuales
-        de la tabla y los compara con la factura cargada para detectar discrepancias.
+        Detiene análisis/reproducción y limpia el estado para cargar otro video.
         """
-        # Leer conteos de la tabla en tiempo real
-        conteos = {}
-        for row in range(self.table_conteo.rowCount()):
-            material_item = self.table_conteo.item(row, 0)
-            conteo_item   = self.table_conteo.item(row, 1)
-            if material_item and conteo_item:
-                conteos[material_item.text()] = conteo_item.text()
+        # Stop analyzer if running
+        try:
+            if hasattr(self, "analyzer") and self.analyzer and self.analyzer.isRunning():
+                self.analyzer.stop()
+                self.analyzer.wait(1500)
+        except Exception:
+            pass
 
-        conteo_desc = " | ".join(f"{mat}: {cnt}" for mat, cnt in conteos.items())
+        # Stop player if running
+        try:
+            if hasattr(self, "player_worker") and self.player_worker and self.player_worker.isRunning():
+                self.player_worker.stop()
+                self.player_worker.wait(1500)
+        except Exception:
+            pass
+
+        # Close speed panel if open
+        try:
+            if hasattr(self, "_speed_panel") and self._speed_panel and self._speed_panel.isVisible():
+                self._speed_panel.close()
+        except Exception:
+            pass
+
+        # Clear loaded video
+        prev_name = os.path.basename(self._video_path) if hasattr(self, "_video_path") and self._video_path else ""
+        self._video_path = None
+        self.lbl_video_name.setText("Ningún video seleccionado")
+        self._set_video_status("idle")
+
+        # Reset analysis UI
+        self.btn_start_analysis.setText("▶  Iniciar Análisis YOLO")
+        self.btn_start_analysis.setEnabled(False)
+        self.btn_load_video.setEnabled(True)
+        if hasattr(self, "analysis_progress"):
+            self.analysis_progress.setValue(0)
+            self.analysis_progress.setVisible(False)
+
+        # Clear results UI
+        for i in range(self.table_conteo.rowCount()):
+            self.table_conteo.setItem(i, 1, QTableWidgetItem("0"))
+            self.table_conteo.setItem(i, 2, QTableWidgetItem("—"))
+        self.list_detections.clear()
+
+        # Reset playback UI
+        self.video_frame.setText("📹\n\nCargue un video desde la USB\npara visualizar la detección con IA")
+        self.video_frame.setAlignment(Qt.AlignCenter)
+        self.video_slider.setValue(0)
+        self.video_slider.setEnabled(False)
+        self.btn_play_pause.setText("▶")
+        self.btn_play_pause.setEnabled(False)
+        self.btn_prev_frame.setEnabled(False)
+        self.btn_next_frame.setEnabled(False)
+        self.btn_rewind.setEnabled(False)
+        self.btn_forward.setEnabled(False)
+        self.btn_snapshot.setEnabled(False)
+        self.lbl_frame_time.setText("00:00 / 00:00")
+
+        # Clear analysis data
+        self._tracking_data = {}
+        self._count_history = {}
+        self._fps = 0.0
+        self._video_total_frames = 0
 
         app_logger.log_action(
             self._user, app_logger.VIDEO_DETENIDO,
-            f"Análisis detenido — {conteo_desc}"
+            f"Detuvo y reinició análisis de video{(' — ' + prev_name) if prev_name else ''}"
         )
+        self.show_toast("Listo para cargar otro video", "info")
 
-        # Registrar resultado formal
-        app_logger.log_action(
-            self._user, app_logger.VIDEO_RESULTADO,
-            f"Conteo final — {conteo_desc}"
-        )
-
-        # ── Comparar con factura cargada para detectar discrepancias ──
-        invoice = getattr(self, "_current_invoice", None)
-        if not invoice:
-            return  # Sin factura cargada, no hay comparación posible
-
-        # Mapa: categoría YOLO → cantidad en factura
-        factura_map = {}
-        for item in invoice.yolo_items:
-            cat = item.categoria  # "cemento" | "tuberia_presion" | "tuberia_sanitaria"
-            factura_map[cat] = factura_map.get(cat, 0) + item.cantidad
-
-        # Mapa de nombres legibles para comparar con la tabla
-        cat_display = {
-            "Cemento":           "cemento",
-            "Tubería Presión":   "tuberia_presion",
-            "Tubería Sanitaria": "tuberia_sanitaria",
-        }
-
-        discrepancias = []
-        for display_name, cat_key in cat_display.items():
-            try:
-                contado = int(conteos.get(display_name, "0"))
-            except ValueError:
-                contado = 0
-            esperado = factura_map.get(cat_key, 0)
-            if esperado > 0 and contado != esperado:
-                diferencia = contado - esperado
-                signo = "+" if diferencia > 0 else ""
-                discrepancias.append(
-                    f"{display_name}: Factura={esperado}, Video={contado} ({signo}{diferencia})"
-                )
-
-        if discrepancias:
-            desc = " | ".join(discrepancias)
-            app_logger.log_action(
-                self._user, app_logger.DISCREPANCIA,
-                f"ALERTA: Diferencia entre factura y video — {desc}"
-            )
-            from PySide6.QtWidgets import QMessageBox as _QMB
-            _QMB.warning(
-                self,
-                "⚠️  Discrepancia Detectada",
-                f"El conteo del video NO coincide con la factura:\n\n{chr(10).join(discrepancias)}\n\n"
-                "Este evento ha sido registrado en el log de auditoría."
-            )
+    def _set_video_status(self, state: str):
+        if not hasattr(self, "video_status"):
+            return
+        state = state or "idle"
+        self.video_status.setProperty("state", state)
+        if state == "idle":
+            self.video_status.setText("⏸  Sin video")
+        elif state == "queued":
+            self.video_status.setText("⏳  Preparando análisis…")
+        elif state == "analyzing":
+            self.video_status.setText("🧠  Analizando…")
+        elif state == "ready":
+            self.video_status.setText("✅  Listo para reproducir")
+        else:
+            self.video_status.setText(state)
+        self.video_status.style().unpolish(self.video_status)
+        self.video_status.style().polish(self.video_status)
+        self.video_status.update()
 
     # ----------------------------------------------------------------
     # REPORTES — LOG DE EXPORTACIÓN
