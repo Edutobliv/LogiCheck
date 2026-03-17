@@ -7,8 +7,9 @@ from PySide6.QtGui import QImage
 
 class YoloAnalyzerWorker(QThread):
     progress_updated = Signal(int)
-    # Emits: final_counts, count_history {frame_idx: counts}, tracking_data {frame_idx: [boxes]}, fps
-    finished_analysis = Signal(object, object, object, float)
+    thumbnail_ready  = Signal(int, QImage)
+    # Emits: final_counts, count_history {frame_idx: counts}, tracking_data {frame_idx: [boxes]}, fps, crossing_frames [idx]
+    finished_analysis = Signal(object, object, object, float, object)
     error_occurred = Signal(str)
 
     def __init__(self, video_path, model_path, line_pos=0.60):
@@ -49,6 +50,12 @@ class YoloAnalyzerWorker(QThread):
         
         frame_idx = 0
         self.tracking_data.clear()
+        
+        # Crossing detection state
+        self.crossing_frames = []
+        self.prev_positions = {} # {track_id: y_center}
+        self.crossed_ids = set()
+        self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
 
         while self._is_running and cap.isOpened():
             ret, frame = cap.read()
@@ -83,6 +90,43 @@ class YoloAnalyzerWorker(QThread):
                     
                     if ui_cat:
                         frame_boxes.append((int(x1), int(y1), int(x2), int(y2), track_id, ui_cat))
+                        
+                        # Crossing detection
+                        line_y = int(height * self.line_pos)
+                        center_y = (y1 + y2) / 2.0
+                        
+                        if track_id is not None:
+                            if track_id in self.prev_positions:
+                                prev_y = self.prev_positions[track_id]
+                                crossed = (prev_y < line_y <= center_y) or (prev_y > line_y >= center_y)
+                                if crossed and track_id not in self.crossed_ids:
+                                    if ui_cat in self.cumulative_counts:
+                                        self.cumulative_counts[ui_cat] += 1
+                                        self.crossing_frames.append(frame_idx)
+                                    self.crossed_ids.add(track_id)
+                            self.prev_positions[track_id] = center_y
+                        else:
+                            # Proximity fallback for crossing
+                            best_match = None
+                            min_dist = 50
+                            for old_id, old_y in self.prev_positions.items():
+                                if isinstance(old_id, str) and old_id.startswith("proxy_"):
+                                    dist = abs(center_y - old_y)
+                                    if dist < min_dist:
+                                        min_dist = dist
+                                        best_match = old_id
+                            
+                            if best_match:
+                                prev_y = self.prev_positions[best_match]
+                                crossed = (prev_y < line_y <= center_y) or (prev_y > line_y >= center_y)
+                                if crossed and best_match not in self.crossed_ids:
+                                    self.cumulative_counts[ui_cat] += 1
+                                    self.crossing_frames.append(frame_idx)
+                                    self.crossed_ids.add(best_match)
+                                self.prev_positions[best_match] = center_y
+                            else:
+                                proxy_id = f"proxy_{len(self.prev_positions)}_{int((x1+x2)/2)}"
+                                self.prev_positions[proxy_id] = center_y
 
             self.tracking_data[frame_idx] = frame_boxes
 
@@ -91,6 +135,15 @@ class YoloAnalyzerWorker(QThread):
                 if total_frames > 0:
                     progress = min(int((frame_idx / total_frames) * 100), 100)
                     self.progress_updated.emit(progress)
+            
+            # --- Emit thumbnail every 1% ---
+            if total_frames > 0 and (frame_idx % max(1, total_frames // 100) == 0):
+                # Resize for thumbnail
+                small_frame = cv2.resize(frame, (160, 90), interpolation=cv2.INTER_AREA)
+                rgb = cv2.cvtColor(small_frame, cv2.COLOR_BGR2RGB)
+                h2, w2, ch = rgb.shape
+                q_img = QImage(rgb.data, w2, h2, ch * w2, QImage.Format_RGB888)
+                self.thumbnail_ready.emit(frame_idx, q_img.copy())
 
         cap.release()
 
@@ -98,7 +151,7 @@ class YoloAnalyzerWorker(QThread):
             final_data = dict(self.tracking_data)
             print(f"[Analyzer] Finalizado. Frames procesados: {len(final_data)}. Emitiendo...")
             self.progress_updated.emit(100)
-            self.finished_analysis.emit({}, {}, final_data, fps)
+            self.finished_analysis.emit(self.cumulative_counts, {}, final_data, fps, self.crossing_frames)
 
     def stop(self):
         self._is_running = False

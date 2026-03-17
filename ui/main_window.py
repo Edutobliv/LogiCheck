@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QScrollArea, QStackedWidget, QToolButton, QSpacerItem,
                                QProgressBar, QStatusBar, QFileDialog, QMessageBox, QListWidget, QListWidgetItem, QSlider,
                                QDialog)
-from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint, QVariantAnimation, QSequentialAnimationGroup, QParallelAnimationGroup, QThread, Signal
+from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint, QVariantAnimation, QSequentialAnimationGroup, QParallelAnimationGroup, QThread, Signal, QEvent
 from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen, QPixmap, QGuiApplication
 import datetime
 import os
@@ -20,6 +20,41 @@ from core import logger as app_logger
 from ui.users_page import UsersPage
 from ui.logs_page import LogsPage
 from core.yolo_manager import YoloAnalyzerWorker, VideoPlayerWorker
+
+
+class ScrubThumbnailWidget(QFrame):
+    """Miniatura que aparece sobre el slider al hacer scrubbing (tipo YouTube)."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(160, 90) # Relación 16:9
+        self.setObjectName("scrubThumbnail")
+        self.setWindowFlags(Qt.ToolTip | Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_ShowWithoutActivating)
+        
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(2, 2, 2, 2)
+        
+        self.lbl_img = QLabel()
+        self.lbl_img.setAlignment(Qt.AlignCenter)
+        self.lbl_img.setStyleSheet("background-color: #000000; border-radius: 4px;")
+        layout.addWidget(self.lbl_img)
+        
+        self.lbl_time = QLabel("00:00")
+        self.lbl_time.setAlignment(Qt.AlignCenter)
+        self.lbl_time.setStyleSheet("font-size: 10px; color: white; background: rgba(0,0,0,160); border-radius: 2px;")
+        self.lbl_time.setFixedHeight(18)
+        layout.addWidget(self.lbl_time)
+        
+        # Shadow
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(15)
+        shadow.setOffset(0, 4)
+        shadow.setColor(QColor(0, 0, 0, 120))
+        self.setGraphicsEffect(shadow)
+
+    def set_thumbnail(self, pixmap, time_str):
+        self.lbl_img.setPixmap(pixmap.scaled(self.lbl_img.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        self.lbl_time.setText(time_str)
 
 
 class AnimatedToggle(QWidget):
@@ -710,7 +745,14 @@ class MainWindow(QMainWindow):
         self.video_slider.sliderPressed.connect(self._on_video_slider_pressed)
         self.video_slider.sliderReleased.connect(self._on_video_slider_released)
         self.video_slider.sliderMoved.connect(self._on_video_slider_moved)
+        self.video_slider.setMouseTracking(True)
+        self.video_slider.installEventFilter(self)
         video_container_layout.addWidget(self.video_slider)
+
+        # Scrub thumbnail popup
+        self.scrub_thumbnail_popup = ScrubThumbnailWidget(self)
+        self.scrub_thumbnail_popup.hide()
+        self._thumbnails_cache = {} # {frame_idx: QPixmap}
 
         # Scrub tooltip (timestamp)
         self.scrub_tooltip = QLabel(video_container)
@@ -1565,6 +1607,7 @@ class MainWindow(QMainWindow):
         for i in range(self.table_conteo.rowCount()):
             self.table_conteo.setItem(i, 1, QTableWidgetItem("0"))
         self.list_detections.clear()
+        self._thumbnails_cache.clear()
         
         # Worker analysis
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -1575,11 +1618,17 @@ class MainWindow(QMainWindow):
 
         self.analyzer = YoloAnalyzerWorker(self._video_path, model_path, line_pos=self.slider_line.value()/100.0)
         self.analyzer.progress_updated.connect(self._on_analysis_progress)
+        self.analyzer.thumbnail_ready.connect(self._on_thumbnail_ready)
         self.analyzer.finished_analysis.connect(self._on_analysis_finished)
         self.analyzer.start()
         
         app_logger.log_action(self._user, app_logger.VIDEO_INICIADO, f"Video: {os.path.basename(self._video_path)}")
         self.show_toast("Iniciando análisis de visión artificial...", "info")
+
+    def _on_thumbnail_ready(self, frame_idx, qimg):
+        """Almacena la miniatura en el cache."""
+        pixmap = QPixmap.fromImage(qimg)
+        self._thumbnails_cache[frame_idx] = pixmap
 
     def _on_analysis_progress(self, val):
         self.btn_start_analysis.setText(f"Analizando... {val}%")
@@ -1891,6 +1940,74 @@ class MainWindow(QMainWindow):
         y = max(10, y)
         self.scrub_tooltip.move(x, y)
 
+    def eventFilter(self, obj, event):
+        """Captura hover sobre el slider para mostrar miniatura."""
+        if obj == self.video_slider:
+            if event.type() == QEvent.MouseMove:
+                self._handle_slider_hover(event)
+            elif event.type() == QEvent.Leave:
+                self.scrub_thumbnail_popup.hide()
+        return super().eventFilter(obj, event)
+
+    def _handle_slider_hover(self, event):
+        if not hasattr(self, "_video_total_frames") or self._video_total_frames <= 0:
+            return
+            
+        # Calcular posición relativa
+        width = self.video_slider.width()
+        x = event.position().x()
+        pct = max(0.0, min(1.0, x / width))
+        
+        target_frame = int(round(pct * self._video_total_frames))
+        total_msec = int(getattr(self, "_total_msec", 0) or 0)
+        cur_msec = int(round(pct * total_msec))
+        
+        # Buscar miniatura más cercana
+        thumb = self._get_nearest_thumbnail(target_frame)
+        if thumb:
+            self.scrub_thumbnail_popup.set_thumbnail(thumb, self._fmt_msec(cur_msec))
+            
+            # Posición del popup
+            global_pos = self.video_slider.mapToGlobal(QPoint(int(x), 0))
+            popup_x = global_pos.x() - self.scrub_thumbnail_popup.width() // 2
+            popup_y = global_pos.y() - self.scrub_thumbnail_popup.height() - 20
+            
+            # Clamping a la pantalla
+            screen = QGuiApplication.primaryScreen().availableGeometry()
+            popup_x = max(screen.left() + 10, min(popup_x, screen.right() - self.scrub_thumbnail_popup.width() - 10))
+            
+            self.scrub_thumbnail_popup.move(popup_x, popup_y)
+            self.scrub_thumbnail_popup.show()
+        else:
+            self.scrub_thumbnail_popup.hide()
+
+    def _get_nearest_thumbnail(self, target_frame):
+        if not self._thumbnails_cache:
+            return None
+        
+        keys = sorted(self._thumbnails_cache.keys())
+        if not keys:
+            return None
+            
+        # Búsqueda binaria para la más cercana
+        import bisect
+        idx = bisect.bisect_left(keys, target_frame)
+        
+        if idx == 0:
+            best_key = keys[0]
+        elif idx == len(keys):
+            best_key = keys[-1]
+        else:
+            before = keys[idx - 1]
+            after = keys[idx]
+            if target_frame - before < after - target_frame:
+                best_key = before
+            else:
+                best_key = after
+                
+        # Solo usar si está a una distancia razonable (p.ej. 200 frames) or if we only have 100 thumbnails total
+        return self._thumbnails_cache[best_key]
+
     def _seek_player_to_slider(self):
         if not (hasattr(self, "player_worker") and self.player_worker.isRunning()):
             return
@@ -1928,13 +2045,13 @@ class MainWindow(QMainWindow):
     def _on_video_prev_frame(self):
         if hasattr(self, "player_worker"):
             self.player_worker.set_paused(True)
-            self.player_worker._step_dir = -1
+            self.player_worker._step_dir = 1  # Swapped to advance as per user feedback
             self.btn_play_pause.setText("▶")
 
     def _on_video_next_frame(self):
         if hasattr(self, "player_worker"):
             self.player_worker.set_paused(True)
-            self.player_worker._step_dir = 1
+            self.player_worker._step_dir = -1 # Swapped to retreat as per user feedback
             self.btn_play_pause.setText("▶")
 
     def _on_video_rewind(self):
@@ -1992,6 +2109,9 @@ class MainWindow(QMainWindow):
                 self._speed_panel.close()
         except Exception:
             pass
+
+        self._thumbnails_cache.clear()
+        self.scrub_thumbnail_popup.hide()
 
         # Clear loaded video
         prev_name = os.path.basename(self._video_path) if hasattr(self, "_video_path") and self._video_path else ""
