@@ -1,6 +1,6 @@
 # ui/splash_screen.py
 # ============================================================
-#  LogiCheck — Splash Screen Premium con animaciones
+#  LogiCheck — Splash Screen con carga condicional de YOLO
 # ============================================================
 
 import sys
@@ -8,12 +8,12 @@ import os
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QFrame, QProgressBar, QApplication, QGraphicsOpacityEffect
+    QFrame, QApplication, QGraphicsOpacityEffect
 )
 from PySide6.QtCore import (
     Qt, QTimer, QPropertyAnimation, QEasingCurve,
     QThread, Signal, QSequentialAnimationGroup,
-    QParallelAnimationGroup, QRect
+    QRect
 )
 from PySide6.QtGui import (
     QFont, QColor, QPainter, QLinearGradient,
@@ -26,51 +26,118 @@ if _BASE not in sys.path:
 
 
 # ══════════════════════════════════════════════════════════════
-#  Hilo de inicialización (DB + recursos en background)
+#  Hilo de inicialización (DB + recursos + YOLO opcional)
 # ══════════════════════════════════════════════════════════════
 class InitWorker(QThread):
-    """Inicializa la BD y recursos en un hilo separado."""
-    progress  = Signal(int, str)   # (porcentaje, mensaje)
-    finished  = Signal()
+    """Inicializa la BD, recursos y opcionalmente el modelo YOLO."""
+    progress = Signal(int, str)   # (porcentaje, mensaje)
+    finished = Signal(object, object)  # (model_or_None, device_or_None)
+
+    def __init__(self, load_yolo: bool = False, user_data: dict = None):
+        super().__init__()
+        self.load_yolo = load_yolo
+        self.user_data = user_data or {}
 
     def run(self):
-        steps = [
-            (15,  "Iniciando motor de base de datos..."),
-            (35,  "Verificando tablas de usuarios..."),
-            (55,  "Cargando módulo de auditoría..."),
-            (70,  "Aplicando configuración de roles..."),
-            (85,  "Preparando interfaz de usuario..."),
-            (100, "¡Listo!"),
-        ]
+        import time
+        preloaded_model  = None
+        preloaded_device = None
 
         try:
             from core.auth   import init_db
             from core.logger import init_logs_table
 
-            self.progress.emit(15, "Iniciando motor de base de datos...")
-            import time; time.sleep(0.3)
+            self.progress.emit(10, "Iniciando motor de base de datos...")
+            time.sleep(0.25)
 
-            self.progress.emit(35, "Verificando tablas de usuarios...")
+            self.progress.emit(25, "Verificando tablas de usuarios...")
             init_db()
-            time.sleep(0.25)
-
-            self.progress.emit(55, "Cargando módulo de auditoría...")
-            init_logs_table()
-            time.sleep(0.25)
-
-            self.progress.emit(70, "Aplicando configuración de roles...")
             time.sleep(0.2)
 
-            self.progress.emit(85, "Preparando interfaz de usuario...")
-            time.sleep(0.25)
+            self.progress.emit(45, "Cargando módulo de auditoría...")
+            init_logs_table()
+            time.sleep(0.2)
+
+            self.progress.emit(60, "Aplicando configuración de roles...")
+            time.sleep(0.15)
+
+            if self.load_yolo:
+                self.progress.emit(70, "Preparando motor de visión artificial...")
+                time.sleep(0.1)
+                preloaded_model, preloaded_device = self._load_yolo_model()
+            else:
+                self.progress.emit(70, "Preparando interfaz de usuario...")
+                time.sleep(0.2)
+
+            self.progress.emit(90, "Preparando interfaz de usuario...")
+            time.sleep(0.2)
 
             self.progress.emit(100, "¡Listo!")
-            time.sleep(0.3)
+            time.sleep(0.25)
 
         except Exception as e:
-            self.progress.emit(100, f"Error: {e}")
+            self.progress.emit(100, f"Error de inicialización: {e}")
 
-        self.finished.emit()
+        self.finished.emit(preloaded_model, preloaded_device)
+
+    def _load_yolo_model(self):
+        """Carga el modelo YOLO en CUDA. Retorna (model, device) o (None, None) si falla."""
+        import time
+        try:
+            from ultralytics import YOLO
+            import torch
+
+            # Determinar ruta del modelo
+            if getattr(sys, 'frozen', False):
+                base_dir = os.path.dirname(sys.executable)
+                internal = os.path.join(base_dir, "_internal")
+                if os.path.exists(internal):
+                    base_dir = internal
+            else:
+                base_dir = _BASE
+
+            model_path = os.path.join(
+                base_dir, "training", "runs", "bultos_cemento2", "weights", "best.pt"
+            )
+            # Fallback a entrenamiento anterior
+            if not os.path.exists(model_path):
+                model_path = os.path.join(
+                    base_dir, "training", "runs", "bultos_cemento", "weights", "best.pt"
+                )
+            # Fallback relativo
+            if not os.path.exists(model_path):
+                model_path = "training/runs/bultos_cemento2/weights/best.pt"
+
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+
+            self.progress.emit(75, f"Cargando modelo IA en {device.upper()}...")
+            time.sleep(0.1)
+
+            model = YOLO(model_path)
+            model.to(device)
+
+            # Warm-up: ejecutar una inferencia dummy para que CUDA inicialice kernels
+            self.progress.emit(85, "Calentando motor de inferencia...")
+            import numpy as np
+            dummy = np.zeros((480, 640, 3), dtype=np.uint8)
+            model.predict(dummy, verbose=False, conf=0.5)
+
+            print(f"[YOLO] Modelo precargado en {device}. Clases: {model.names}")
+            return model, device
+
+        except Exception as e:
+            # Registrar en log sin bloquear la app
+            try:
+                from core import logger as app_logger
+                app_logger.log_action(
+                    self.user_data,
+                    "ERROR_CARGA_MODELO",
+                    f"No se pudo precargar el modelo YOLO: {e}"
+                )
+            except Exception:
+                pass
+            print(f"[YOLO] Advertencia: no se pudo precargar el modelo — {e}")
+            return None, None
 
 
 # ══════════════════════════════════════════════════════════════
@@ -172,16 +239,19 @@ class FloatingParticle(QWidget):
 # ══════════════════════════════════════════════════════════════
 class SplashScreen(QWidget):
     """
-    Splash screen con:
-    - Barra de progreso con gradiente animado
-    - Partículas flotantes decorativas
-    - Fade-in al aparecer, fade-out al cerrar
-    - Mensajes de carga dinámicos
+    Splash screen con carga condicional del modelo YOLO.
+    - load_yolo=True  → precarga el modelo en CUDA y lo expone en _preloaded_model
+    - load_yolo=False → solo inicializa DB (para usuarios sin permiso de video)
     """
     ready = Signal()   # emitido cuando la inicialización termina
 
-    def __init__(self):
+    def __init__(self, user_data: dict = None, load_yolo: bool = False):
         super().__init__()
+        self._load_yolo      = load_yolo
+        self._user_data      = user_data or {}
+        self._preloaded_model  = None   # Expuesto a main.py
+        self._preloaded_device = None
+
         self.setWindowFlags(
             Qt.FramelessWindowHint |
             Qt.WindowStaysOnTopHint |
@@ -249,11 +319,25 @@ class SplashScreen(QWidget):
 
         logo_row.addLayout(brand_col)
         logo_row.addStretch()
-        layout.addLayout(logo_row)
 
+        # Badge de modo IA (solo si se carga YOLO)
+        if self._load_yolo:
+            self._ai_badge = QLabel("🧠 CUDA")
+            self._ai_badge.setStyleSheet("""
+                font-size: 10px;
+                font-weight: 700;
+                color: #a6e3a1;
+                background: rgba(166,227,161,0.12);
+                border: 1px solid rgba(166,227,161,0.35);
+                border-radius: 8px;
+                padding: 3px 8px;
+            """)
+            logo_row.addWidget(self._ai_badge, alignment=Qt.AlignTop)
+
+        layout.addLayout(logo_row)
         layout.addSpacing(30)
 
-        # ── Separador con gradiente ───────────────────────
+        # ── Separador ─────────────────────────────────────
         sep = QFrame()
         sep.setFixedHeight(1)
         sep.setStyleSheet("background: #313244; border: none;")
@@ -369,7 +453,7 @@ class SplashScreen(QWidget):
     # ── Worker de inicialización ─────────────────────────────
 
     def _start_worker(self):
-        self._worker = InitWorker()
+        self._worker = InitWorker(load_yolo=self._load_yolo, user_data=self._user_data)
         self._worker.progress.connect(self._on_progress)
         self._worker.finished.connect(self._on_finished)
         self._worker.start()
@@ -386,7 +470,35 @@ class SplashScreen(QWidget):
         self._bar_anim.start()
         self.lbl_status.setText(message)
 
-    def _on_finished(self):
+    def _on_finished(self, model, device):
+        """Recibe el modelo precargado (o None si falló/no aplica)."""
+        self._preloaded_model  = model
+        self._preloaded_device = device
+
+        # Si se cargó correctamente, actualizar badge
+        if model is not None and hasattr(self, "_ai_badge"):
+            self._ai_badge.setText(f"🧠 {(device or 'cpu').upper()} ✓")
+            self._ai_badge.setStyleSheet("""
+                font-size: 10px;
+                font-weight: 700;
+                color: #a6e3a1;
+                background: rgba(166,227,161,0.20);
+                border: 1px solid #a6e3a1;
+                border-radius: 8px;
+                padding: 3px 8px;
+            """)
+        elif self._load_yolo and model is None and hasattr(self, "_ai_badge"):
+            self._ai_badge.setText("⚠️ IA no disponible")
+            self._ai_badge.setStyleSheet("""
+                font-size: 10px;
+                font-weight: 700;
+                color: #f9e2af;
+                background: rgba(249,226,175,0.12);
+                border: 1px solid rgba(249,226,175,0.35);
+                border-radius: 8px;
+                padding: 3px 8px;
+            """)
+
         QTimer.singleShot(400, lambda: (self.fade_out_and_close(), self.ready.emit()))
 
     # ── Pintado del fondo (sombra suave) ─────────────────────

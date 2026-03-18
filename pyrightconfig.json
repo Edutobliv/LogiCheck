@@ -1,7 +1,13 @@
 {
-  "pythonPath": ".venv/Scripts/python.exe",
   "venvPath": ".",
   "venv": ".venv",
+  "pythonVersion": "3.12",
   "include": ["."],
-  "exclude": [".venv"]
+  "exclude": [".venv"],
+  "reportMissingImports": "none",
+  "analysis": {
+    "useLibraryCodeForTypes": true,
+    "autoSearchPaths": true,
+    "extraPaths": ["."]
+  }
 }

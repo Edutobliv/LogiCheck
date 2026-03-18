@@ -12,26 +12,34 @@ class YoloAnalyzerWorker(QThread):
     finished_analysis = Signal(object, object, object, float, object)
     error_occurred = Signal(str)
 
-    def __init__(self, video_path, model_path, line_pos=0.60):
+    def __init__(self, video_path, model_path, line_pos=0.60,
+                 preloaded_model=None, preloaded_device=None):
         super().__init__()
         self.video_path = video_path
         self.model_path = model_path
         self.line_pos   = line_pos  # fraction of height for counting line
         self._is_running = True
         self.tracking_data = {}   # {frame_idx: [(x1,y1,x2,y2,track_id,label), ...]}
-        # Removed cumulative_counts from Analyzer, moving logic to Player
 
-        try:
-            from ultralytics import YOLO
-            import torch
-            self.model = YOLO(model_path)
-            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            self.model.to(self.device)
-            print(f"[YOLO] Modelo cargado en {self.device}. Clases: {self.model.names}")
+        # ── Usar modelo precargado si está disponible ──────────
+        if preloaded_model is not None:
+            self.model  = preloaded_model
+            self.device = preloaded_device or "cpu"
+            print(f"[YOLO] Reutilizando modelo precargado en {self.device}. Clases: {self.model.names}")
             self.model_loaded = True
-        except Exception as e:
-            self.model_loaded = False
-            self.error_msg = str(e)
+        else:
+            # Carga normal (fallback si el splash no precargó el modelo)
+            try:
+                from ultralytics import YOLO
+                import torch
+                self.model  = YOLO(model_path)
+                self.device = "cuda" if torch.cuda.is_available() else "cpu"
+                self.model.to(self.device)
+                print(f"[YOLO] Modelo cargado en {self.device}. Clases: {self.model.names}")
+                self.model_loaded = True
+            except Exception as e:
+                self.model_loaded = False
+                self.error_msg = str(e)
 
 
     def run(self):

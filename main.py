@@ -7,6 +7,7 @@ from ui.login_dialog   import LoginDialog
 from ui.main_window    import MainWindow
 from ui.splash_screen  import SplashScreen
 from core import logger as app_logger
+from core.permissions  import can_do_action
 
 
 def main():
@@ -22,25 +23,9 @@ def main():
     except FileNotFoundError:
         print("Advertencia: No se encontró style.qss")
 
-    # ── Splash Screen ──────────────────────────────────────
-    splash = SplashScreen()
-    splash.show()
-    app.processEvents()
-
-    # Esperar a que el splash termine (hilo de init + fade-out)
-    loop = QEventLoop()
-    splash.ready.connect(loop.quit)       # Sale del loop cuando la init termina
-    loop.exec()                           # Bloc hasta que ready se emita
-
-    # Dar tiempo al fade-out antes de mostrar el login
-    from PySide6.QtCore import QTimer
-    _finish_loop = QEventLoop()
-    QTimer.singleShot(550, _finish_loop.quit)
-    _finish_loop.exec()
-
-    # ── Pantalla de Login ──────────────────────────────────
+    # ── Pantalla de Login (PRIMERO) ────────────────────────────
     login = LoginDialog()
-    
+
     # Forzar al SO a mostrarla en el frente (sin anclarla como siempre visible)
     login.setWindowFlags(login.windowFlags() | Qt.WindowStaysOnTopHint)
     login.show()
@@ -58,8 +43,36 @@ def main():
     app_logger.log_action(user_data, app_logger.LOGIN,
                           f"Acceso desde {os.environ.get('COMPUTERNAME', 'equipo desconocido')}")
 
-    # ── Ventana Principal ──────────────────────────────────
-    window = MainWindow(user_data=user_data)
+    # ── Splash Screen condicional (según permiso de video) ──────
+    # Solo si el usuario puede iniciar análisis de video,
+    # precargamos el modelo YOLO en CUDA durante la pantalla de carga.
+    can_video = can_do_action(user_data, "video.iniciar")
+
+    splash = SplashScreen(user_data=user_data, load_yolo=can_video)
+    splash.show()
+    app.processEvents()
+
+    # Esperar a que el splash termine (hilo de init + fade-out)
+    loop = QEventLoop()
+    splash.ready.connect(loop.quit)
+    loop.exec()
+
+    # Dar tiempo al fade-out antes de mostrar la ventana principal
+    from PySide6.QtCore import QTimer
+    _finish_loop = QEventLoop()
+    QTimer.singleShot(550, _finish_loop.quit)
+    _finish_loop.exec()
+
+    # Recuperar el modelo precargado del splash (puede ser None si fallo o sin permiso)
+    preloaded_model  = getattr(splash, "_preloaded_model", None)
+    preloaded_device = getattr(splash, "_preloaded_device", None)
+
+    # ── Ventana Principal ──────────────────────────────────────
+    window = MainWindow(
+        user_data=user_data,
+        preloaded_model=preloaded_model,
+        preloaded_device=preloaded_device,
+    )
 
     _logout_requested = [False]
 
@@ -79,4 +92,6 @@ def main():
 
 
 if __name__ == "__main__":
+    import multiprocessing
+    multiprocessing.freeze_support()
     main()

@@ -1,5 +1,4 @@
-# -*- mode: python ; coding: utf-8 -*-
-# LogiCheck v1.1 — PyInstaller spec file
+# LogiCheck v1.2 — PyInstaller spec file
 
 import os
 from pathlib import Path
@@ -14,20 +13,28 @@ a = Analysis(
         # Recursos de styles
         ('resources/style.qss',       'resources'),
         ('resources/style_light.qss', 'resources'),
-        # Módulos del core
+        # Módulos del core (PyInstaller los detecta, pero los mantenemos si se usan dinámicamente)
         ('core/__init__.py',          'core'),
         ('core/invoice_parser.py',    'core'),
         ('core/auth.py',              'core'),
         ('core/permissions.py',       'core'),
         ('core/logger.py',            'core'),
+        ('core/yolo_manager.py',      'core'),
         # Módulos de la UI
         ('ui/__init__.py',            'ui'),
         ('ui/login_dialog.py',        'ui'),
         ('ui/users_page.py',          'ui'),
         ('ui/logs_page.py',           'ui'),
         ('ui/splash_screen.py',       'ui'),
-        # Base de datos Excel (referencia materiales/vehículos)
+        ('ui/main_window.py',         'ui'),
+        # Modelos YOLO
+        ('training/runs/bultos_cemento/weights/best.pt', 'training/runs/bultos_cemento/weights'),
+        ('training/runs/bultos_cemento2/weights/best.pt', 'training/runs/bultos_cemento2/weights'),
+        ('yolo11n.pt', '.'),
+        ('yolo26n.pt', '.'),
+        # Base de datos y Excel
         ('BaseDatos_Ferreteria.xlsx', '.'),
+        ('logicheck_users.db', '.'),
     ],
     hiddenimports=[
         'PySide6.QtCore',
@@ -39,15 +46,14 @@ a = Analysis(
         'pandas',
         'sqlite3',        # Base de datos de usuarios
         'hashlib',
+        'ultralytics',
+        'torch',
+        'torchvision',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        'ultralytics',   # YOLO — excluir por ahora (versión beta)
-        'cv2',           # OpenCV — excluir por ahora
-        'torch',
-        'torchvision',
         'matplotlib',
         'scipy',
         'notebook',
@@ -69,14 +75,14 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=False,              # Desactivado ya que no está instalado
     console=False,          # Sin ventana de consola
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,              # Puedes agregar un .ico aquí cuando tengas uno
+    icon=None,
 )
 
 coll = COLLECT(
@@ -84,7 +90,7 @@ coll = COLLECT(
     a.binaries,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name='LogiCheck',
 )

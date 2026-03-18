@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QGraphicsOpacityEffect,
                                QScrollArea, QStackedWidget, QToolButton, QSpacerItem,
                                QProgressBar, QStatusBar, QFileDialog, QMessageBox, QListWidget, QListWidgetItem, QSlider,
-                               QDialog)
+                               QDialog, QStyle, QStyleOptionSlider)
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint, QVariantAnimation, QSequentialAnimationGroup, QParallelAnimationGroup, QThread, Signal, QEvent
 from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen, QPixmap, QGuiApplication
 import datetime
@@ -55,6 +55,50 @@ class ScrubThumbnailWidget(QFrame):
     def set_thumbnail(self, pixmap, time_str):
         self.lbl_img.setPixmap(pixmap.scaled(self.lbl_img.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
         self.lbl_time.setText(time_str)
+
+
+class AuditScrubSlider(QSlider):
+    """Slider personalizado que dibuja marcas rojas en momentos de detección."""
+    def __init__(self, orientation, parent=None):
+        super().__init__(orientation)
+        if parent:
+            self.setParent(parent)
+        self.event_markers = [] # Lista de floats (0.0 a 1.0)
+        
+    def set_event_markers(self, markers):
+        self.event_markers = markers
+        self.update()
+
+    def paintEvent(self, event):
+        # Primero dibujamos el slider normal
+        super().paintEvent(event)
+        
+        if not self.event_markers:
+            return
+            
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Obtener el área del "groove" (la pista del slider)
+        opt = QStyleOptionSlider()
+        self.initStyleOption(opt)
+        gr = self.style().subControlRect(QStyle.CC_Slider, opt, QStyle.SC_SliderGroove, self)
+        
+        # Dibujar marcas rojas
+        painter.setPen(Qt.NoPen)
+        # Usamos un rojo vibrante con cierta transparencia
+        color = QColor("#f38ba8")
+        color.setAlpha(200)
+        painter.setBrush(color)
+        
+        # El slider maneja 0-1000, pero calculamos basado en el ancho del groove
+        # Dejamos un pequeño margen para que no tape el handle si está justo ahí
+        for pct in self.event_markers:
+            x = gr.left() + int(pct * gr.width())
+            # Dibujamos un rectángulo vertical que resalte la zona
+            painter.drawRoundedRect(x - 2, gr.top() + 1, 4, gr.height() - 2, 2, 2)
+        
+        painter.end()
 
 
 class AnimatedToggle(QWidget):
@@ -273,7 +317,8 @@ class NavButton(QPushButton):
 class MainWindow(QMainWindow):
     logout_requested = Signal()  # Emitida al cerrar sesión
 
-    def __init__(self, user_data: dict = None):
+    def __init__(self, user_data: dict = None,
+                 preloaded_model=None, preloaded_device=None):
         super().__init__()
         self.setWindowTitle("LogiCheck — Auditoría Logística Inteligente")
         self.setMinimumSize(1100, 700)
@@ -281,6 +326,10 @@ class MainWindow(QMainWindow):
         
         self._is_dark = True
         self._current_invoice = None  # Stores last InvoiceData
+
+        # Modelo YOLO precargado desde el Splash Screen (puede ser None)
+        self._preloaded_model  = preloaded_model
+        self._preloaded_device = preloaded_device
 
         # Sesión activa
         self._user = user_data or {"username": "admin", "role": "admin", "full_name": "Administrador"}
@@ -325,7 +374,7 @@ class MainWindow(QMainWindow):
         brand_layout.addStretch()
         sidebar_layout.addLayout(brand_layout)
         
-        version_label = QLabel("v1.0 — Ferretería Durán")
+        version_label = QLabel("v1.2 — Ferretería Durán")
         version_label.setObjectName("versionLabel")
         sidebar_layout.addWidget(version_label)
         
@@ -494,7 +543,7 @@ class MainWindow(QMainWindow):
         status = QStatusBar()
         status.setObjectName("statusBar")
         _role_display = get_role_display(self._role)
-        status.showMessage(f"  ✅ Sistema listo  |  LogiCheck v1.0  |  Usuario: {self._user.get('full_name', '')}  |  Rol: {_role_display}")
+        status.showMessage(f"  ✅ Sistema listo  |  LogiCheck v1.2  |  Usuario: {self._user.get('full_name', '')}  |  Rol: {_role_display}")
         self.setStatusBar(status)
 
         # ── Aplicar permisos según el rol activo ──────────────
@@ -702,7 +751,22 @@ class MainWindow(QMainWindow):
         controls_layout.addWidget(self.lbl_line_val)
         
         controls_layout.addStretch()
-        
+
+        # Indicador de estado del motor IA (CUDA precargado o no)
+        if can_do_action(self._role, "video.iniciar"):
+            if self._preloaded_model is not None:
+                _dev = (self._preloaded_device or "cpu").upper()
+                self.lbl_model_status = QLabel(f"🧠 Motor IA listo ({_dev})")
+                self.lbl_model_status.setStyleSheet(
+                    "font-size: 10px; color: #a6e3a1; background: transparent;"
+                )
+            else:
+                self.lbl_model_status = QLabel("⚠️ Motor IA: carga en frío")
+                self.lbl_model_status.setStyleSheet(
+                    "font-size: 10px; color: #f9e2af; background: transparent;"
+                )
+            controls_layout.addWidget(self.lbl_model_status)
+
         self.lbl_video_name = QLabel("Ningún video seleccionado")
         self.lbl_video_name.setObjectName("subtleText")
         controls_layout.addWidget(self.lbl_video_name)
@@ -737,7 +801,7 @@ class MainWindow(QMainWindow):
         video_container_layout.addWidget(self.video_frame)
         
         # Video Slider
-        self.video_slider = QSlider(Qt.Horizontal)
+        self.video_slider = AuditScrubSlider(Qt.Horizontal)
         self.video_slider.setObjectName("videoSlider")
         self.video_slider.setRange(0, 1000)
         self.video_slider.setEnabled(False)
@@ -1610,16 +1674,37 @@ class MainWindow(QMainWindow):
         self._thumbnails_cache.clear()
         
         # Worker analysis
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        # Determinar base_dir de forma robusta para PyInstaller
+        if getattr(sys, 'frozen', False):
+            # En el .exe, los datos están en el mismo dir que el exe o en _internal
+            base_dir = os.path.dirname(sys.executable)
+            # Priorizar _internal si existe (típico de modo COLLECT)
+            internal_path = os.path.join(base_dir, "_internal")
+            if os.path.exists(internal_path):
+                base_dir = internal_path
+        else:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
         # Usamos el modelo entrenado con YOLO11
         model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento2", "weights", "best.pt")
         if not os.path.exists(model_path): # Fallback a otro entrenamiento
             model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento", "weights", "best.pt")
+        
+        # Si sigue sin existir, buscar en el CWD (fallback final)
+        if not os.path.exists(model_path):
+             model_path = "training/runs/bultos_cemento2/weights/best.pt"
 
-        self.analyzer = YoloAnalyzerWorker(self._video_path, model_path, line_pos=self.slider_line.value()/100.0)
+        self.analyzer = YoloAnalyzerWorker(
+            self._video_path,
+            model_path,
+            line_pos=self.slider_line.value() / 100.0,
+            preloaded_model=self._preloaded_model,
+            preloaded_device=self._preloaded_device,
+        )
         self.analyzer.progress_updated.connect(self._on_analysis_progress)
         self.analyzer.thumbnail_ready.connect(self._on_thumbnail_ready)
         self.analyzer.finished_analysis.connect(self._on_analysis_finished)
+        self.analyzer.error_occurred.connect(self._on_analysis_error)
         self.analyzer.start()
         
         app_logger.log_action(self._user, app_logger.VIDEO_INICIADO, f"Video: {os.path.basename(self._video_path)}")
@@ -1635,7 +1720,17 @@ class MainWindow(QMainWindow):
         if hasattr(self, "analysis_progress"):
             self.analysis_progress.setValue(max(0, min(int(val), 100)))
 
-    def _on_analysis_finished(self, final_counts, count_history, tracking_data, fps):
+    def _on_analysis_error(self, err_msg):
+        self.btn_start_analysis.setText("⚠️ Error en Análisis")
+        self.btn_start_analysis.setEnabled(True)
+        self.btn_load_video.setEnabled(True)
+        self._set_video_status("idle")
+        if hasattr(self, "analysis_progress"):
+            self.analysis_progress.setVisible(False)
+        self.show_toast(f"Error: {err_msg}", "error")
+        app_logger.log_action(self._user, "ERROR_ANALISIS", f"Error YOLO: {err_msg}")
+
+    def _on_analysis_finished(self, final_counts, count_history, tracking_data, fps, crossing_frames):
         self.btn_start_analysis.setText("✅ Análisis Completo")
         if hasattr(self, "analysis_progress"):
             self.analysis_progress.setValue(100)
@@ -1647,6 +1742,11 @@ class MainWindow(QMainWindow):
             self._video_total_frames = int(max(tracking_data.keys())) if tracking_data else 0
         except Exception:
             self._video_total_frames = 0
+
+        # Update event markers on the slider
+        if hasattr(self, "video_slider") and self._video_total_frames > 0:
+            event_pcts = [f / float(self._video_total_frames) for f in crossing_frames]
+            self.video_slider.set_event_markers(event_pcts)
         
         # Enable playback controls
         self.btn_play_pause.setEnabled(True)
@@ -2147,11 +2247,8 @@ class MainWindow(QMainWindow):
         self.btn_snapshot.setEnabled(False)
         self.lbl_frame_time.setText("00:00 / 00:00")
 
-        # Clear analysis data
-        self._tracking_data = {}
-        self._count_history = {}
-        self._fps = 0.0
         self._video_total_frames = 0
+        self.video_slider.set_event_markers([])
 
         app_logger.log_action(
             self._user, app_logger.VIDEO_DETENIDO,
