@@ -1,0 +1,4493 @@
+
+=== PAGE 1 ===
+ 
+ 
+DISEÑO Y DESARROLLO DE UNA APLICACIÓN DE ESCRITORIO PARA LA 
+VISUALIZACIÓN Y VERIFICACIÓN DE DATOS LOGÍSTICOS MEDIANTE VISIÓN 
+ARTIFICIAL EN LA FERRETERÍA DURÁN, APULO 2026 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+MIGUEL ANGEL GONZALEZ POSADA 
+SAMUEL ESTEBAN VILLALBA DURAN 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+UNIVERSIDAD PILOTO DE COLOMBIA 
+SECCIONAL DEL ALTO MAGDALENA 
+FACULTAD DE INGENIERÍA 
+PROGRAMA INGENIERÍA DE SISTEMAS 
+GIRARDOT, CUNDINAMARCA 
+2026 
+ 
+ 
+2 cm 
+2 cm 
+2 cm 
+2 cm 
+Comentado [LT1]: 1.Titulo Es considerado como el más 
+breve resumen del proyecto, pues sintetiza lo que se va a 
+hacer. Es decir, en forma concreta proporciona una idea 
+global completa de la investigación a realizar. 
+  
+Dependiendo el tipo de investigación, el título del proyecto 
+responde generalmente a estos interrogantes: 
+ 
+- ¿Qué? (Proceso) 
+- ¿Sobre que? (sujeto u objeto) 
+- ¿Dónde? (Localización geográfica) 
+- ¿Cómo? (técnica o método) 
+- ¿Cuándo? (épocas, fechas, etc) 
+
+=== PAGE 2 ===
+ 
+ 
+DISEÑO Y DESARROLLO DE UNA APLICACIÓN DE ESCRITORIO PARA LA 
+VISUALIZACIÓN Y VERIFICACIÓN DE DATOS LOGÍSTICOS MEDIANTE VISIÓN 
+ARTIFICIAL EN LA FERRETERÍA DURÁN, APULO 2026 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+MIGUEL ANGEL GONZALEZ POSADA 
+SAMUEL ESTEBAN VILLALBA DURAN 
+miguel-gonzalez@upc.edu.co 
+samuel-villalba@upc.edu.co 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Trabajo de grado presentada como opción de grado para optar el título de Ingeniero de 
+Sistemas 
+ 
+ 
+ 
+ 
+ 
+ 
+Docente 
+LUDWIG IVAN TRUJILLO HERNANDEZ 
+Profesión pregrado 
+Profesión Especialización 
+Profesión Maestría 
+ludwin-Trujillo@unipiloto.edu.co 
+ 
+ 
+ 
+ 
+ 
+ 
+UNIVERSIDAD PILOTO DE COLOMBIA 
+SECCIONAL DEL ALTO MAGDALENA 
+FACULTAD DE INGENIERÍA 
+PROGRAMA INGENIERÍA DE SISTEMAS 
+GIRARDOT, CUNDINAMARCA 
+2026 
+2 cm 
+Comentado [LT2]: 2.Titulo Es considerado como el más 
+breve resumen del proyecto, pues sintetiza lo que se va a 
+hacer. Es decir, en forma concreta proporciona una idea 
+global completa de la investigación a realizar. 
+  
+Dependiendo el tipo de investigación, el título del proyecto 
+responde generalmente a estos interrogantes: 
+ 
+- ¿Qué? (Proceso) 
+- ¿Sobre que? (sujeto u objeto) 
+- ¿Dónde? (Localización geográfica) 
+- ¿Cómo? (técnica o método) 
+- ¿Cuándo? (épocas, fechas, etc) 
+
+=== PAGE 3 ===
+ 
+ 
+Nota de aceptación 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Presidente del Jurado 
+ 
+ 
+ 
+ 
+ 
+ 
+Jurado 
+ 
+ 
+ 
+ 
+ 
+Jurado 
+ 
+ 
+ 
+ 
+ 
+ 
+Girardot, 26 de marzo de 2026  
+ 
+ 
+ 
+Comentado [LT3]: No aplica para Anteproyecto 
+
+=== PAGE 4 ===
+ 
+ 
+DEDICATORIA (opcional) 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+Nota mediante la cual el/los autores(es) ofrece(n) su trabajo, en forma especial, a personas o 
+entidades.  Su presentación es opcional y debe conservar los márgenes.  Para elaborar la 
+página dedicatoria, es posible guiarse por la plantilla que ofrece los procesadores de texto y se 
+debe seguir el esquema presentado en la Figura 5 (Instituto Colombiano de Normas Técnicas y 
+Certificación (ICONTEC), 2022) 
+ 
+ 
+Comentado [LT4]: No aplica para Anteproyecto 
+
+=== PAGE 5 ===
+ 
+ 
+AGRADECIMIENTOS (opcional) 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+En esta página el (los) autor (es) expresa (n) el reconocimiento hacia las personas y/o entidades 
+que asesoraron suministraron datos o contribuyeron significativamente con el desarrollo del 
+tema. Es opcional y debe contener, además de la nota correspondiente, los nombres de las 
+personas con sus respectivos cargos y los nombres completos de las instituciones y su aporte 
+al trabajo. Para elaborar la página de agradecimiento se puede guiar por la plantilla que ofrecen 
+los procesadores de texto y se debe seguir el esquema presentado en la Figura 6. (Instituto 
+Colombiano de Normas Técnicas y Certificación (ICONTEC), 2022) 
+ 
+ 
+ 
+Comentado [LT5]: No aplica para Anteproyecto 
+
+=== PAGE 6 ===
+ 
+ 
+CONTENIDO 
+ 
+ 
+ 
+Pág. 
+INTRODUCCIÓN 
+ 
+ 
+1. 
+TÍTULO DE PRIMER NIVEL (TÍTULO CAPÍTULO) 
+ 
+x 
+1.1. 
+TÍTULO SEGUNDO NIVEL (SUBCAPÍTULO)  
+ 
+x 
+1.1.1. Título tercer nivel  
+ 
+x 
+ 
+ 
+Con este video pueden configurar una tabla de contenido automático en word 
+https://www.youtube.com/watch?v=qJm8ExelcVc&t=133s 
+ 
+ 
+ 
+
+=== PAGE 7 ===
+ 
+ 
+LISTA DE TABLAS 
+ 
+ 
+ 
+Pág. 
+ 
+Tabla 1 
+ 
+x 
+Tabla 2 
+ 
+x 
+Tabla 3 
+ 
+x 
+Tabla 4 
+ 
+x 
+ 
+Les dejo este video en el que explica como configurar la lista de tablas y figuras con normas 
+APA en word 
+https://www.youtube.com/watch?v=2YD9pdjorKY  
+ 
+APA para tablas dentro del contenido del documento 
+https://normas-apa.org/estructura/tablas/  
+ 
+ 
+ 
+
+=== PAGE 8 ===
+ 
+ 
+LISTA DE FIGURAS 
+ 
+ 
+ 
+Pág. 
+ 
+Figura 1 
+ 
+x 
+Figura 2 
+ 
+x 
+Figura 3 
+ 
+x 
+Figura 4 
+ 
+x 
+ 
+ 
+APA para figuras dentro del contenido del documento 
+https://normas-apa.org/estructura/figuras/ 
+ 
+ 
+
+=== PAGE 9 ===
+ 
+ 
+LISTA DE ANEXOS 
+ 
+ 
+ 
+Pág. 
+ 
+Anexo A 
+ 
+x 
+Anexo B 
+ 
+x 
+Anexo C 
+ 
+x 
+Anexo D 
+ 
+x 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 10 ===
+ 
+ 
+RESUMEN 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+Para los ensayos y las partes de monografías, es adecuado un resumen de máximo 250 
+palabras.  Para documentos extensos como informes, tesis y trabajos de grado, no debe 
+exceder las 500 palabras y debe ser lo suficientemente breve como para que no ocupe más de 
+una página.  Para este tipo de trabajos, se debe hacer un resumen descriptivo donde se explique 
+la estructura del escrito, las partes fundamentales, las fuentes o el estilo.  Es muy útil en el caso 
+de originales extensos o complejos, porque ayuda al lector a comprender la organización del 
+texto y localizar en él los datos que le puedan interesar.  Para elaborar un resumen, se deben 
+tener en cuenta los siguientes elementos: el título del trabajo, la introducción, los objetivos y 
+alcance, los primeros párrafos de los capítulos, el método utilizado, los resultados y la 
+conclusión. 
+Al final del resumen, se deben usar palabras clave del texto que permitan la recuperación de la 
+información. 
+El resumen debe escribirse en mayúsculas, centrado a 2 cm del borde superior de la plantilla.  
+El texto debe aparecer con doble interlineado. (Instituto Colombiano de Normas Técnicas y 
+Certificación (ICONTEC), 2022) 
+Palabras Clave: (Colocar solo 5) 
+ 
+
+=== PAGE 11 ===
+ 
+ 
+ABSTRACT 
+ 
+Font and size: Arial – 12 text; Line spacing: single; Title: must begin on a separate page; 
+Contents: The text must reach the established bottom margin; Avoid single subheadings at the 
+bottom of the page; write in interpersonal form (third person singular); Page numbering: 
+consecutive and in Arabic numerals (cover and title page are counted, but not numbered). Note: 
+Document presentation follows the ICONTEC standard, citations and references follow the APA 
+standard. 
+ 
+Consists of: 
+For essays and sections of monographs, a summary of no more than 250 words is appropriate. 
+For longer documents such as reports, theses, and dissertations, it should not exceed 500 words 
+and should be brief enough to occupy no more than one page. For these types of works, a 
+descriptive summary should be provided that explains the structure of the document, its key 
+sections, sources, and style. It is very useful for long or complex originals because it helps the 
+reader understand the organization of the text and locate information that may be of interest. To 
+create a summary, the following elements should be taken into account: the title of the work, the 
+introduction, the objectives and scope, the first paragraphs of the chapters, the method used, 
+the results, and the conclusion. 
+At the end of the summary, use keywords from the text to facilitate information retrieval. 
+The summary should be written in capital letters, centered 2 cm from the top edge of the 
+template. The text should be double-spaced. (Instituto Colombiano de Normas Técnicas y 
+Certificación (ICONTEC), 2022) 
+ 
+Kew words: (Only 5) 
+ 
+
+=== PAGE 12 ===
+ 
+ 
+INTRODUCCIÓN 
+ 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+Origen, antecedentes, objetivos, alcances, limitaciones, bases teóricas y prácticas del trabajo, 
+metodología a emplear, significado del estudio en el campo respectivo, se muestra la 
+importancia y aplicación en el área investigada, se plantea el problema, pero no se desarrolla el 
+tema, ni se dan conclusiones. No se debe confundir con el resumen, ni realizar un recuento de 
+la teoría, método o resultados, ni sacar conclusiones o recomendaciones. (Instituto 
+Colombiano de Normas Técnicas y Certificación (ICONTEC), 2022) 
+ 
+ 
+ 
+ 
+Comentado [LT6]: La introducción debe contemplar lo 
+siguiente: 
+ 
+a- Es una especie de preámbulo que ofrece una panorámica 
+de la investigación a realizar, habla en términos generales de 
+lo que trata el proyecto. 
+b- Usualmente inicia con una información general sobre el 
+ámbito en el que se enmarca el problema de investigación, 
+es decir, se contextualiza el proyecto. 
+c- Luego se adentra en aspectos específicos más relevantes 
+del proyecto en cuestión y hace referencia general al 
+problema, los objetivos y la metodología a utilizar, 
+principalmente. 
+d- Debe brindar una mirada general del contenido del 
+proyecto. 
+
+=== PAGE 13 ===
+ 
+ 
+1. TÍTULO DEL ANTEPROYECTO/TRABAJO DE GRADO 
+ 
+ 
+1.1. 
+TEMA 
+Desarrollo de una aplicación de escritorio basada en visión artificial para la visualización y 
+verificación automatizada de datos logísticos en el proceso de despacho de materiales en la 
+Ferretería Durán, Apulo, orientada a mejorar el control operativo y la confiabilidad de la 
+información registrada. 
+ 
+ 
+ 
+ 
+ 
+Comentado [LT7]: Tema. Es la formulación del tema en 
+forma concreta: Formular el tema de investigación es 
+concretar en un enunciado comprensible y sencillo el 
+contenido central del Título, de modo que informen 
+suficientemente al lector sobre el contenido central. 
+ 
+Cuando después de leer un libro o ver una película debemos 
+responder por el tema ante la pregunta: ¿De qué se trataba?  
+
+=== PAGE 14 ===
+ 
+ 
+2. PLANTEAMIENTO DEL PROBLEMA 
+ 
+ 
+2.1. OBSERVACIÓN DE DATOS Y HECHOS (MIGUEL) 
+ 
+A nivel internacional, múltiples estudios evidencian que los procesos logísticos continúan 
+enfrentando problemas asociados a errores humanos en tareas de conteo, registro y 
+verificación de mercancías, especialmente en entornos donde aún predominan métodos 
+manuales o sistemas parcialmente digitalizados. De acuerdo con (World Economic Forum, 
+2023), la automatización y la digitalización de procesos operativos se han convertido en una 
+prioridad estratégica para reducir ineficiencias y mejorar la confiabilidad de los datos 
+empresariales. Asimismo, investigaciones de (McKinsey & Company, 2022) señalan que los 
+errores en procesos logísticos pueden representar pérdidas significativas derivadas de 
+discrepancias en inventario, devoluciones y reprocesos administrativos.  
+En el ámbito tecnológico, la incorporación de visión artificial en entornos industriales y 
+comerciales ha demostrado ser una herramienta eficaz para la verificación automatizada de 
+productos, particularmente en tareas de inspección y control de calidad. Sin embargo, 
+pequeñas y medianas empresas en distintos países aún presentan brechas en la adopción de 
+estas tecnologías, lo que mantiene niveles elevados de vulnerabilidad operativa. Esta situación 
+refleja una problemática global: la necesidad de sistemas informáticos que permitan visualizar 
+y verificar datos logísticos con mayor precisión, reduciendo la dependencia exclusiva del 
+control humano. 
+En América Latina, la problemática adquiere matices particulares debido a limitaciones 
+estructurales en la transformación digital de las pequeñas y medianas empresas. Según 
+(CEPAL, 2021), existe una brecha significativa en la incorporación de tecnologías avanzadas 
+como inteligencia artificial y automatización en el sector productivo, especialmente en 
+empresas de comercio minorista y distribución. Esta situación impacta directamente en la 
+eficiencia de los procesos logísticos, donde persisten prácticas manuales para el control de 
+inventarios y despachos. Según informes del (Banco Interamericano de Desarrollo, 2020) 
+indican que la baja digitalización limita la trazabilidad y la confiabilidad de los datos operativos, 
+generando riesgos de pérdidas económicas y disminución de competitividad. En 
+organizaciones comerciales de mediana escala, es común encontrar inconsistencias entre 
+registros contables y salidas físicas de mercancía, debido a la ausencia de herramientas 
+tecnológicas que permitan validar automáticamente la información.  
+En consecuencia, Latinoamérica enfrenta el desafío de integrar soluciones basadas en 
+tecnologías emergentes que fortalezcan el control interno y mejoren la gestión de datos 
+logísticos. 
+ 
+ 
+ 
+ 
+
+=== PAGE 15 ===
+ 
+ 
+En el contexto colombiano, el proceso de transformación digital empresarial ha avanzado de 
+manera progresiva; no obstante, persisten rezagos significativos en pequeñas y medianas 
+empresas del sector comercial. (MinTIC, 2022). Señala que, aunque existen políticas para 
+promover la adopción tecnológica, muchas organizaciones aún presentan niveles básicos de 
+digitalización en sus procesos internos. Según estudios del (DANE, 2022). Se evidencian que 
+las pymes comerciales enfrentan dificultades en el control de inventarios y en la 
+sistematización de información logística, lo que incrementa la probabilidad de errores 
+administrativos.  
+En el sector ferretero, caracterizado por la alta rotación de materiales y diversidad de 
+referencias, la verificación manual de despachos incrementa el riesgo de discrepancias entre 
+facturación y entrega efectiva. La ausencia de sistemas informáticos con capacidades de 
+visualización y validación automatizada limita la capacidad de auditoría interna y dificulta la 
+generación de reportes confiables para la toma de decisiones. Esta realidad pone de manifiesto 
+la necesidad de desarrollar soluciones tecnológicas aplicadas que fortalezcan el control 
+operativo y la integridad de los datos. 
+En el ámbito regional, particularmente en municipios intermedios como Apulo (Cundinamarca), 
+las empresas comerciales suelen operar con recursos tecnológicos limitados y procesos 
+administrativos tradicionales. La falta de herramientas avanzadas para el control logístico 
+incrementa la dependencia del registro manual y la supervisión directa del personal, lo que 
+puede generar inconsistencias en el conteo y despacho de materiales. En establecimientos 
+ferreteros de la región, donde el volumen de ventas puede variar según la dinámica del sector 
+construcción, la verificación manual resulta susceptible a errores involuntarios derivados de la 
+carga operativa diaria. Esta situación afecta la confiabilidad de los datos registrados, la 
+precisión en inventarios y la transparencia en los procesos internos. La inexistencia de 
+aplicaciones de escritorio especializadas que integren visión artificial para la visualización y 
+verificación automatizada de datos logísticos evidencia una oportunidad de intervención 
+tecnológica pertinente y contextualizada. Por tanto, se identifica una problemática concreta en 
+el entorno local que justifica el diseño y desarrollo de una solución informática adaptada a las 
+condiciones reales de la organización objeto de estudio. 
+ 
+ 
+2.2. HALLAZGO DEL PROBLEMA(SAMUEL) 
+Tras un proceso de observación directa en la Ferretería Durán, se ha identificado una brecha 
+crítica entre la demanda operativa y la capacidad técnica de control logístico. Actualmente, la 
+verificación de los despachos de materiales pesados, tales como bultos de cemento, varillas y 
+aceros, se realiza mediante una comunicación verbal y visual entre el auxiliar de bodega y el 
+conductor, careciendo de un soporte tecnológico que valide la exactitud de lo cargado. Esta 
+investigación viene en consecuencia a identificar que dicho método empírico es el origen 
+principal de las inconsistencias detectadas en los cierres de inventario mensuales. Según 
+plantea (Coyle, 2021) en su análisis sobre la administración de suministros, la falta de precisión 
+en el registro de inventarios físicos compromete la planificación financiera de la organización. 
+La ausencia de un sistema de visión artificial que registre objetivamente cada unidad que sale 
+de la bodega impide la trazabilidad real del producto, lo que se traduce en fugas de capital no 
+
+=== PAGE 16 ===
+ 
+ 
+detectadas y en una rotación de inventario que no coincide con los reportes de facturación 
+electrónica. 
+ 
+Siendo coherente con la seguridad industrial y la eficiencia del transporte, otro hallazgo 
+relevante es la asignación inadecuada de vehículos según el peso y volumen de la carga. En 
+la práctica actual, se ha observado el uso de motocarros para el transporte de materiales que 
+superan su capacidad técnica nominal, lo cual incrementa el desgaste mecánico y el riesgo de 
+fallas operativas críticas. Bajo el enfoque de optimización logística, la carencia de un módulo 
+que calcule automáticamente el flete y sugiera el vehículo ideal basado en la detección visual 
+de los materiales es una deficiencia operativa mayor que compromete la rentabilidad 
+organizacional. Este hallazgo sugiere que el problema no es solo de conteo, sino de 
+inteligencia de flota, ya que la empresa no posee datos estructurados que le permitan gestionar 
+su capacidad de carga de manera técnica. Teniendo en cuenta que la sobrecarga mecánica 
+reduce la vida útil de los activos, la falta de supervisión en este proceso genera costos ocultos 
+de mantenimiento y riesgos latentes para la integridad de los operarios. 
+ 
+Asimismo, se ha evidenciado una desconexión informativa entre la zona de despacho y el área 
+administrativa, lo que propicia que los errores de conteo manual solo sean detectados días 
+después de la entrega. Siguiendo esta línea, la ausencia de una interfaz de visualización 
+específica para el administrador limita la capacidad de auditoría preventiva, permitiendo que 
+las mermas por errores humanos se acumulen silenciosamente. De acuerdo con (Ivanov, 2021) 
+la visibilidad en tiempo real es el pilar de la resiliencia en las cadenas de suministro modernas, 
+permitiendo la detección de anomalías antes de que afecten el flujo financiero. En 
+consecuencia, el hallazgo principal reside en la obsolescencia del control manual frente a la 
+complejidad de la operación ferretera moderna en Apulo. La implementación de LogiCheck no 
+se propone simplemente como una mejora de software, sino como una necesidad imperativa 
+para mitigar riesgos operativos, económicos y legales, transformando la supervisión subjetiva 
+en una auditoría automatizada y basada en evidencia visual. 
+ 
+2.3. FORMULACIÓN DEL PROBLEMA (SAMUEL) 
+2.3.1 Pregunta de Investigación 
+¿De qué manera la implementación de un sistema automatizado basado en visión artificial y 
+herramientas de integración digital puede optimizar la auditoría logística y reducir los errores 
+operativos en los procesos de despacho de la Ferretería Duran en Apulo? 
+ 
+2.3.2 Elementos del problema 
+A continuación, se discriminan los factores que estructuran la problemática identificada: 
+ 
+ 
+Errores en la contabilización: Discrepancias en el conteo manual de bultos y materiales 
+de construcción durante el flujo de salida. 
+ 
+Ineficiencia en la asignación vehicular: Falta de un cálculo técnico de peso y volumen 
+para determinar el vehículo adecuado (motocarro vs. camión). 
+ 
+Riesgos de seguridad industrial: Peligro de accidentes por sobrecarga mecánica en 
+vehículos pequeños y falta de supervisión en el uso de Equipos de Protección Personal 
+(EPP). 
+ 
+Desconexión informativa: Ausencia de validación cruzada automática entre lo que se 
+carga físicamente en bodega y lo registrado en la factura electrónica. 
+ 
+Pérdidas económicas: Fletes mal liquidados y mermas por errores humanos en el 
+registro de salida. 
+
+=== PAGE 17 ===
+ 
+ 
+2.3.3 Preguntas generadoras 
+Como apoyo a la investigación, se plantean los siguientes interrogantes: 
+ 
+¿Cómo puede la visión artificial (YOLOv8) sustituir eficazmente la inspección visual 
+humana en el conteo de materiales ferreteros? 
+ 
+¿Qué impacto tiene la automatización del cálculo de fletes en la rentabilidad logística 
+de la ferretería? 
+ 
+¿De qué forma la integración con n8n permite un control de inventarios más robusto 
+frente a la facturación electrónica? 
+ 
+ 
+ 
+1.1.1. Pregunta de Investigación 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+La pregunta de investigación es el primer paso en el desarrollo de un proyecto nuevo. Permite 
+establecer claramente el problema a resolver, mantenerlo enfocado y con un propósito. 
+Proporciona el marco dentro del cual se pretende abordar la solución. De esta manera, la 
+pregunta de investigación es la base sobre la cual se construye todo proyecto de investigación. 
+Por lo tanto, es de suma importancia aprender a redactarla adecuadamente. (Enago Academy, 
+2025) 
+La pregunta de investigación fundamenta las siguientes partes en una propuesta al facilitar la 
+formulación de enunciados operacionales y de hipótesis claras. Por ejemplo, es útil en el 
+planteamiento del título, cuando se elimina el marco de la pregunta; del objetivo general, al 
+agregar un verbo en infinitivo al inicio y de la hipótesis, al redactarla como si los resultados 
+hubieran demostrado evidencia para resolver la problemática planteada. (Enago Academy, 
+2025) 
+ 
+1.1.2. Elementos del problema (SAMUEL) 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+ 
+Consta de:  
+
+=== PAGE 18 ===
+ 
+ 
+Son un conjunto de datos, situaciones, ideas, hechos y aspectos diferentes que hacen parte de 
+un todo que, por razones metodológicas, se deben discriminar y desglosar con el propósito de 
+que se les identifique y se les conozca como una dimensión del problema enunciado. 
+Los elementos constituirán el punto de partida de un posterior trabajo bibliográfico, en donde se 
+entrará a conocer y profundizar aspectos ignorados del problema. A la postre, el manejo, la 
+profundización y el conocimiento de estos elementos son el punto de partida en el proceso de 
+elaboración del marco teórico o del planteamiento teórico. 
+Redactarlos a modo de viñeta en forma de problema y no de soluciones. No son párrafos 
+descriptivos (se relacionan con el marco teórico) 
+Ejemplo: 
+• 
+Brecha digital 
+• 
+Falta de apropiación de las tecnologías de información 
+• 
+Poco aprovechamiento de las herramientas computacionales al servicio de la empresa. 
+ 
+1.1.3. Preguntas generadoras (SAMUEL) 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de:  
+Tener en cuenta preguntas que surgen de la investigación y que nutren el interés por ser resueltas 
+durante la investigación. Presentarlas a modo de viñeta y pues no hay un número límite, pero podríamos 
+pensar que máximo 7 preguntas sería ideal. 
+ 
+ 
+
+=== PAGE 19 ===
+ 
+ 
+3. OBJETIVOS (MIGUEL) 
+ 
+ 
+3.1. 
+OBJETIVO GENERAL  
+Diseñar y desarrollar una aplicación de escritorio para la visualización y verificación 
+automatizada de datos logísticos mediante visión artificial, orientada al control del proceso de 
+despacho de materiales en la Ferretería Durán, Apulo. 
+ 
+3.2. 
+OBJETIVOS ESPECÍFICOS  
+ Analizar el proceso actual de despacho y registro de materiales pesados y voluminosos 
+en la Ferretería Durán, identificando las principales inconsistencias asociadas a la 
+verificación manual y gestión de datos logísticos. 
+ 
+ Diseñar la arquitectura funcional y técnica de la aplicación de escritorio, definiendo los 
+módulos de captura, procesamiento con visión artificial, almacenamiento y visualización 
+de datos. 
+ 
+ Desarrollar y probar un prototipo funcional de la aplicación que permita detectar, 
+registrar y visualizar los materiales despachados, evaluando su precisión y consistencia 
+en un entorno controlado. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 20 ===
+ 
+ 
+3.3. 
+OBJETIVOS DEL SISTEMA (Máximo 5) Corresponden a acciones que se pretenden 
+realizar en la elaboración del sistema informático a desarrollar 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+El objetivo del sistema es indicar que acciones son necesarias para el abordaje de la solución 
+tecnológica a desarrollar durante el proyecto. 
+ 
+Ejemplos 
+* Determinar la metodología de desarrollo aplicable a la investigación 
+* Determinar la interfaz, colores, apropiados para la aplicación. 
+* Evaluar la arquitectura de software y hardware necesaria para la aplicación 
+* Realizar las pruebas de calidad de la solución tecnológica  
+ 
+4. JUSTIFICACIÓN (MIGUEL) 
+ 
+4.1. 
+JUSTIFICACIÓN GENERAL 
+ 
+La incorporación de tecnologías digitales en los procesos empresariales constituye un 
+elemento clave para fortalecer la calidad y confiabilidad de la información operativa. Según la 
+(OCDE, 2020) señala que la digitalización permite mejorar los mecanismos de control interno 
+y reducir la probabilidad de errores derivados de procedimientos manuales, especialmente en 
+actividades repetitivas como el registro y verificación de mercancías. En el ámbito logístico, la 
+disponibilidad de herramientas tecnológicas que faciliten la visualización estructurada de datos 
+contribuye a una supervisión más precisa y transparente de los procesos de salida de 
+productos.  
+ 
+Asimismo, De acuerdo con la (UNCTAD, 2021) destaca que la adopción de soluciones basadas 
+en tecnologías emergentes mejora la gestión de datos y fortalece la toma de decisiones en 
+entornos comerciales. En este contexto, el desarrollo de una aplicación de escritorio con 
+capacidades de visión artificial orientada a la visualización y verificación de datos logísticos 
+responde a la necesidad de apoyar el control operativo mediante herramientas tecnológicas 
+accesibles. La propuesta se enfoca en proporcionar un sistema que permita validar información 
+de despacho con mayor objetividad, contribuyendo a la reducción de inconsistencias y a la 
+generación de datos más confiables para la gestión empresarial. 
+ 
+ 
+ 
+
+=== PAGE 21 ===
+ 
+ 
+En el contexto colombiano, la digitalización de las pequeñas y medianas empresas continúa 
+siendo un reto estructural, particularmente en el sector comercio. (Departamento Nacional de 
+Planeación, 2019), a través del Documento CONPES 3975 sobre transformación digital e 
+inteligencia artificial, reconoce la necesidad de promover el uso estratégico de tecnologías para 
+mejorar la eficiencia y confiabilidad de los procesos organizacionales. De igual manera, 
+(Supersociedades, 2023) ha señalado en sus análisis sectoriales que muchas pymes 
+presentan debilidades en el control y sistematización de información operativa, lo cual puede 
+afectar la transparencia y la trazabilidad de sus actividades comerciales.  
+ 
+En entornos como el de la Ferretería Durán, donde el control de despachos depende en gran 
+medida de verificaciones manuales, la implementación de una herramienta tecnológica que 
+permita visualizar y verificar datos logísticos se convierte en una alternativa pertinente y viable. 
+Por tanto, el proyecto se justifica como una iniciativa que aporta al fortalecimiento del control 
+interno empresarial mediante el desarrollo de una solución informática adaptada al contexto 
+local y alineada con las políticas nacionales de transformación digital. 
+ 
+En cuanto al tema de sostenibilidad, el proyecto se apoya principalmente con la meta 9.4 del 
+ODS 9, orientada a modernizar la infraestructura y reconvertir las industrias para que sean 
+sostenibles mediante la adopción de tecnologías limpias e innovadoras, de acuerdo con la 
+Agenda 2030 formulada por (Organización de las Naciones Unidas, 2015). De manera 
+complementaria, contribuye a la meta 12.2 del ODS 12, al promover el uso eficiente de 
+recursos materiales y la reducción de desperdicios derivados de errores logísticos. En este 
+sentido, LogiCheck no solo responde a una necesidad empresarial específica, sino que se 
+articula con objetivos globales de sostenibilidad e innovación productiva. 
+ 
+Por ende, la investigación posee relevancia académica, tecnológica, económica y social, al 
+integrar fundamentos teóricos de la gestión logística con herramientas de automatización, 
+generando un impacto tangible en la operatividad y en la modernización del sector ferretero. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 22 ===
+ 
+ 
+4.2. 
+JUSTIFICACIÓN TÉCNICA (MIGUEL) 
+El desarrollo de una aplicación de escritorio para la visualización y verificación automatizada 
+de datos logísticos mediante visión artificial se fundamenta en avances consolidados en el 
+campo de la inteligencia artificial aplicada a la detección de objetos. De acuerdo con (Redmon 
+et al, 2016), el modelo YOLO (You Only Look Once) introdujo un enfoque unificado para la 
+detección en tiempo real, permitiendo identificar y localizar múltiples objetos en una sola 
+evaluación de red neuronal, lo que marcó un hito en precisión y velocidad de procesamiento. 
+Posteriormente, investigaciones como la por (Glenn Jocher et al, 2023) sobre la evolución de 
+arquitecturas YOLO han demostrado mejoras significativas en desempeño y adaptabilidad en 
+entornos prácticos. Estas tecnologías permiten automatizar tareas de conteo y verificación 
+visual que tradicionalmente dependen de supervisión humana, reduciendo inconsistencias en 
+el registro de mercancías.  
+ 
+Desde la perspectiva de ingeniería de software, la construcción de una aplicación de escritorio 
+estructurada bajo principios de diseño modular facilita la integración entre módulos de captura, 
+procesamiento y visualización de datos, garantizando mantenibilidad y escalabilidad técnica. 
+En este sentido, la aplicación propuesta se sustenta en tecnologías validadas científicamente 
+y en buenas prácticas de desarrollo que permiten asegurar consistencia, precisión y 
+confiabilidad en el procesamiento de información logística. 
+ 
+Desde el enfoque de calidad del software y control de procesos, la implementación de 
+mecanismos automatizados de verificación responde a la necesidad de reducir defectos 
+derivados de la intervención manual. La norma internacional International Organization for 
+Standardization (ISO/IEC 25010, 2011) establece que la calidad del software debe evaluarse 
+en términos de funcionalidad, confiabilidad y precisión de resultados, atributos esenciales en 
+sistemas que gestionan datos operativos. Asimismo, el Project Management Institute (PMI, 
+2021) señala que la adecuada gestión de proyectos tecnológicos requiere definir entregables 
+medibles y validables, especialmente cuando se desarrollan soluciones orientadas al control 
+de información.  
+ 
+En el contexto del proyecto, la aplicación de escritorio permitirá estructurar el flujo de datos 
+desde la detección visual hasta la generación de registros verificables, contribuyendo a mejorar 
+la integridad de la información sin necesidad de infraestructuras complejas. Técnicamente, la 
+solución es viable dentro del plazo establecido, al centrarse en el desarrollo de un prototipo 
+funcional que integre visión artificial y visualización de datos en un entorno controlado. Por 
+tanto, la justificación técnica se sostiene en fundamentos científicos, estándares 
+internacionales de calidad y metodologías formales de gestión de proyectos, garantizando 
+coherencia entre el diseño, desarrollo y validación del sistema propuesto. 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 23 ===
+ 
+ 
+4.3. 
+JUSTIFICACIÓN ACADÉMICA(MIGUEL) 
+ 
+El desarrollo del presente proyecto de grado se fundamenta en los conocimientos adquiridos 
+durante la formación académica en el programa de Ingeniería de Sistemas, particularmente en 
+asignaturas orientadas al desarrollo de software y al análisis de sistemas computacionales. 
+Materias como Algoritmia, Análisis de Algoritmos y Estructura de Datos Computacional 
+proporcionan las bases necesarias para comprender la organización y procesamiento eficiente 
+de la información dentro de un sistema informático. Estas áreas permiten estructurar 
+procedimientos computacionales capaces de analizar datos y ejecutar procesos de manera 
+optimizada, lo cual resulta esencial en el desarrollo de aplicaciones que requieren tratamiento 
+automatizado de información.  
+ 
+Según (Cormen, Leiserson, Rivest y Stein, 2009), el diseño y análisis de algoritmos constituye 
+uno de los pilares fundamentales para la construcción de sistemas computacionales eficientes, 
+ya que permite estructurar soluciones que gestionen datos de forma organizada y con un uso 
+adecuado de los recursos computacionales. En este sentido, los fundamentos algorítmicos 
+adquiridos durante la carrera permiten abordar el procesamiento de información requerido en 
+el sistema propuesto, facilitando la implementación de mecanismos automatizados para la 
+verificación de datos logísticos mediante técnicas computacionales. 
+ 
+De igual manera, asignaturas como Desarrollo de Aplicaciones, Métodos Fundamentales en 
+Construcción de Software y Arquitectura de Software aportan los principios necesarios para el 
+diseño, estructuración e implementación de sistemas informáticos que respondan a 
+necesidades específicas dentro de un entorno organizacional. Estas materias permiten 
+comprender el ciclo de vida del software, los modelos de diseño y las buenas prácticas para el 
+desarrollo de aplicaciones mantenibles y escalables. De acuerdo con (Pressman y Maxim, 
+2020), la ingeniería de software proporciona un conjunto de métodos, herramientas y 
+procedimientos que permiten desarrollar software de manera sistemática y controlada, 
+garantizando calidad y funcionalidad en las soluciones tecnológicas. En el contexto de este 
+proyecto, dichos conocimientos permiten estructurar la aplicación de escritorio propuesta 
+siguiendo principios de diseño de software, modularidad y organización de componentes, lo 
+cual contribuye a que la solución desarrollada sea clara, funcional y adecuada para el entorno 
+donde será implementada. 
+ 
+Asimismo, la formación académica en asignaturas como Sistemas de Bases de Datos, 
+Modelos de Datos e Infraestructura TIC proporciona los fundamentos necesarios para la 
+gestión, almacenamiento y organización de la información dentro de los sistemas 
+computacionales. Estas áreas permiten comprender cómo los datos pueden ser estructurados, 
+almacenados y consultados de manera eficiente dentro de una aplicación informática. Según 
+(Silberschatz, Korth y Sudarshan, 2019), los sistemas de bases de datos permiten gestionar 
+grandes volúmenes de información garantizando integridad, consistencia y accesibilidad de los 
+datos dentro de los sistemas de información. En el desarrollo del presente proyecto, estos 
+conocimientos resultan relevantes para el manejo de los datos logísticos asociados al proceso 
+de despacho de materiales, permitiendo estructurar la información que será utilizada por la 
+aplicación para su visualización y verificación dentro del sistema propuesto. 
+ 
+ 
+
+=== PAGE 24 ===
+ 
+ 
+Por otra parte, asignaturas como Sistemas Operativos, Redes de Datos y Planificación y 
+Gestión de Redes y Servicios permiten comprender el funcionamiento del entorno tecnológico 
+donde se ejecutan las aplicaciones informáticas. Estas materias abordan aspectos 
+relacionados con la administración de recursos computacionales, comunicación entre sistemas 
+y funcionamiento de infraestructuras tecnológicas. De acuerdo con (Tanenbaum y Bos, 2015), 
+los sistemas operativos constituyen el componente fundamental que permite la interacción 
+entre el hardware y las aplicaciones, gestionando los recursos del sistema y facilitando la 
+ejecución de programas dentro de un entorno computacional. En este sentido, el conocimiento 
+adquirido en estas áreas permite comprender las condiciones técnicas necesarias para la 
+ejecución de la aplicación desarrollada, garantizando que el sistema funcione de manera 
+adecuada dentro de un entorno informático real. 
+ 
+Finalmente, asignaturas como Simulación, Probabilidad y Estadística e Investigación 
+Operacional contribuyen a desarrollar habilidades analíticas para el estudio y comprensión de 
+procesos dentro de los sistemas organizacionales. Estas áreas permiten analizar información, 
+identificar patrones y comprender el comportamiento de distintos procesos mediante el uso de 
+herramientas computacionales y modelos analíticos. Según (Russell y Norvig, 2021), las 
+técnicas computacionales y los modelos de análisis de datos permiten desarrollar sistemas 
+inteligentes capaces de procesar información y apoyar la toma de decisiones en distintos 
+contextos organizacionales. En el marco del presente proyecto, estos conocimientos aportan 
+una base conceptual para comprender cómo las tecnologías de procesamiento de información, 
+particularmente aquellas relacionadas con la visión artificial, pueden utilizarse para apoyar 
+procesos operativos como la verificación de datos logísticos dentro de una organización. 
+ 
+
+=== PAGE 25 ===
+ 
+ 
+5. ALCANCES Y LIMITES (SAMUEL) 
+ 
+5.1. 
+ALCANCE PRESENTE: 
+ 
+El proyecto comprende el diseño, desarrollo y despliegue de una aplicación de escritorio para 
+la verificación automatizada de despachos logísticos mediante visión artificial, la cual será 
+instalada de forma local en un único equipo de cómputo ubicado en la Ferretería Durán, en el 
+municipio de Apulo. El sistema será concebido como una solución standalone que opera de 
+manera autónoma en el entorno donde será desplegado, sin dependencia de servidores 
+externos ni infraestructura en la nube; tanto el modelo de detección basado en YOLOv8 como 
+las demás dependencias se integrarán localmente en la aplicación. El software incluirá un 
+módulo de carga y procesamiento de facturas en formato PDF para la extracción automatizada 
+de datos de despacho, un módulo de análisis de video mediante un modelo de visión artificial 
+entrenado para la detección y conteo de materiales de construcción (cemento, tubería de 
+presión y tubería sanitaria), un módulo de almacenamiento local de registros y un módulo de 
+visualización de datos que facilite la comparación entre lo facturado y lo detectado en el análisis 
+visual. El alcance contempla el despliegue funcional del prototipo en el equipo designado, así 
+como la ejecución de pruebas controladas para validar su desempeño y consistencia en la 
+generación de información. 
+ 
+ 
+5.2. 
+ALCANCE FUTURO 
+ 
+ Integración de la aplicación con sistemas contables o ERP para sincronizar 
+automáticamente los datos de facturación y despacho. 
+ 
+ Migración de la aplicación de escritorio a una versión web o híbrida que permita 
+acceso remoto y monitoreo en tiempo real. 
+ 
+ Incorporación de almacenamiento en la nube para respaldo automático de la 
+información y análisis histórico de datos logísticos. 
+ 
+ Integración con dispositivos IoT o cámaras industriales para mejorar la calidad de 
+captura y precisión en la detección. 
+ 
+ Escalamiento del sistema para su aplicación en otras ferreterías o empresas del 
+sector comercial con procesos logísticos similares. 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 26 ===
+ 
+ 
+ 
+5.3. 
+LIMITACIONES (SAMUEL) 
+ 
+ Resistencia al cambio por parte del personal: Posible baja aceptación inicial debido 
+a la transición de procesos manuales a un sistema automatizado. 
+ 
+ Calidad y capacidad del equipo de cómputo disponible: El desempeño del sistema 
+dependerá de las especificaciones técnicas del único equipo donde será desplegado. 
+ 
+ Condiciones de iluminación y entorno físico: La precisión del modelo de visión 
+artificial puede verse afectada por factores ambientales durante el despacho. 
+ 
+ Disponibilidad limitada de datos para entrenamiento y pruebas: La efectividad del 
+modelo de visión artificial puede verse condicionada por la cantidad y variedad de 
+imágenes disponibles para su validación. 
+ 
+ Dependencia de un único equipo local: Cualquier falla técnica en el equipo podría 
+afectar temporalmente el funcionamiento de la aplicación. 
+ 
+ Dependencia del formato de factura del proveedor: El módulo de extracción de 
+datos está diseñado para interpretar una estructura específica de factura en formato 
+PDF; cualquier cambio en el diseño o disposición del documento por parte del 
+proveedor podría requerir ajustes en el procesamiento. 
+ 
+ Detección restringida a categorías específicas de productos: El modelo de visión 
+artificial estará entrenado únicamente para la detección de cemento, tubería de 
+presión y tubería sanitaria, por lo que no será aplicable a la totalidad del inventario 
+manejado por la ferretería. 
+ 
+ Oclusión y apilamiento de materiales: La precisión del conteo automatizado puede 
+verse reducida cuando los productos se encuentran parcialmente ocultos, 
+superpuestos o apilados durante el registro en video. 
+ 
+
+=== PAGE 27 ===
+ 
+ 
+ 
+6. MARCO REFERENCIAL  
+ 
+ 
+6.1. 
+ANTECEDENTES (MIGUEL) 
+ 
+En el ámbito de la detección automática de objetos para control y verificación visual, uno de 
+los desarrollos más relevantes es la evolución del modelo YOLO hacia versiones optimizadas 
+para aplicaciones prácticas. (Glenn Jocher et al, 2023) presentan la arquitectura YOLOv8 como 
+una mejora en precisión y velocidad para tareas de detección en tiempo real, destacando su 
+aplicabilidad en entornos industriales y comerciales donde se requiere conteo automático de 
+objetos. Este trabajo demuestra que los modelos de visión artificial pueden integrarse en 
+sistemas funcionales para identificar y registrar elementos visuales con alta confiabilidad. La 
+investigación evidencia que el uso de redes neuronales convolucionales permite automatizar 
+procesos tradicionalmente manuales, reduciendo errores en tareas repetitivas. Su relevancia 
+para el presente proyecto radica en la posibilidad de aplicar estos modelos en una aplicación 
+de escritorio destinada a la verificación de materiales en procesos logísticos locales. 
+ 
+En el campo de la gestión inteligente de inventarios, (Zhang et al, 2020) desarrollaron un 
+sistema basado en visión por computador y aprendizaje profundo para el monitoreo 
+automatizado de productos en almacenes, logrando mejoras significativas en precisión de 
+conteo y trazabilidad. El estudio demuestra que la detección visual automatizada puede apoyar 
+la validación de existencias y minimizar discrepancias entre registros digitales y realidad física. 
+La investigación resalta que los sistemas de visión artificial permiten estructurar datos 
+operativos en tiempo real, facilitando procesos de auditoría interna. Este antecedente es 
+pertinente porque valida el uso de modelos de detección para fortalecer la confiabilidad de 
+información logística sin depender exclusivamente de supervisión humana directa. 
+ 
+Asimismo, un estudio publicado en IEEE Access por (Liu et al, 2021) propuso un sistema de 
+conteo inteligente de objetos mediante redes neuronales profundas aplicado a entornos 
+comerciales. Los autores demostraron que la integración de algoritmos de detección con 
+interfaces gráficas de usuario mejora la capacidad de monitoreo y visualización de datos en 
+aplicaciones prácticas. El trabajo resalta la importancia de integrar procesamiento visual con 
+módulos de visualización estructurada para facilitar la toma de decisiones basada en datos 
+confiables. Este enfoque guarda relación directa con el proyecto actual, ya que se busca 
+desarrollar una aplicación de escritorio que combine detección automatizada con visualización 
+clara de la información registrada. 
+ 
+En el contexto latinoamericano, (Pérez y Rodríguez, 2022) desarrollaron un prototipo de 
+sistema de verificación de productos mediante visión artificial aplicado a pequeñas empresas 
+comerciales, evidenciando que el uso de herramientas basadas en aprendizaje profundo 
+mejora la consistencia en el registro de mercancías. La investigación subraya que las pymes 
+pueden adoptar soluciones tecnológicas accesibles sin requerir infraestructuras complejas, 
+siempre que el diseño del sistema esté adaptado a sus capacidades operativas. Este 
+antecedente es relevante porque demuestra la viabilidad técnica y económica de implementar 
+
+=== PAGE 28 ===
+ 
+ 
+soluciones de visión artificial en entornos comerciales similares al de la ferretería objeto de 
+estudio. 
+ 
+Finalmente, un estudio reciente de (Chen et al, 2023) sobre aplicaciones de visión artificial en 
+control logístico destaca que la detección automatizada de objetos permite fortalecer procesos 
+de auditoría y validación en cadenas de suministro de pequeña escala. Los autores concluyen 
+que la incorporación de modelos de detección en sistemas locales reduce inconsistencias y 
+mejora la confiabilidad de los datos operativos. La investigación reafirma que la integración de 
+inteligencia artificial con aplicaciones de escritorio constituye una alternativa viable para 
+organizaciones que buscan mejorar el control de información sin recurrir a infraestructuras 
+complejas. Este antecedente respalda la pertinencia técnica del presente proyecto, al 
+evidenciar la aplicabilidad real de la visión artificial en procesos de verificación logística. 
+ 
+ 
+6.2. 
+MARCO TEÓRICO (MIGUEL) 
+ 
+La presente investigación se ubica dentro de la corriente de la inteligencia artificial aplicada a 
+la automatización de procesos operativos mediante sistemas capaces de percibir y procesar 
+información visual. Según (Russell y Norvig, 2021), la inteligencia artificial se define como el 
+estudio de agentes que perciben su entorno y actúan racionalmente con base en el 
+procesamiento de datos. Dentro de esta disciplina, la visión por computador se ha consolidado 
+como un campo especializado orientado a la interpretación automática de imágenes y video. 
+(Szeliski, 2022) explica que la visión artificial integra modelos matemáticos, estadísticos y de 
+aprendizaje profundo para extraer características relevantes de datos visuales. En este 
+sentido, el proyecto se inscribe en la línea de sistemas inteligentes aplicados al control de 
+información logística, constituyendo una aplicación contextualizada de teorías consolidadas en 
+percepción computacional, con un enfoque práctico orientado a la verificación automatizada 
+de datos en entornos comerciales locales. 
+ 
+Uno de los fundamentos técnicos esenciales es el aprendizaje profundo, particularmente las 
+redes neuronales convolucionales (CNN), ampliamente utilizadas en tareas de reconocimiento 
+y detección de objetos. (Goodfellow, Bengio y Courville, 2016) sostienen que las CNN permiten 
+aprender representaciones jerárquicas a partir de datos visuales mediante capas 
+convolucionales que identifican patrones espaciales relevantes. Estas arquitecturas procesan 
+imágenes a través de filtros que detectan bordes, texturas y formas, facilitando la clasificación 
+y localización de objetos en una escena. Sobre esta base teórica se desarrollaron modelos de 
+detección en tiempo real como YOLO (You Only Look Once), propuesto por (Redmon et al, 
+2016), que unifica la predicción de clases y la delimitación de objetos en un solo proceso 
+computacional. Posteriormente, (Bochkovskiy, Wang y Liao, 2020) optimizaron esta 
+arquitectura en YOLOv4, mejorando la relación entre precisión y velocidad. Estas 
+contribuciones científicas fundamentan la viabilidad técnica del módulo de detección que se 
+integrará en la aplicación de escritorio propuesta. 
+ 
+Desde la perspectiva de ingeniería de software, el desarrollo de la aplicación se sustenta en 
+principios de diseño estructurado y arquitectura modular. (Pressman y Maxim, 2020) señalan 
+que un sistema bien diseñado debe dividirse en componentes funcionales claramente definidos 
+para garantizar mantenibilidad y coherencia interna. En el caso del proyecto, la arquitectura 
+contempla módulos diferenciados de captura de imagen, procesamiento mediante visión 
+
+=== PAGE 29 ===
+ 
+ 
+artificial, almacenamiento local de datos y visualización estructurada de resultados. Asimismo, 
+la (International Organization for Standardization, 2011), a través de la norma ISO/IEC 25010, 
+establece que la calidad del software debe evaluarse en términos de funcionalidad, 
+confiabilidad y precisión, atributos esenciales para sistemas que gestionan información 
+operativa. Estos principios permiten relacionar directamente los fundamentos teóricos con el 
+diseño práctico del sistema, asegurando coherencia entre teoría y desarrollo tecnológico. 
+ 
+En relación con la gestión y verificación de datos, los sistemas de información desempeñan un 
+papel central en la organización y validación de registros empresariales. Según (Laudon y 
+Laudon, 2022), los sistemas de información permiten recolectar, procesar y distribuir datos que 
+respaldan la toma de decisiones organizacionales, siendo la calidad y consistencia de la 
+información un factor determinante. En procesos logísticos como el despacho de materiales, 
+la ausencia de herramientas automatizadas puede generar discrepancias entre registros 
+digitales y realidad física. La visualización estructurada de datos, combinada con mecanismos 
+automatizados de verificación, fortalece el control interno y reduce la probabilidad de errores 
+humanos.  
+ 
+ 
+6.3. 
+MARCO CONCEPTUAL (SAMUEL) 
+ 
+Para la construcción técnica y teórica de esta investigación, resulta imprescindible unificar los 
+criterios terminológicos que explican la interacción entre la inteligencia artificial y los procesos 
+operativos en la Ferretería Durán. En esta dirección, el concepto de visión artificial se 
+constituye en un eje fundamental, La visión artificial se entiende como un área de la informática 
+que permite a las máquinas analizar imágenes y videos para identificar y extraer información 
+útil del entorno visual. Siguiendo este enfoque, el estudio examina cómo la visión por 
+computador trasciende la simple captura de imágenes y se configura como una herramienta 
+de análisis de datos en tiempo real, capaz de extraer información cuantificable y verificable a 
+partir de secuencias de video. Esta perspectiva se articula con las necesidades de la Ferretería 
+Durán, donde la percepción automática de materiales pesados demanda modelos 
+matemáticos y estadísticos que conviertan señales lumínicas en información logística 
+estructurada, útil para la toma de decisiones administrativas y el fortalecimiento del control 
+operativo. 
+ 
+En coherencia con la línea de detección de objetos, resulta fundamental delimitar el modelo 
+YOLO (You Only Look Once) como base tecnológica del sistema propuesto. Según (Redmon, 
+2016), YOLO introduce una arquitectura unificada que, a diferencia de enfoques tradicionales 
+que procesan una imagen en múltiples etapas, permite predecir simultáneamente las clases y 
+los cuadros delimitadores de los objetos en una única evaluación de la red neuronal, 
+habilitando la detección en tiempo real. Atendiendo a los avances recientes, esta investigación 
+adopta la versión YOLOv8, la cual incorpora mejoras en precisión, velocidad y capacidad de 
+generalización en escenarios con baja iluminación y materiales apilados, características 
+frecuentes en entornos ferreteros. De acuerdo con (Jocher, 2023) esta evolución de las redes 
+neuronales convolucionales ofrece una mayor adaptabilidad en contextos operativos de 
+mediana escala, lo que contribuye a mitigar las limitaciones del conteo manual de bultos de 
+cemento y varillas, proporcionando una detección más robusta para el muelle de despacho de 
+la organización. 
+ 
+
+=== PAGE 30 ===
+ 
+ 
+En relación con la gestión operativa, la logística de despacho se concibe como el conjunto de 
+actividades orientadas a asegurar que los productos lleguen al cliente final en las cantidades, 
+condiciones y tiempos acordados. Dentro de este proceso, la verificación del flujo de salida se 
+reconoce como una etapa crítica de la cadena de suministro, dado que cualquier discrepancia 
+entre lo facturado y lo cargado físicamente se traduce en pérdidas económicas directas, 
+afectación de la confiabilidad del inventario y deterioro de la trazabilidad interna. Esta 
+investigación propone, en consecuencia, el concepto de “verificación automatizada” como un 
+proceso en el que la intervención humana se reduce de manera significativa mediante el uso 
+de algoritmos de visión artificial y validación cruzada de datos. Bajo este enfoque, el sistema 
+no solo ejecuta el conteo de objetos, sino que integra el concepto de “inteligencia de flota”, 
+permitiendo que la asignación de vehículos se realice con base en el peso y volumen estimado 
+visualmente, con el fin de disminuir riesgos de sobrecarga mecánica y optimizar los costos de 
+flete en el contexto regional de Apulo. 
+ 
+Finalmente, el concepto de visualización de datos en aplicaciones de escritorio se torna 
+esencial para el diseño de la interfaz destinada al administrador de la ferretería. Un sistema de 
+información eficaz debe transformar datos brutos en representaciones gráficas y tabulares 
+significativas, que apoyen la auditoría preventiva y faciliten la interpretación de los flujos de 
+mercancía. Siguiendo esta premisa, la aplicación LogiCheck se define bajo una arquitectura 
+modular que separa la lógica de procesamiento visual de la capa de presentación, con el 
+propósito de asegurar la integridad, consistencia y mantenibilidad de los reportes generados. 
+Atendiendo a los criterios de usabilidad, la visualización estructurada de la información permite 
+contrastar los datos extraídos de facturas en formato PDF con la evidencia capturada por las 
+cámaras de seguridad, fortaleciendo la validación cruzada entre registros documentales y 
+realidad física del despacho. En concordancia con lo planteado por (Pressman, 2020), la 
+calidad del software se evalúa en función de su capacidad para ofrecer resultados precisos y 
+confiables al usuario final; por tanto, el marco conceptual de este proyecto integra la 
+rigurosidad de la ingeniería de software con las necesidades prácticas de la gestión ferretera 
+en un contexto local. 
+ 
+Variables del proyecto 
+ 
+Dentro del esquema conceptual de esta investigación, se identifican variables clave que 
+condicionan el éxito de la solución informática propuesta. La variable independiente se define 
+como la implementación del sistema de verificación automatizada basado en visión artificial 
+con el modelo YOLOv8, entendido como el factor causal que transforma los procedimientos 
+actuales de control logístico en el despacho de materiales. En correspondencia, las variables 
+dependientes se asocian con la precisión del conteo de unidades y la eficiencia en los tiempos 
+de despacho, las cuales se verán reflejadas en indicadores como reducción de discrepancias 
+entre lo facturado y lo despachado, disminución de reprocesos administrativos y mejora en la 
+trazabilidad de los movimientos de inventario. Siguiendo esta lógica, se espera que, al 
+intervenir la variable independiente mediante la automatización visual del proceso, las 
+variables de respuesta evidencien una disminución significativa del margen de error humano y 
+una mayor confiabilidad en los datos registrados. Esta relación entre variables permite medir 
+de forma objetiva el impacto del software en la rentabilidad y el control operativo de la 
+Ferretería Durán, contribuyendo a transformar un proceso predominantemente empírico en 
+una operación sustentada en evidencia técnica y registros digitales verificables. 
+ 
+
+=== PAGE 31 ===
+ 
+ 
+6.4. 
+MARCO LEGAL (MIGUEL) 
+ 
+6.4.1. Constitucional política de Colombia (1991)  
+Artículo 67: Establece que la educación es un derecho de la persona y un servicio público que 
+tiene una función social, orientada al acceso al conocimiento, la ciencia, la técnica y los demás 
+bienes y valores de la cultura. 
+Artículo 70: Señala que el Estado tiene el deber de promover y fomentar el acceso a la cultura 
+y apoyar la ciencia, la tecnología y las demás manifestaciones del conocimiento. 
+Artículo 71: Establece que el Estado promoverá la investigación científica, el desarrollo 
+tecnológico y la innovación. (República de Colombia, 1991) 
+ 
+6.4.2. Ley 527 de 1999 
+Artículo 2: Define el concepto de mensaje de datos como la información generada, enviada, 
+recibida, almacenada o comunicada por medios electrónicos 
+Artículo 6: Establece que los mensajes de datos tendrán la misma validez jurídica que los 
+documentos escritos cuando se garantice la integridad de la información. (Congreso de la 
+República de Colombia, 1999). 
+ 
+6.4.3. Ley 1341 de 2009 
+ 
+Artículo 2: Define las Tecnologías de la Información y las Comunicaciones como el conjunto 
+de recursos, herramientas y programas que permiten la recopilación, procesamiento, 
+almacenamiento y transmisión de información. (Congreso de la República de Colombia, 2009). 
+6.4.4. Ley 1581 de 2012 
+Artículo 4: Establece los principios para el tratamiento de datos personales, incluyendo 
+legalidad, finalidad, libertad, veracidad, transparencia y seguridad. (Congreso de la República 
+de Colombia, 2012). 
+ 
+6.4.5. Ley 1712 de 2014 
+Por medio de la cual se crea la Ley de Transparencia y del Derecho de Acceso a la Información 
+Pública Nacional. Esta norma promueve el acceso a la información pública y fomenta el uso 
+de herramientas tecnológicas para facilitar la gestión y consulta de información dentro de 
+entidades públicas y privadas que administren información de interés. (Congreso de la 
+República de Colombia, 2014). 
+
+=== PAGE 32 ===
+ 
+ 
+6.4.6. Ley 1978 de 2019 
+Por la cual se moderniza el sector de Tecnologías de la Información y las Comunicaciones en 
+Colombia. Esta ley fortalece el marco institucional del sector TIC y promueve el uso de 
+tecnologías digitales para mejorar la competitividad, innovación y desarrollo de procesos 
+tecnológicos dentro de las organizaciones. (Congreso de la República de Colombia, 2019). 
+ 
+ 
+6.5. 
+MARCO INSTITUCIONAL 
+ 
+La investigación se desarrolla en la Ferretería Durán, un establecimiento comercial ubicado en 
+el municipio de Apulo, Cundinamarca, dedicado a la comercialización de materiales y 
+herramientas para la construcción, mantenimiento y mejoras en el hogar. Este tipo de 
+establecimientos cumple un papel importante dentro de las economías locales, ya que facilita 
+el acceso a insumos necesarios para actividades de construcción, remodelación y 
+mantenimiento tanto en viviendas como en pequeños proyectos de infraestructura. En el caso 
+particular de la Ferretería Durán, la organización cuenta con una estructura operativa pequeña 
+conformada por aproximadamente cinco trabajadores, quienes se encargan de las actividades 
+relacionadas con la atención al cliente, la gestión de inventarios y la preparación de pedidos 
+para despacho. 
+ 
+Como ocurre en muchas pequeñas empresas comerciales, gran parte de los procesos 
+operativos se realizan mediante procedimientos manuales o con apoyo limitado de 
+herramientas tecnológicas. Estas condiciones son comunes en micro y pequeñas empresas, 
+donde la adopción de tecnologías digitales suele ser progresiva debido a factores como 
+recursos disponibles, tamaño de la organización y naturaleza de las operaciones. En este 
+contexto, la Ferretería Durán representa un escenario organizacional adecuado para el 
+desarrollo de iniciativas académicas orientadas a explorar la aplicación de herramientas 
+tecnológicas que permitan apoyar procesos operativos dentro de un entorno empresarial real. 
+Por esta razón, la organización constituye el contexto institucional en el cual se enmarca el 
+desarrollo del presente proyecto de investigación. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 33 ===
+ 
+ 
+6.6. 
+MARCO GEOGRÁFICO (MIGUEL) 
+ 
+El trabajo de investigación se desarrolla en el municipio de Apulo, ubicado en el departamento 
+de Cundinamarca, Colombia. Este municipio pertenece a la provincia del Tequendama y se 
+encuentra aproximadamente a 100 kilómetros de la ciudad de Bogotá, capital del país. Apulo 
+se caracteriza por ser un municipio de tamaño pequeño cuya actividad económica se basa 
+principalmente en el comercio local, el turismo y algunas actividades relacionadas con el sector 
+agropecuario. Debido a su ubicación dentro del departamento de Cundinamarca, el municipio 
+presenta una dinámica comercial orientada al abastecimiento de bienes y servicios para la 
+población local y visitantes. En este contexto territorial se encuentra ubicada la Ferretería 
+Durán, establecimiento comercial donde se desarrolla el presente proyecto de investigación. 
+ 
+ 
+ 
+ 
+ 
+Figura X. Ubicación geográfica del municipio de Apulo, Cundinamarca. 
+Fuente: (Wikipedia, 2026). 
+ 
+ 
+ 
+ 
+
+=== PAGE 34 ===
+ 
+ 
+ 
+6.7. 
+MARCO DEMOGRÁFICO. (MIGUEL) 
+ 
+El presente proyecto de investigación se desarrolla en el municipio de Apulo, ubicado en el 
+departamento de Cundinamarca, Colombia. De acuerdo con información del Departamento 
+Administrativo Nacional de Estadística, los municipios de tamaño pequeño en el país presentan 
+dinámicas poblacionales asociadas principalmente a actividades comerciales locales, turismo 
+y actividades agropecuarias. En este contexto, Apulo se caracteriza por ser un municipio con 
+una población relativamente reducida en comparación con los principales centros urbanos del 
+departamento, lo que influye en la organización de las actividades económicas y comerciales 
+que se desarrollan dentro del territorio (DANE, 2018). 
+ 
+Según el (Censo Nacional de Población y Vivienda, 2018), el municipio de Apulo cuenta con 
+una población aproximada de 8.000 habitantes, distribuidos entre el área urbana y rural. Una 
+parte importante de la población se concentra en el casco urbano del municipio, donde se 
+desarrollan la mayoría de las actividades comerciales y de servicios que atienden las 
+necesidades de la comunidad local y de los visitantes que llegan a la región. En esta zona 
+urbana se encuentran diferentes establecimientos comerciales que suministran bienes y 
+servicios para la población, entre ellos negocios dedicados a la comercialización de materiales 
+para construcción y mantenimiento. 
+ 
+Por otra parte, la distribución poblacional entre zonas urbanas y rurales influye en la dinámica 
+económica del municipio, ya que gran parte de la actividad comercial se concentra en el área 
+urbana, donde se ubican los principales establecimientos de comercio que abastecen a la 
+población. En este contexto demográfico operan diferentes microempresas y pequeños 
+negocios que cumplen un papel importante en el suministro de productos necesarios para la 
+comunidad. Entre estos establecimientos se encuentra la Ferretería Durán, empresa en la cual 
+se desarrolla el presente proyecto de investigación. 
+ 
+Las características demográficas de municipios como Apulo influyen en la forma en que operan 
+los pequeños establecimientos comerciales, los cuales generalmente cuentan con estructuras 
+organizacionales reducidas y procesos operativos adaptados al tamaño del mercado local. En 
+este escenario, el contexto demográfico del municipio constituye un elemento relevante para 
+comprender el entorno en el cual se desarrolla el presente proyecto y donde se plantea la 
+aplicación de herramientas tecnológicas que apoyen procesos operativos dentro de una 
+empresa comercial local. 
+ 
+ 
+ 
+
+=== PAGE 35 ===
+ 
+ 
+7. HIPÓTESIS (MIGUEL) 
+ 
+7.1 Hipótesis de trabajo 
+El desarrollo de una aplicación de escritorio que incorpore técnicas de visión artificial para la 
+visualización y verificación de materiales en el proceso de despacho de la Ferretería Durán 
+permitirá disponer de una herramienta tecnológica que apoye la revisión de los productos 
+incluidos en los pedidos, facilitando la comparación entre los materiales registrados y los 
+materiales que se preparan para su entrega. 
+ 
+7.2 Variable independiente 
+Desarrollo de una aplicación de escritorio basada en técnicas de visión artificial para la 
+visualización y verificación de materiales en el proceso de despacho de la Ferretería Durán. 
+ 
+7.3 Variables dependientes 
+7.3.1 Verificación de materiales en los pedidos   
+Correspondencia entre los materiales registrados en los pedidos y los materiales visualizados 
+durante el proceso de despacho mediante la aplicación desarrollada. 
+ 
+7.3.2 Visualización de los materiales durante el proceso de despacho 
+Posibilidad de observar y revisar los productos que se manipulan durante el despacho a través 
+de la interfaz de la aplicación. 
+ 
+7.3.3 Registro de información del proceso de despacho 
+Disponibilidad de información relacionada con los materiales observados y los pedidos 
+registrados durante el proceso de despacho dentro de la aplicación. 
+ 
+7.3.4 Apoyo al proceso de revisión de pedidos 
+Uso de la aplicación como herramienta de apoyo para revisar los materiales asociados a los 
+pedidos antes de su entrega. 
+ 
+ 
+ 
+
+=== PAGE 36 ===
+ 
+ 
+8 DISEÑO METODOLÓGICO (MIGUEL) 
+ 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+La metodología aclara –en forma muy detallada– los pasos y procedimientos utilizados 
+para llevar a cabo la investigación. Así mismo, debe incluir paso a paso la explicación 
+de todos los aspectos necesarios para reproducir o repetir la investigación, aquí debe 
+quedar muy claro el ‘cómo’ de la investigación. (Universidad de Veracruz, 2010) 
+ 
+8.1 
+ÁREA DE INVESTIGACIÓN: (MIGUEL) 
+ 
+Haga referencia al área de investigación que esté asociado el proyecto de investigación, por 
+ejemplo: Desarrollo de Software, redes, innovación, patentes, entre otros, y explique 
+brevemente la razón en un solo párrafo no mayor a 14 renglones. 
+ 
+8.2 
+LÍNEA DE INVESTIGACIÓN: (MIGUEL) 
+ 
+Este proyecto está asociado a la línea de investigación del programa de ingeniería el cual se 
+denomina: Diseño y desarrollo de software, infraestructura de Sistemas Informáticos y Gestión 
+e innovación de Sistemas Informáticos. 
+ 
+8.3 
+METODOLOGÍA DE INVESTIGACIÓN: (MIGUEL) 
+ 
+4.1.1. Tipo de investigación. 
+ 
+ 
+ 
+ 
+4.1.2. Enfoque de la investigación 
+ 
+
+=== PAGE 37 ===
+ 
+ 
+ 
+ 
+4.1.3. Carácter de la investigación 
+ 
+El carácter de la investigación hace referencia a la naturaleza y finalidad del conocimiento que 
+se pretende generar, indicando si el estudio es básico, aplicado, formativo, científico o 
+tecnológico. 
+Principales caracteres de la investigación 
+ 
+Los más usados en el ámbito universitario (especialmente en ingeniería, ciencias sociales y 
+educación) son: 
+ 
+1. Investigación de carácter básico (o fundamental) 
+ 
+ Busca generar conocimiento teórico nuevo. 
+ No persigue una aplicación inmediata. 
+ Responde a preguntas del tipo ¿por qué ocurre? o ¿cómo se explica? 
+ 
+Ejemplo: 
+Estudio teórico sobre nuevos modelos de optimización en redes de datos. 
+ 
+2. Investigación de carácter aplicado 
+ 
+ Busca resolver un problema concreto de la realidad. 
+ Usa teorías existentes para intervenir o mejorar una situación. 
+ Muy común en ingeniería y ciencias aplicadas. 
+ 
+Ejemplo: 
+Diseño de un sistema de información para optimizar la gestión académica de una universidad. 
+ 
+3. Investigación de carácter formativo 
+ 
+ Orientada al aprendizaje del proceso investigativo. 
+ Frecuente en trabajos de aula, semilleros y primeros proyectos. 
+ El énfasis está en el proceso, no necesariamente en la novedad científica. 
+ 
+
+=== PAGE 38 ===
+ 
+ 
+Ejemplo: 
+Proyecto de curso donde el estudiante aplica un método de análisis de datos sobre un caso 
+real. 
+ 
+4. Investigación de carácter científico 
+ 
+ Sigue rigurosamente el método científico. 
+ Busca validez, confiabilidad y generalización. 
+ Apunta a publicación, transferencia o aporte disciplinar. 
+ 
+Ejemplo: 
+Estudio experimental con validación estadística sobre el desempeño de un algoritmo. 
+ 
+5. Investigación de carácter tecnológico 
+ 
+ Centrada en el diseño, construcción o mejora de artefactos, sistemas o procesos. 
+ Muy común en ingeniería de sistemas. 
+ El aporte está en la solución tecnológica. 
+ 
+Ejemplo: 
+Desarrollo de una aplicación basada en IA para detección de fraudes. 
+ 
+ 
+8.4 
+POBLACIÓN Y MUESTRA (MIGUEL) 
+ 
+4.1.4. Población 
+ 
+La población de la presente investigación se identifica como una población finita compuesta 
+por los seis (6) colaboradores que integran la estructura operativa y administrativa de la 
+ferretería Duran (Dueño de la ferretería, Administrador y Auxiliares de bodega/logística). Estos 
+sujetos son los responsables de ejecutar los procesos de despacho, asignación de carga y 
+auditoría manual que el sistema LogiCheck pretende mejorar. 
+ 
+4.1.5. Muestra  
+ 
+Dado que la población es pequeña y finita (N=6), se trabajará con una muestra censal. Esto 
+significa que se incluirá al 100% de los trabajadores en las fases de recolección de 
+requerimientos, pruebas de usabilidad y validación de la optimización logística. No se extrae 
+una muestra representativa, ya que todos los sujetos son actores clave en el proceso. 
+ 
+
+=== PAGE 39 ===
+ 
+ 
+ 
+ 
+Muestra no probabilística: 
+ 
+Se desarrolló una investigación aplicada en una empresa de servicios con el propósito de 
+mejorar los tiempos de respuesta y la atención al cliente mediante el diseño de un sistema de 
+información web. 
+ 
+Para la recolección de información se utilizó una muestra no probabilística de tipo intencional, 
+conformada por funcionarios del área de atención al cliente, un supervisor operativo y algunos 
+clientes frecuentes que habían presentado quejas por demoras en el servicio. 
+ 
+Los participantes fueron seleccionados por su conocimiento directo del problema y del proceso 
+de atención, ya que el objetivo del estudio no era generalizar resultados, sino identificar fallas 
+en el flujo de información y definir los requerimientos del sistema propuesto. 
+ 
+Muestreo probabilístico: 
+ 
+Se realizó una investigación cuantitativa en una empresa de servicios con el objetivo de 
+evaluar los tiempos de respuesta y el nivel de satisfacción de los clientes antes del diseño 
+de un sistema de información web. 
+Para la recolección de datos se empleó una muestra probabilística aleatoria, seleccionada 
+a partir del registro total de clientes activos de la empresa, garantizando que todos tuvieran 
+la misma probabilidad de ser incluidos en el estudio. 
+La información se obtuvo mediante encuestas estructuradas, lo que permitió analizar 
+estadísticamente los resultados y generalizar conclusiones sobre el desempeño del 
+servicio. 
+ 
+Hernández Sampieri, R., Fernández Collado, C., & Baptista Lucio, P. (2014). Metodología de la 
+investigación (6.ª ed.). McGraw-Hill Education. 
+ 
+ 
+ 
+ 
+ 
+
+=== PAGE 40 ===
+ 
+ 
+8.5 
+TÉCNICAS E INSTRUMENTOS PARA LA RECOLECCIÓN DE LA INFORMACIÓN 
+(MIGUEL) 
+ 
+4.1.6. Técnica de recolección (cómo se recolectan los datos) 
+ 
+La técnica de recolección de datos se define como el procedimiento sistemático que utiliza el 
+investigador para obtener información relevante y válida con el fin de responder a las preguntas 
+de investigación y cumplir los objetivos del estudio. Estas técnicas permiten recopilar datos de 
+manera organizada, asegurando su confiabilidad y pertinencia según el enfoque metodológico 
+adoptado. Entre las principales técnicas de recolección de datos se encuentran la observación, 
+la entrevista, la encuesta o cuestionario, el análisis de documentos, los grupos focales y 
+las pruebas o mediciones, cuya selección depende del tipo de investigación, el diseño del 
+estudio y la naturaleza de la población (Hernández Sampieri et al., 2014). 
+ 
+Referencia bibliográfica 
+Hernández Sampieri, R., Fernández Collado, C., & Baptista Lucio, P. (2014). Metodología de 
+la investigación (6.ª ed.). McGraw-Hill Education. 
+ 
+Investigación cualitativa 
+Investigación cuantitativa 
+Entrevistas (abiertas o semiestructuradas) 
+Encuestas estructuradas 
+Grupos focales 
+Cuestionarios con escalas (Likert, diferencial 
+semántico) 
+Observación participante o no participante 
+Tests y pruebas estandarizadas 
+Análisis de documentos (informes, registros, 
+normas) 
+Registros numéricos y bases de datos 
+Diarios de campo 
+Medición de indicadores y métricas 
+Historias de vida / estudios de caso 
+Experimentos y pruebas controladas 
+ 
+ 
+4.1.7. Instrumentos de recolección (con que se recolectan los datos) 
+ 
+Los instrumentos de recolección de datos son los medios específicos y estructurados 
+que se utilizan para registrar, medir o captar información sobre las variables de estudio de 
+forma sistemática y válida. Según Hernández Sampieri, Fernández Collado y Baptista, los 
+instrumentos permiten traducir conceptos teóricos en datos observables, garantizando 
+confiabilidad y validez en la investigación. Entre los instrumentos más comunes se encuentran: 
+cuestionarios y encuestas, guías de entrevista, listas de chequeo, escalas de medición 
+(como Likert), pruebas estandarizadas, formatos de observación y registros 
+documentales, los cuales se seleccionan según el enfoque (cualitativo o cuantitativo) y los 
+objetivos del estudio (Hernández Sampieri et al., 2018). 
+ 
+4.1.8. Validación del instrumento  
+La validación del instrumento de recolección de datos es el proceso mediante el cual se 
+evalúa si un instrumento mide realmente lo que pretende medir, de manera coherente, 
+precisa y adecuada a los objetivos de la investigación. Según Hernández Sampieri, Fernández 
+
+=== PAGE 41 ===
+ 
+ 
+Collado y Baptista, la validación busca garantizar la validez y confiabilidad del instrumento 
+antes de su aplicación definitiva, reduciendo sesgos y errores en la medición de las variables 
+(Hernández Sampieri et al., 2018). 
+Tipos de validación y cómo se aplican 
+Los principales tipos de validación son: validez de contenido, que se aplica mediante el juicio 
+de expertos para evaluar la pertinencia, claridad y coherencia de los ítems; validez de 
+constructo, que verifica si el instrumento representa adecuadamente el concepto teórico, 
+usualmente mediante análisis estadístico (por ejemplo, análisis factorial); y validez de 
+criterio, que compara los resultados del instrumento con otro criterio externo o instrumento 
+previamente validado. Estas validaciones se realizan antes o durante la prueba piloto del 
+instrumento, permitiendo ajustes previos a su uso formal en la investigación (Hernández 
+Sampieri et al., 2018; Kerlinger & Lee, 2002). 
+Referencias 
+Hernández Sampieri, R., Fernández Collado, C., & Baptista Lucio, M. P. (2018). Metodología 
+de 
+la 
+investigación 
+(6.ª 
+ed.). 
+McGraw-Hill 
+Education. 
+Kerlinger, F. N., & Lee, H. B. (2002). Investigación del comportamiento: métodos de 
+investigación en ciencias sociales (4.ª ed.). McGraw-Hill. 
+8.6 
+TABULACIÓN Y ANÁLISIS DE RESULTADOS 
+La tabulación consiste en ordenar, clasificar y sistematizar los datos recolectados, 
+mientras que el análisis de resultados implica interpretar dichos datos para responder a 
+los objetivos y preguntas de investigación. Hernández Sampieri et al. señalan que esta etapa 
+transforma los datos en información significativa, permitiendo extraer conclusiones válidas y 
+fundamentadas según el enfoque metodológico adoptado (Hernández Sampieri et al., 2018). 
+En investigación cuantitativa, la tabulación se realiza mediante matrices de datos, tablas 
+y bases estadísticas, apoyadas en software como Excel o SPSS. El análisis se basa en 
+estadística descriptiva e inferencial (frecuencias, medias, correlaciones, pruebas de 
+hipótesis), con el propósito de medir variables y generalizar resultados a una población 
+(Hernández Sampieri et al., 2018). 
+En investigación cualitativa, la tabulación implica la organización de textos, audios o 
+registros de observación, generalmente mediante codificación y categorización. El 
+análisis es interpretativo, buscando identificar patrones, significados y relaciones 
+conceptuales que permitan comprender el fenómeno estudiado, más que cuantificarlo 
+(Hernández Sampieri et al., 2018; Strauss & Corbin, 2002). 
+En investigación mixta, la tabulación y el análisis integran procedimientos cuantitativos y 
+cualitativos, ya sea de forma secuencial o concurrente. Los resultados se contrastan y 
+complementan para lograr una comprensión más amplia y robusta del problema, 
+combinando medición estadística con interpretación contextual (Creswell & Plano Clark, 2018). 
+Referencias 
+Hernández Sampieri, R., Fernández Collado, C., & Baptista Lucio, M. P. (2018). Metodología 
+
+=== PAGE 42 ===
+ 
+ 
+de 
+la 
+investigación 
+(6.ª 
+ed.). 
+McGraw-Hill 
+Education. 
+Strauss, A., & Corbin, J. (2002). Bases de la investigación cualitativa. Universidad de Antioquia. 
+Creswell, J. W., & Plano Clark, V. L. (2018). Designing and conducting mixed methods research 
+(3rd ed.). SAGE Publications. 
+ 
+9 METODOLOGÍA DE DESARROLLO DE SOFTWARE 
+ 
+9.1 
+FASES DE DISEÑO DE SISTEMA (Con base en la metodología de desarrollo 
+escogida) 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+En este apartado se debe describir cómo se aplicó la metodología de desarrollo 
+seleccionada para la solución informática, explicando cada fase de diseño del sistema 
+(análisis de requerimientos, diseño, implementación, pruebas y despliegue). Si tu proyecto es 
+de software, puedes fundamentarte en metodologías ágiles como Scrum, que organiza el 
+trabajo en iteraciones cortas llamadas sprints con roles definidos y entregas incrementales, o 
+Extreme Programming (XP), que enfatiza calidad de código y retroalimentación continua; 
+también puedes aplicar Kanban o Scrumban para gestionar visualmente el flujo de tareas y 
+adaptarlas al tamaño de tu equipo (≤3 integrantes) según la naturaleza de las actividades del 
+proyecto de software. Si tu proyecto está enfocado a redes de comunicación (por ejemplo, 
+diseño de una red comunitaria), puedes justificar el uso de marcos de gestión de proyectos 
+como PMBOK® o PRINCE2, que permiten estructurar fases de planificación, ejecución, 
+monitoreo y cierre de proyectos técnicos complejos, integrando actividades de diseño de 
+topologías, configuración de equipos y pruebas de conectividad, además de gestionar alcance, 
+tiempo y recursos. 
+Referencias para consulta: 
+• 
+ Khan, A. I., Qurashi, R. J., & Khan, U. A. (2011). A Comprehensive Study of Commonly 
+Practiced Heavy and Light Weight Software Methodologies. arXiv preprint. 
+• 
+Calderón H., J. S., Jaramillo E., N. A., Vallejo C., S. M., & Bolaños G., M. E. (2017). Las 
+metodologías ágiles de ingeniería de software: Scrum, XP y Kanban y su aplicación en 
+los procesos de enseñanza–aprendizaje. ACOFI Papers. 
+• 
+Project Management Institute (PMI). (2021). Guía del PMBOK® – Séptima Edición. PMI 
+Standards. 
+• 
+Modesto Iregui, C. M. (2020). Comparación estándares PMI y PRINCE2, y su aplicación 
+a proyectos tecnológicos. UNAD Repository. 
+
+=== PAGE 43 ===
+ 
+ 
+ 
+ 
+
+=== PAGE 44 ===
+ 
+ 
+10 ANÁLISIS DEL SISTEMA ACTUAL 
+ 
+10.1 PROCESO GENERAL DEL SISTEMA  
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+En este apartado se debe describir de manera estructurada y comprensible cómo funciona 
+actualmente la organización u objeto de estudio, identificando los procesos generales que se 
+desarrollan en su interior. El propósito no es aún proponer mejoras, sino comprender y 
+documentar la realidad existente del sistema, de tal forma que el lector pueda formarse una 
+visión integral de su funcionamiento. 
+La descripción debe incluir todos los procesos relevantes, independientemente de si están 
+o no apoyados por software, si están formalmente definidos o si hacen parte directa de la 
+problemática analizada. Esto implica considerar procesos operativos, administrativos, de 
+control, de toma de decisiones y de gestión de la información, explicando cómo se ejecutan, 
+quiénes intervienen y qué información se genera o se utiliza en cada uno. 
+Asimismo, se debe explicar cómo fluye la información dentro de la organización, especificando 
+si el tratamiento de los datos se realiza de manera manual, semiautomatizada o automatizada. 
+Es importante resaltar que la ausencia de software no implica ausencia de un sistema de 
+información, ya que la información puede ser registrada, almacenada y procesada mediante 
+formatos físicos, hojas de cálculo, comunicaciones verbales o procedimientos empíricos. 
+En conjunto, esta descripción debe permitir entender cómo está configurado el sistema 
+organizacional y su sistema de información en el estado actual, sirviendo como base técnica 
+para justificar posteriormente el diseño de una solución tecnológica o de mejora de procesos. 
+ 
+10.2 DIAGNÓSTICO DEL SISTEMA ACTUAL 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+ 
+
+=== PAGE 45 ===
+ 
+ 
+En este apartado se deben identificar y describir de manera objetiva las situaciones 
+problémicas evidenciadas a partir del análisis del sistema actual. El diagnóstico no consiste 
+en proponer soluciones, sino en analizar críticamente el funcionamiento del sistema 
+existente, resaltando las debilidades, ineficiencias y limitaciones que afectan el desempeño 
+de los procesos organizacionales. 
+Se deben identificar los “cuellos de botella” presentes en los procesos, entendidos como 
+aquellas actividades, etapas o actores que generan retrasos, acumulación de trabajo, 
+reprocesos o dependencia excesiva de recursos específicos. Para cada cuello de botella, se 
+debe explicar cómo se origina, en qué parte del proceso se presenta y qué impacto tiene sobre 
+la continuidad y fluidez de las operaciones. 
+Adicionalmente, el diagnóstico debe incluir el análisis de los tiempos asociados a los 
+procesos, señalando aquellos que afectan negativamente la eficiencia y la productividad. Esto 
+implica describir tiempos de espera, tiempos muertos, demoras en la captura o validación de 
+información, retrasos en la toma de decisiones o en la entrega de resultados. Siempre que sea 
+posible, estos tiempos deben ser cuantificados o comparados (por ejemplo, tiempos promedio, 
+tiempos estimados o tiempos percibidos), explicando cómo inciden en el cumplimiento de los 
+objetivos del sistema. 
+En conjunto, este diagnóstico debe permitir comprender por qué el sistema actual no 
+responde de manera óptima a las necesidades de la organización, estableciendo una base 
+sólida y justificada para el posterior diseño de una propuesta de solución. 
+ 
+10.3 DEFINICIÓN DE CASOS DE USO 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+En este apartado se deben identificar y describir los casos de uso que representan la forma 
+en que los actores interactúan actualmente con el sistema, independientemente de que 
+dichas interacciones estén apoyadas por software, se realicen de manera manual o mediante 
+procedimientos informales. El objetivo es modelar el comportamiento real del sistema 
+existente, no el deseado ni el propuesto. 
+Cada caso de uso debe reflejar una funcionalidad observable del sistema actual, es decir, una 
+acción o conjunto de acciones que el sistema permite realizar a uno o varios actores para lograr 
+un objetivo específico dentro del proceso organizacional. Los actores pueden ser personas, 
+áreas, roles organizacionales u otros sistemas que interactúan con el flujo de información. 
+Para cada caso de uso se debe especificar, como mínimo: el nombre del caso de uso, los 
+actores involucrados, una breve descripción del objetivo, el flujo básico de eventos (cómo se 
+ejecuta actualmente el proceso), las posibles excepciones o variaciones y los resultados 
+
+=== PAGE 46 ===
+ 
+ 
+obtenidos. Esta descripción debe centrarse en qué sucede realmente, incluso si el proceso es 
+ineficiente, redundante o propenso a errores. 
+Asimismo, es importante evidenciar las limitaciones del sistema actual dentro de los casos de 
+uso, tales como dependencias manuales, validaciones informales, reprocesos, retrasos o 
+ausencia de controles automáticos. Estos elementos permitirán relacionar posteriormente los 
+casos de uso con las situaciones problémicas identificadas en el diagnóstico. 
+En conjunto, la definición de los casos de uso del sistema actual debe servir como una 
+representación funcional del estado AS-IS del sistema, facilitando la comprensión de cómo 
+operan los procesos hoy y constituyendo un insumo fundamental para el diseño de los casos 
+de uso del sistema propuesto. 
+ 
+1. Formato estándar de ficha de Caso de Uso. (Sistema actual – AS-IS) 
+Este formato le permite al estudiante describir lo que realmente ocurre, incluso si el proceso 
+es manual, informal o ineficiente. 
+Ficha de Caso de Uso – Sistema Actual 
+Nombre del caso de uso: 
+Verbo en infinitivo + objeto del proceso (ej. Registrar pedido de cliente). 
+Actor(es): 
+Persona(s), rol(es) o área(s) que interactúan con el sistema (ej. Vendedor, Auxiliar 
+administrativo). 
+Descripción: 
+Breve explicación del objetivo del caso de uso dentro del sistema actual. 
+Disparador: 
+Evento que da inicio al caso de uso (ej. llegada de un cliente, solicitud verbal). 
+Precondiciones: 
+Condiciones que deben cumplirse antes de ejecutar el caso de uso. 
+Flujo básico (flujo principal): 
+Secuencia ordenada de pasos que describen cómo se ejecuta actualmente el proceso. 
+Flujos alternos / excepciones: 
+Variaciones del flujo principal o situaciones anómalas (errores, reprocesos, demoras). 
+Postcondiciones: 
+Resultado final del caso de uso (qué queda registrado, entregado o comunicado). 
+Observaciones / limitaciones del sistema actual: 
+Problemas, dependencias manuales, riesgos, demoras o ausencia de control 
+evidenciados. 
+
+=== PAGE 47 ===
+ 
+ 
+2. Ejemplo completo.  
+Contexto: 
+Empresa comercializadora pequeña que vende productos de ferretería. No cuenta con sistema 
+informático; toda la información se maneja en formatos físicos y comunicación verbal. 
+ 
+Caso de Uso 01 – Registrar pedido de cliente (AS-IS) 
+Actor(es): 
+Vendedor 
+Cliente 
+Descripción: 
+Este caso de uso describe el proceso mediante el cual el vendedor registra manualmente el 
+pedido de un cliente en el sistema actual de la empresa, utilizando formatos físicos y 
+comunicación verbal. 
+Disparador: 
+El cliente solicita la compra de uno o varios productos en el punto de venta. 
+Precondiciones: 
+ El vendedor se encuentra disponible. 
+ Existen formatos físicos de registro de pedidos. 
+ El cliente está presente en el establecimiento. 
+Flujo básico (flujo principal): 
+ El cliente indica verbalmente los productos que desea comprar. 
+ El vendedor verifica visualmente la disponibilidad del producto en bodega. 
+ El vendedor registra el pedido en un formato físico (papel), anotando nombre del 
+producto, cantidad y precio. 
+ El vendedor calcula manualmente el valor total del pedido. 
+ El vendedor informa verbalmente el total al cliente. 
+ El pedido queda registrado en el formato físico para su posterior facturación. 
+ 
+Flujos alternos / excepciones: 
+ A1. Producto no disponible: 
+o El vendedor informa al cliente que el producto no se encuentra en inventario. 
+o El pedido se modifica o se cancela. 
+ A2. Error en el cálculo: 
+o El vendedor detecta un error en la suma. 
+o Se corrige manualmente el valor total, generando tachones en el formato. 
+ 
+
+=== PAGE 48 ===
+ 
+ 
+Postcondiciones: 
+ El pedido queda registrado en papel. 
+ El formato físico se archiva para su posterior uso en facturación y control. 
+Observaciones / limitaciones del sistema actual: 
+ El registro manual es propenso a errores de escritura y cálculo. 
+ No existe validación automática de inventarios. 
+ La información no queda centralizada ni respaldada digitalmente. 
+ La búsqueda de pedidos anteriores es lenta y depende del archivo físico. 
+ 
+Este ejemplo es para poder definir los casos de uso el sistema actual, describa los 
+necesarios asociados al proyecto. 
+10.4 DEFINICIÓN DIAGRAMA CONTEXTUAL 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+Este apartado tiene como finalidad delimitar el sistema actual dentro de su entorno, 
+identificando qué elementos pertenecen al sistema y cuáles interactúan con él desde el 
+exterior. El diagrama contextual permite comprender qué hace el sistema, con quién se 
+relaciona y qué información intercambia, antes de proponer cualquier solución o rediseño. 
+1. ¿Qué es el diagrama contextual? 
+El diagrama contextual es una representación gráfica de alto nivel que muestra el sistema 
+como un único bloque, rodeado por entidades externas (personas, áreas, organizaciones u 
+otros sistemas) con las que intercambia información. 
+🔹 No describe procesos internos 
+🔹 No muestra lógica ni flujos detallados 
+🔹 Sí muestra entradas y salidas de información 
+2. Contenido que debe incluir el apartado 
+El estudiante debe desarrollar este apartado explicando antes, durante y después del 
+diagrama, no solo dibujándolo. 
+
+=== PAGE 49 ===
+ 
+ 
+2.1 Descripción del sistema actual 
+Se debe iniciar con un párrafo que describa: 
+ 
+Nombre del sistema actual 
+ 
+Propósito general 
+ 
+Tipo de sistema (manual, mixto, automatizado) 
+ 
+Contexto organizacional en el que opera 
+Ejemplo: 
+El sistema actual de gestión de pedidos de la empresa se basa en procesos manuales 
+apoyados en formatos físicos y comunicación verbal. Su función principal es registrar las 
+solicitudes de los clientes, controlar el despacho de productos y generar información básica 
+para facturación. 
+2.2 Identificación de las entidades externas 
+En este subapartado se describen todos los actores externos que interactúan con el sistema, 
+aclarando por qué no hacen parte del sistema. 
+Las entidades externas pueden ser: 
+ 
+Personas o roles (clientes, proveedores) 
+ 
+Áreas organizacionales 
+ 
+Otras empresas 
+ 
+Sistemas externos (si existen) 
+Ejemplo: 
+ 
+Cliente: solicita productos y recibe facturas. 
+ 
+Proveedor: entrega mercancía y recibe órdenes de compra. 
+ 
+Área contable: recibe información para facturación y reportes. 
+2.3 Flujos de información de entrada 
+Se describen los datos que ingresan al sistema desde cada entidad externa. 
+Ejemplo: 
+ 
+Solicitudes de pedido del cliente. 
+ 
+Información de productos entregados por el proveedor. 
+ 
+Solicitudes de información del área contable. 
+2.4 Flujos de información de salida 
+
+=== PAGE 50 ===
+ 
+ 
+Se describen los datos que el sistema entrega al entorno. 
+Ejemplo: 
+ 
+Confirmación del pedido al cliente. 
+ 
+Registro de pagos para contabilidad. 
+ 
+Solicitudes de reposición al proveedor. 
+3. Representación gráfica del diagrama contextual 
+El estudiante debe incluir el diagrama, elaborado de forma clara, donde: 
+ 
+El sistema se represente como un solo proceso 
+ 
+Las entidades externas estén claramente identificadas 
+ 
+Los flujos de información estén rotulados 
+Ejemplo descriptivo (texto que acompaña el diagrama) 
+En el diagrama contextual del sistema actual se observa que el sistema de gestión de pedidos 
+interactúa con tres entidades externas: Cliente, Proveedor y Área Contable. El cliente envía 
+solicitudes de pedido y recibe confirmaciones; el proveedor intercambia información 
+relacionada con el abastecimiento; y el área contable recibe información para la generación de 
+facturas y reportes financieros. 
+ 
+ 
+
+=== PAGE 51 ===
+ 
+ 
+ 
+ 
+4. Aspectos clave que debe evidenciar el estudiante 
+Este apartado debe demostrar que el estudiante: 
+ 
+Comprende los límites del sistema 
+ 
+Diferencia sistema vs. entorno 
+ 
+Identifica correctamente entradas y salidas 
+ 
+Describe el sistema tal como existe (AS-IS), no como debería ser 
+5. Errores comunes que deben evitarse 
+❌ Incluir procesos internos 
+❌ Usar muchos niveles de detalle 
+❌ Confundir actores con módulos 
+❌ Proponer mejoras en este apartado 
+6. Referencias bibliográficas de consulta 
+Estas referencias pueden ser citadas por los estudiantes para sustentar el uso del diagrama 
+contextual: 
+ 
+Kendall, K. & Kendall, J. (2011). Análisis y diseño de sistemas. Pearson Educación. 
+
+=== PAGE 52 ===
+ 
+ 
+ 
+Pressman, R. (2014). Ingeniería del software: un enfoque práctico. McGraw-Hill. 
+ 
+Sommerville, I. (2016). Ingeniería de software. Pearson. 
+ 
+Yourdon, E. (1989). Análisis estructurado moderno. Prentice Hall. 
+ 
+ISO/IEC 12207:2017 – Software life cycle processes. 
+ 
+ 
+
+=== PAGE 53 ===
+ 
+ 
+11 REQUERIMIENTOS 
+ 
+11.1 PROCESO GENERAL DEL SISTEMA  
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+A partir de este apartado el estudiante deja de analizar y empieza a especificar. 
+Todo lo descrito anteriormente (análisis del sistema actual, diagnóstico, diagramas) sirve como 
+insumo para definir los requerimientos. 
+Desde aquí se responde a la pregunta: ¿Qué debe cumplir el sistema para resolver el problema 
+identificado? 
+¿Qué son los requerimientos? 
+Los requerimientos son las necesidades, condiciones y restricciones que debe cumplir 
+un sistema para satisfacer los objetivos de la organización o del usuario. Representan lo que 
+el sistema debe hacer y cómo debe comportarse, independientemente de la tecnología que 
+se utilice. 
+Los requerimientos constituyen la base del diseño, desarrollo, pruebas y validación del 
+sistema, por lo cual deben ser claros, verificables y comprensibles. 
+Hay que tener en cuenta que los requerimientos se pueden documentar de dos formas, uno a 
+través de la metodología tradicional y la otra con metodología ágil. Mostraremos cada una 
+Documentación de requerimientos – Enfoque tradicional (NO ágil) 
+Cuando se utiliza una metodología tradicional (cascada, espiral, incremental, MÉTRICA 3, 
+RUP en su forma clásica), los requerimientos se documentan de forma estructurada, 
+numerada y clasificada. 
+11.2 Clasificación general de los requerimientos 
+Independientemente de la metodología utilizada (tradicional o ágil), los requerimientos se 
+clasifican conceptualmente en los siguientes tipos: 
+4.1.9. Requerimientos funcionales 
+Describen las funciones y servicios que el sistema debe proporcionar. 
+Responden a la pregunta: ¿Qué debe hacer el sistema? 
+
+=== PAGE 54 ===
+ 
+ 
+Forma de redacción recomendada: 
+El sistema debe + acción + condición 
+Ejemplo: 
+ 
+RF-01: El sistema debe permitir registrar un nuevo cliente ingresando nombre, 
+identificación y correo electrónico. 
+ 
+RF-02: El sistema debe permitir consultar los pedidos realizados por un cliente. 
+ 
+RF-03: El sistema debe permitir modificar la información de un pedido existente. 
+ 
+4.1.10. 
+Requerimientos no funcionales 
+Describen características de calidad del sistema. 
+Responden a la pregunta: ¿Cómo debe comportarse el sistema? 
+ 
+Incluyen aspectos como: 
+ 
+Rendimiento 
+ 
+Usabilidad 
+ 
+Disponibilidad 
+ 
+Confiabilidad 
+Ejemplo: 
+ 
+RNF-01: El sistema debe responder a las consultas en un tiempo máximo de 3 
+segundos. 
+ 
+RNF-02: El sistema debe ser fácil de usar para usuarios sin conocimientos técnicos. 
+ 
+RNF-03: El sistema debe estar disponible durante el horario laboral de la empresa. 
+4.1.11. 
+Requerimientos técnicos 
+Definen restricciones tecnológicas o técnicas del sistema. 
+Ejemplo: 
+ 
+RT-01: El sistema debe desarrollarse como una aplicación web. 
+ 
+RT-02: El sistema debe utilizar una base de datos relacional. 
+ 
+RT-03: El sistema debe ser compatible con los navegadores Google Chrome y Mozilla 
+Firefox. 
+
+=== PAGE 55 ===
+ 
+ 
+ 
+4.1.12. 
+Requerimientos de reportes 
+Especifican la información que el sistema debe generar como salida estructurada. 
+Ejemplo: 
+ 
+RR-01: El sistema debe generar un reporte de ventas diarias. 
+ 
+RR-02: El sistema debe generar un reporte de inventario disponible. 
+ 
+RR-03: El sistema debe permitir exportar los reportes en formato PDF. 
+4.1.13. 
+Requerimientos de seguridad 
+Definen mecanismos de protección de la información y control de acceso. 
+Ejemplo: 
+ 
+RS-01: El sistema debe requerir autenticación de usuario mediante nombre de usuario 
+y contraseña. 
+ 
+RS-02: El sistema debe permitir la asignación de roles y permisos. 
+ 
+RS-03: El sistema debe restringir el acceso a información sensible según el rol del 
+usuario. 
+ 
+Cambio de enfoque: documentación de requerimientos con metodología ágil 
+Aquí NO cambian los requerimientos, cambia la forma de escribirlos. 
+En metodologías ágiles (Scrum, XP, Kanban, Scrumban, enfoques híbridos o ágiles 
+adaptativos), los requerimientos se expresan principalmente mediante historias de usuario y 
+artefactos equivalentes. 
+ 
+11.2.1. Requerimientos expresados como historias de usuario (Enfoque ágil) 
+Cuando se emplean metodologías ágiles (Scrum, XP), los requerimientos se expresan como 
+historias de usuario, pero siguen representando los mismos tipos de requerimientos. 
+11.2.2. Historias de usuario (equivalentes a requerimientos funcionales) 
+Una historia de usuario describe una funcionalidad desde la perspectiva del usuario. 
+Estructura básica: 
+Como [rol], quiero [funcionalidad], para [beneficio]. 
+Ejemplos (equivalentes a RF): 
+
+=== PAGE 56 ===
+ 
+ 
+• 
+HU-01: Como vendedor, quiero registrar un nuevo cliente, para poder gestionar 
+pedidos. 
+• 
+HU-02: Como usuario, quiero consultar los pedidos realizados, para hacer 
+seguimiento. 
+• 
+HU-03: Como administrador, quiero modificar pedidos, para corregir errores. 
+11.2.3 Requerimientos no funcionales en enfoque ágil 
+En ágil, estos se documentan como criterios de aceptación o restricciones globales. 
+Ejemplo: 
+• 
+Criterio de aceptación HU-01: 
+El registro del cliente debe completarse en menos de 3 segundos. 
+11.2.4 Requerimientos técnicos en enfoque ágil 
+Se documentan como restricciones técnicas del producto o historias técnicas. 
+Ejemplo: 
+• 
+HU-T-01: Como equipo de desarrollo, queremos que el sistema sea una aplicación 
+web, para facilitar su acceso desde distintos dispositivos. 
+11.2.5. Requerimientos de reportes en enfoque ágil 
+Ejemplo: 
+• 
+HU-04: Como administrador, quiero generar un reporte de ventas diarias, para 
+analizar el desempeño del negocio. 
+11.2.6. Requerimientos de seguridad en enfoque ágil 
+Ejemplo: 
+• 
+HU-05: Como administrador, quiero asignar roles y permisos, para controlar el acceso 
+al sistema. 
+Diferenciación entre metodología tradicional y ágil 
+Aspecto 
+Metodología tradicional 
+Metodología ágil 
+Forma de documentar Requerimientos numerados 
+Historias de usuario 
+Nivel de detalle 
+Alto desde el inicio 
+Evolutivo 
+Documento principal Especificación de requerimientos Backlog del producto 
+
+=== PAGE 57 ===
+ 
+ 
+Aspecto 
+Metodología tradicional 
+Metodología ágil 
+Cambio 
+Controlado 
+Continuo 
+ 
+FORMATO ESTÁNDAR DE HISTORIA DE USUARIO (USO ACADÉMICO) 
+Este formato está inspirado en: 
+• 
+Cohn, M. (2004) User Stories Applied 
+• 
+Buenas prácticas de Scrum y XP y adaptado para entornos educativos, donde se necesita 
+mayor explicitud. 
+FICHA DE HISTORIA DE USUARIO 
+Campo 
+Descripción 
+ID 
+Identificador único de la historia 
+Nombre de la historia Nombre corto y representativo 
+Rol 
+Tipo de usuario que interactúa 
+Historia de usuario 
+Redacción estándar “Como…, quiero…, para…” 
+Descripción 
+Explicación detallada de la funcionalidad 
+Criterios de aceptación Condiciones que deben cumplirse para que la historia sea válida 
+Prioridad 
+Alta / Media / Baja 
+Observaciones 
+Restricciones, notas o aclaraciones 
+ 
+EJEMPLOS COMPLETOS 
+(Aplicados a: Gestión de clientes, pedidos y reportes) 
+HISTORIA DE USUARIO 1 – Gestión de clientes 
+Campo 
+Contenido 
+ID 
+HU-01 
+Nombre 
+Gestión de clientes 
+Rol 
+Vendedor 
+Historia de 
+usuario 
+Como vendedor, quiero registrar y consultar clientes, para gestionar 
+correctamente los pedidos. 
+
+=== PAGE 58 ===
+ 
+ 
+Campo 
+Contenido 
+Descripción 
+Esta historia permite al vendedor registrar la información básica de los clientes y 
+consultarla posteriormente. El sistema debe almacenar los datos de forma 
+organizada para facilitar su uso en procesos como pedidos y reportes. 
+Criterios de 
+aceptación 
+- El sistema permite registrar nombre, identificación y correo electrónico. 
+- No permite registros con campos obligatorios vacíos. 
+- Permite consultar un cliente por identificación. 
+Prioridad 
+Alta 
+Observaciones 
+El cliente debe existir antes de registrar un pedido. 
+ 
+HISTORIA DE USUARIO 2 – Gestión de pedidos 
+Campo 
+Contenido 
+ID 
+HU-02 
+Nombre 
+Gestión de pedidos 
+Rol 
+Vendedor 
+Historia de 
+usuario 
+Como vendedor, quiero registrar y consultar pedidos, para llevar control de las 
+ventas realizadas. 
+Descripción 
+Esta historia describe la funcionalidad que permite crear pedidos asociados a 
+clientes registrados. El sistema debe permitir registrar productos, cantidades y 
+valores, así como consultar pedidos existentes. 
+Criterios de 
+aceptación 
+- El sistema permite crear un pedido asociado a un cliente. 
+- Calcula automáticamente el valor total del pedido. 
+- Permite consultar pedidos por cliente o fecha. 
+Prioridad 
+Alta 
+Observaciones 
+No se puede registrar un pedido sin cliente asociado. 
+ 
+HISTORIA DE USUARIO 3 – Generación de reportes 
+Campo 
+Contenido 
+ID 
+HU-03 
+
+=== PAGE 59 ===
+ 
+ 
+Campo 
+Contenido 
+Nombre 
+Generación de reportes 
+Rol 
+Administrador 
+Historia de usuario Como administrador, quiero generar reportes de ventas, para analizar el 
+desempeño del negocio. 
+Descripción 
+Esta historia permite generar reportes consolidados de las ventas realizadas 
+en el sistema, facilitando la toma de decisiones administrativas. 
+Criterios de 
+aceptación 
+- El sistema genera un reporte de ventas por rango de fechas. 
+- El reporte muestra total de ventas y número de pedidos. 
+- El reporte puede visualizarse en pantalla. 
+Prioridad 
+Media 
+Observaciones 
+El reporte se basa únicamente en pedidos registrados. 
+ 
+Recomendación clara para el estudiante 
+Si tu proyecto NO usa metodología ágil, documenta los requerimientos de forma estructurada 
+por tipo. 
+Si tu proyecto SÍ usa metodología ágil, documenta los requerimientos mediante historias de 
+usuario, asegurando que cubran los requerimientos funcionales, no funcionales, técnicos, de reportes 
+y de seguridad. 
+REFERENCIAS BIBLIOGRÁFICAS 
+• 
+Cohn, M. (2004). User Stories Applied. Addison-Wesley. 
+• 
+Patton, J. (2014). User Story Mapping. O’Reilly. 
+• 
+Schwaber, K., & Sutherland, J. (2020). The Scrum Guide. 
+• 
+Sommerville, I. (2016). Ingeniería de Software. Pearson. 
+ 
+ 
+
+=== PAGE 60 ===
+ 
+ 
+ 
+12 DISEÑO Y DESARROLLO DEL SISTEMA PROPUESTO 
+ 
+12.1 ARQUITECTURA DEL APLICATIVO 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+Este apartado describe cómo será construido el sistema propuesto, a partir de los 
+requerimientos definidos previamente. Aquí se pasa de qué debe hacer el sistema a cómo se 
+va a estructurar para hacerlo, sin entrar aún en código fuente. 
+El diseño debe ser coherente con los requerimientos, el contexto organizacional y las 
+capacidades técnicas del equipo. 
+¿Qué es la arquitectura del aplicativo? 
+La arquitectura del aplicativo define la estructura computacional del sistema, especificando: 
+• 
+Componentes principales 
+• 
+Responsabilidades de cada componente 
+• 
+Forma de comunicación entre ellos 
+• 
+Distribución de funciones y datos 
+La arquitectura no depende directamente de la metodología (tradicional o ágil), sino del 
+tipo de sistema, sus requerimientos y su contexto de uso. 
+Elementos que debe contener este apartado 
+El estudiante debe describir de forma clara y justificada los siguientes elementos: 
+12.1.1. Tipo de arquitectura seleccionada 
+Se debe indicar qué arquitectura se propone y por qué es adecuada. 
+Arquitecturas comunes: 
+• 
+Arquitectura en capas 
+• 
+Cliente–servidor 
+• 
+Arquitectura web 
+
+=== PAGE 61 ===
+ 
+ 
+• 
+Arquitectura monolítica 
+• 
+Arquitectura modular 
+• 
+Arquitectura basada en servicios (si aplica) 
+Ejemplo: 
+El sistema propuesto adopta una arquitectura en capas, lo cual permite separar la lógica de 
+presentación, aplicación y acceso a datos, facilitando el mantenimiento y la escalabilidad. 
+12.1.2. Descripción general de la arquitectura 
+Aquí se explica cómo está organizado el sistema a alto nivel. 
+Debe incluir: 
+• 
+Componentes principales 
+• 
+Relación entre ellos 
+• 
+Flujo general de información 
+Ejemplo: 
+La arquitectura del sistema se compone de una capa de presentación que interactúa con el 
+usuario, una capa de aplicación que gestiona la lógica del negocio y una capa de base de 
+datos encargada del almacenamiento de la información. 
+12.1.3. Componentes de la arquitectura 
+Se describen los componentes sin entrar en código. 
+Ejemplo de componentes: 
+• 
+Interfaz de usuario 
+• 
+Servicios de negocio 
+• 
+Módulo de reportes 
+• 
+Base de datos 
+Cada componente debe incluir: 
+• 
+Función 
+• 
+Responsabilidad 
+• 
+Relación con otros componentes 
+12.1.4. Diagrama de arquitectura 
+Debe incluirse un diagrama que represente: 
+• 
+Capas o componentes 
+• 
+Comunicación entre ellos 
+
+=== PAGE 62 ===
+ 
+ 
+• 
+Tecnologías generales (opcional) 
+El diagrama debe ser coherente con la descripción textual. 
+12.1.5. Justificación de la arquitectura propuesta 
+Este punto es clave para evaluación. 
+El estudiante debe explicar: 
+• 
+Por qué esta arquitectura responde a los requerimientos 
+• 
+Cómo facilita el mantenimiento 
+• 
+Cómo soporta la seguridad y escalabilidad 
+Ejemplo: 
+La arquitectura en capas permite aislar cambios en la interfaz sin afectar la lógica del negocio, 
+lo cual resulta adecuado para un sistema con posibles modificaciones futuras. 
+Errores comunes a evitar 
+❌ Confundir arquitectura con lenguaje de programación 
+❌ Describir código fuente 
+❌ Elegir arquitectura sin justificación 
+❌ Mezclar metodología con arquitectura 
+Referencias bibliográficas de consulta 
+Estas fuentes pueden ser usadas y citadas por los estudiantes: 
+• 
+Sommerville, I. (2016). Ingeniería de software. Pearson. 
+• 
+Pressman, R. (2014). Ingeniería del software: un enfoque práctico. McGraw-Hill. 
+• 
+Bass, L., Clements, P., & Kazman, R. (2013). Software Architecture in Practice. 
+Addison-Wesley. 
+• 
+ISO/IEC/IEEE 42010:2011 – Systems and software architecture. 
+• 
+Fowler, M. (2002). Patterns of Enterprise Application Architecture. Addison-Wesley. 
+12.2 DICCIONARIO DE DATOS 
+¿Qué es el Diccionario de Datos? 
+El diccionario de datos es un documento técnico que describe de manera estructurada y 
+detallada los datos que utiliza el sistema, especificando su significado, tipo, restricciones y 
+relaciones. 
+Su propósito es: 
+
+=== PAGE 63 ===
+ 
+ 
+• 
+Estandarizar el uso de la información 
+• 
+Evitar ambigüedades 
+• 
+Facilitar el desarrollo y mantenimiento 
+• 
+Servir como referencia para desarrolladores y administradores de base de datos 
+En términos formales, el diccionario de datos define la estructura lógica de la información 
+del sistema. 
+El diccionario de datos debe estar alineado con: 
+• 
+Requerimientos funcionales 
+• 
+Historias de usuario 
+• 
+Arquitectura del sistema 
+• 
+Modelo entidad–relación 
+No se inventan tablas nuevas en este apartado. Se documentan las ya definidas en el diseño. 
+¿Qué debe contener el Diccionario de Datos? 
+Como mínimo debe incluir: 
+1. Nombre de la tabla o entidad 
+2. Descripción de la tabla 
+3. Campos o atributos 
+Para cada campo debe especificarse: 
+• 
+Nombre del campo 
+• 
+Tipo de dato 
+• 
+Tamaño (si aplica) 
+• 
+Descripción 
+• 
+Llave primaria (PK) 
+• 
+Llave foránea (FK) 
+• 
+Restricciones (NOT NULL, UNIQUE, etc.) 
+Formato sugerido (tabla académica) 
+Tabla: CLIENTE 
+Campo 
+Tipo de dato Tamaño PK/FK Restricciones 
+Descripción 
+id_cliente 
+Entero 
+- 
+PK 
+NOT NULL 
+Identificador único del cliente 
+nombre 
+Texto 
+100 
+- 
+NOT NULL 
+Nombre completo del cliente 
+identificacion Texto 
+20 
+- 
+UNIQUE 
+Documento de identidad 
+
+=== PAGE 64 ===
+ 
+ 
+Campo 
+Tipo de dato Tamaño PK/FK Restricciones 
+Descripción 
+correo 
+Texto 
+100 
+- 
+- 
+Correo electrónico del cliente 
+ 
+Ejemplo aplicado: 
+Sistema propuesto contempla: 
+• 
+Gestión de clientes 
+• 
+Gestión de pedidos 
+• 
+Generación de reportes 
+El diccionario de datos debe reflejar esa estructura. 
+Tabla: CLIENTE 
+Descripción: 
+Almacena la información básica de los clientes registrados en el sistema. 
+Campo 
+Tipo 
+Tamaño PK/FK Restricción 
+Descripción 
+id_cliente 
+INT 
+- 
+PK 
+NOT NULL Identificador único del cliente 
+nombre 
+VARCHAR 100 
+- 
+NOT NULL Nombre completo 
+identificacion VARCHAR 20 
+- 
+UNIQUE 
+Número de identificación 
+correo 
+VARCHAR 100 
+- 
+- 
+Correo electrónico 
+Tabla: PEDIDO 
+Descripción: 
+Almacena la información de los pedidos realizados por los clientes. 
+Campo 
+Tipo 
+Tamaño PK/FK Restricción 
+Descripción 
+id_pedido INT 
+- 
+PK 
+NOT NULL Identificador único del pedido 
+fecha 
+DATE 
+- 
+- 
+NOT NULL Fecha del pedido 
+total 
+DECIMAL 10,2 
+- 
+NOT NULL Valor total del pedido 
+id_cliente INT 
+- 
+FK 
+NOT NULL Cliente que realiza el pedido 
+
+=== PAGE 65 ===
+ 
+ 
+Relación lógica 
+• 
+Un cliente puede tener varios pedidos. 
+• 
+Cada pedido pertenece a un solo cliente. 
+Nivel de profundidad esperado 
+El estudiante debe: 
+• 
+Documentar todas las tablas relevantes 
+• 
+Explicar relaciones principales 
+• 
+Usar tipos de datos coherentes 
+• 
+No copiar código SQL innecesario 
+Nota: El diccionario no es código, es documentación estructurada. 
+Diferencia entre modelo entidad–relación y diccionario de datos 
+Modelo ER 
+Diccionario de Datos 
+Es gráfico 
+Es descriptivo 
+Muestra relaciones Detalla atributos 
+Es conceptual 
+Es técnico-documental 
+ 
+Errores comunes que deben evitarse 
+❌ No explicar el significado de los campos 
+❌ Usar nombres ambiguos 
+❌ No indicar llaves primarias o foráneas 
+❌ Incluir campos que no aparecen en los requerimientos 
+Relación con metodología (Tradicional vs Ágil) 
+El diccionario de datos: 
+• 
+En metodología tradicional → se documenta completamente desde el diseño. 
+• 
+En metodología ágil → puede evolucionar por iteraciones, pero siempre debe existir 
+documentación técnica mínima. 
+La metodología no elimina la necesidad del diccionario; solo cambia el momento en que se 
+consolida. 
+Referencias bibliográficas recomendadas 
+
+=== PAGE 66 ===
+ 
+ 
+• 
+Date, C. J. (2019). Database Design and Relational Theory. O’Reilly. 
+• 
+Elmasri, R., & Navathe, S. (2016). Fundamentals of Database Systems. Pearson. 
+• 
+Pressman, R. (2014). Ingeniería del software. McGraw-Hill. 
+• 
+ISO/IEC 11179 – Metadata Registries. 
+• 
+Sommerville, I. (2016). Ingeniería de Software. Pearson. 
+12.3 MODELO CONCEPTUAL (ENTIDAD–RELACIÓN) 
+ 
+¿Qué es el modelo conceptual? 
+El modelo conceptual, representado comúnmente mediante un Diagrama Entidad–Relación 
+(ER), es una representación gráfica de alto nivel que describe la estructura de la información 
+del sistema, identificando: 
+• 
+Entidades principales 
+• 
+Atributos relevantes 
+• 
+Relaciones entre entidades 
+• 
+Cardinalidades 
+Su propósito es modelar la información desde una perspectiva independiente de la 
+tecnología, enfocándose en la lógica del negocio. 
+Este modelo responde a la pregunta: 
+¿Qué información necesita el sistema y cómo se relaciona? 
+¿Qué debe contener este apartado? 
+El estudiante debe incluir: 
+12.3.1. Descripción general del modelo 
+Un texto explicativo donde se indique: 
+• 
+Qué procesos soporta el modelo 
+• 
+Qué entidades principales se identificaron 
+• 
+Cómo se relacionan en términos generales 
+12.3.2. Identificación de entidades 
+Las entidades representan objetos del mundo real que almacenan información relevante. 
+Ejemplo aplicado: 
+• 
+Cliente 
+• 
+Pedido 
+• 
+Producto (si aplica) 
+
+=== PAGE 67 ===
+ 
+ 
+• 
+DetallePedido (si se requiere mayor nivel) 
+12.3.3. Identificación de atributos 
+Cada entidad debe tener atributos significativos. 
+Ejemplo: 
+Entidad: Cliente 
+Atributos: id_cliente, nombre, identificación, correo 
+12.3.4. Identificación de relaciones 
+Se deben definir las relaciones entre entidades y su cardinalidad: 
+• 
+Uno a uno (1:1) 
+• 
+Uno a muchos (1:N) 
+• 
+Muchos a muchos (N:M) 
+12.3.5. Diagrama gráfico ER (Si el diagrama es muy grande, genere un vector gráfico y 
+lo adiciona como anexo) 
+Debe incluir: 
+• 
+Entidades (rectángulos) 
+• 
+Atributos (óvalos o listados según notación) 
+• 
+Relaciones (rombos o líneas) 
+• 
+Cardinalidades claras 
+El diagrama debe ser coherente con el diccionario de datos. 
+Ejemplo articulado al sistema propuesto 
+Recordemos el ejemplo que se viene revisando en el que el sistema contempla: 
+• 
+Gestión de clientes 
+• 
+Gestión de pedidos 
+• 
+Generación de reportes 
+Descripción del modelo conceptual propuesto 
+El modelo conceptual del sistema de gestión de clientes y pedidos está compuesto por dos 
+entidades principales: Cliente y Pedido. Un cliente puede realizar múltiples pedidos, pero cada 
+pedido pertenece a un único cliente. Esta estructura permite almacenar la información 
+necesaria para soportar los procesos de ventas y generación de reportes. 
+ 
+
+=== PAGE 68 ===
+ 
+ 
+ 
+Entidades y atributos 
+Entidad: CLIENTE 
+• 
+id_cliente (PK) 
+• 
+nombre 
+• 
+identificacion 
+• 
+correo 
+Entidad: PEDIDO 
+• 
+id_pedido (PK) 
+• 
+fecha 
+• 
+total 
+• 
+id_cliente (FK conceptual) 
+ 
+Relación 
+CLIENTE realiza PEDIDO 
+Cardinalidad: 
+• 
+Un Cliente puede realizar muchos Pedidos (1:N) 
+• 
+Un Pedido pertenece a un solo Cliente 
+ 
+Representación conceptual (descripción textual) 
+CLIENTE (1) —— (N) PEDIDO 
+Si se quisiera ampliar el modelo: 
+Se podría incluir: 
+Entidad: PRODUCTO 
+Entidad: DETALLE_PEDIDO 
+Con relación: 
+PEDIDO (1) —— (N) DETALLE_PEDIDO 
+PRODUCTO (1) —— (N) DETALLE_PEDIDO 
+Esto permitiría soportar múltiples productos por pedido. 
+
+=== PAGE 69 ===
+ 
+ 
+ 12.3.5 Relación con metodología (tradicional vs ágil) 
+El modelo entidad–relación: 
+• 
+En metodología tradicional → se define completamente antes del desarrollo. 
+• 
+En metodología ágil → puede evolucionar iterativamente conforme se agregan 
+historias de usuario. 
+La metodología no elimina la necesidad del modelo conceptual; solo cambia cuándo se 
+consolida. 
+Errores comunes que deben evitarse 
+❌ Incluir tipos de datos técnicos en el modelo conceptual 
+❌ No definir cardinalidades 
+❌ Mezclar modelo conceptual con modelo físico 
+❌ No justificar las entidades elegidas 
+❌ No relacionar el modelo con los requerimientos 
+Buenas prácticas esperadas en el estudiante 
+• 
+Identificar correctamente entidades del negocio 
+• 
+Definir relaciones coherentes 
+• 
+Mantener consistencia con requerimientos e historias de usuario 
+• 
+Evitar sobre-modelar 
+Referencias bibliográficas recomendadas 
+• 
+Chen, P. (1976). The Entity-Relationship Model – Toward a Unified View of Data. ACM 
+Transactions on Database Systems. 
+• 
+Elmasri, R., & Navathe, S. (2016). Fundamentals of Database Systems. Pearson. 
+• 
+Date, C. J. (2019). Database Design and Relational Theory. O’Reilly. 
+• 
+Pressman, R. (2014). Ingeniería del software. McGraw-Hill. 
+• 
+Sommerville, I. (2016). Ingeniería de Software. Pearson. 
+12.4 DIAGRAMA DE CASOS DE USO 
+¿Qué es un Diagrama de Casos de Uso? Recordar que es del sistema propuesto. 
+El Diagrama de Casos de Uso es una representación visual que describe las interacciones 
+entre los actores del sistema y las funciones o servicios que éste ofrece. Se usa para modelar 
+comportamientos del sistema desde la perspectiva del usuario. 
+• 
+Actores: Roles que interactúan con el sistema (personas o sistemas externos). 
+• 
+Casos de uso: Funcionalidades significativas que los actores utilizan. 
+
+=== PAGE 70 ===
+ 
+ 
+Nota: Este diagrama NO describe lógica interna, algoritmos ni flujos de datos detallados: solo 
+quién usa qué funcionalidad y con qué propósito. 
+¿Qué debe contener este apartado? 
+El apartado debe incluir: 
+12.4.1. Descripción general del propósito 
+Explicar brevemente qué se modela y por qué es importante (orientación al usuario). 
+12.4.2. Identificación de actores 
+Los actores son roles que interactúan con el sistema propuesto, no las personas reales. 
+Pueden representar usuarios u otros sistemas. 
+Ejemplo (sistema propuesto): 
+• 
+Vendedor 
+• 
+Administrador 
+• 
+Cliente (si aplica interacción directa) 
+• 
+Área contable 
+12.4.3. Identificación de casos de uso 
+Los casos de uso representan funcionalidades relevantes del sistema, alineadas con los 
+requerimientos o historias de usuario. 
+Ejemplo (sistema propuesto): 
+• 
+Registrar cliente 
+• 
+Consultar cliente 
+• 
+Registrar pedido 
+• 
+Consultar pedido 
+• 
+Generar reporte de ventas 
+Los casos de uso deben describirse brevemente: 
+Registrar cliente: Permite al vendedor almacenar información de un nuevo cliente. 
+No basta con listar: se debe contextualizar qué hace cada caso de uso y qué valor aporta. 
+ 
+12.4.4. Relaciones entre actores y casos de uso 
+Establecer qué actor interactúa con cada caso de uso. 
+
+=== PAGE 71 ===
+ 
+ 
+12.4.5. Diagrama gráfico 
+Debe presentarse un diagrama que contenga: 
+• 
+Actores (figuras de “muñeco” o iconos) 
+• 
+Casos de uso (óvalos) 
+• 
+Líneas de asociación (qué actor usa cada caso) 
+• 
+Inclusiones o extensiones (si aplican) 
+• 
+Límites del sistema (rectángulo que encierra casos de uso) 
+El diagrama debe ser claro, legible y justificado. 
+Ejemplo aplicado (integrado con los apartados previos) 
+Descripción general 
+El sistema de gestión propuesto permite registrar y consultar clientes y pedidos, así como 
+generar reportes de ventas. Este diagrama de casos de uso representa las interacciones de 
+los principales actores con las funcionalidades del sistema. 
+Actores identificados 
+• 
+Vendedor: Registra y consulta clientes y pedidos. 
+• 
+Administrador: Genera reportes y administra el sistema. 
+• 
+Cliente (opcional): Consulta estado de su pedido (si el sistema lo permite). 
+Casos de uso identificados 
+Caso de Uso 
+Descripción breve 
+Registrar cliente 
+Permite registrar un nuevo cliente con datos básicos 
+Consultar cliente 
+Permite buscar clientes por identificación 
+Registrar pedido 
+Permite registrar pedidos asociados a clientes 
+Consultar pedido 
+Permite buscar pedidos existentes 
+Generar reporte de ventas Permite generar informes para análisis 
+ 
+ 
+ 
+ 
+Diagrama de Casos de Uso (descripción textual) 
+
+=== PAGE 72 ===
+ 
+ 
+            [Administrador] 
+                 | 
+                 |       ___________________________ 
+                 |        |                           | 
+                 +------| Generar reporte de ventas | 
+                          |___________________________| 
+                                                      | 
+                                                      | 
+[Vendedor]                                    | 
+  |    \_______________________| 
+  |            |     |        | 
+  |            |     |        |___________ 
+  |            |     |                    | 
+  |            |     |  __________________| 
+  |            |     | |                  | 
+  +-- Register Client         Consultar Cliente 
+  | 
+  +-- Register Order 
+  | 
+  +-- Consult Order 
+El diagrama puede elaborarse con herramientas como draw.io, Lucidchart, StarUML, Visual 
+Paradigm o Microsoft Visio. 
+¿Cómo escribir cada caso de uso? 
+Más allá del diagrama, cada caso de uso debe describirse con elementos básicos: 
+Elemento 
+Descripción 
+Nombre 
+Título descriptivo 
+Actor principal 
+Quién lo usa 
+Descripción 
+Qué hace 
+Flujo principal 
+Secuencia de pasos de interacción 
+Flujos alternos Casos secundarios o excepciones 
+Precondiciones Qué se requiere antes de iniciar 
+Postcondiciones Qué se obtiene después 
+Ejemplo descripto: 
+Caso de uso: Registrar cliente 
+
+=== PAGE 73 ===
+ 
+ 
+• 
+Actor principal: Vendedor 
+• 
+Descripción: El vendedor introduce datos de un nuevo cliente; el sistema valida y 
+guarda la información. 
+• 
+Precondición: El vendedor ha iniciado sesión en el sistema. 
+• 
+Flujo principal: 1. Vendedor selecciona “Registrar cliente” → 2. Introduce datos → 3. 
+El sistema guarda y confirma. 
+• 
+Postcondición: El cliente queda registrado en la base de datos. 
+¿Por qué es útil este diagrama? 
+• 
+Permite visualizar el alcance funcional del sistema 
+• 
+Facilita la comunicación con stakeholders 
+• 
+Sirve como base para el diseño detallado, pruebas y casos de uso técnicos 
+• 
+Es útil para planificar iteraciones en metodologías ágiles 
+Errores comunes que los estudiantes deben evitar 
+❌ Representar lógica interna o procesos detallados 
+❌ Usar actores concretos (nombres de personas) en lugar de roles 
+❌ No relacionar con los requerimientos 
+❌ Incluir casos de uso redundantes o sin propósito 
+Referencias bibliográficas 
+Aquí tienes fuentes recientes que puedes recomendar a tus estudiantes para consulta teórica 
+formal: 
+• 
+Cohn, M. (2018). User Stories Applied: For Agile Software Development. Addison-
+Wesley. 
+• 
+Leffingwell, D. (2019). Scaling Software Agility: Best Practices for Large Enterprises. 
+Addison-Wesley. 
+• 
+Denis, A., & Briggs, R. (2019). UML Distilled: A Brief Guide to the Standard Object 
+Modeling Language (3rd ed.). Addison-Wesley. 
+• 
+Larman, C., & Basili, V. (2017). Iterative and Incremental Development: A Brief History. 
+IEEE Computer. 
+• 
+ISO/IEC/IEEE 42010:2018 – Systems and software engineering — Architecture 
+description (incluye conceptos que enlazan arquitectura con casos de uso y 
+requisitos). 
+12.5 DIAGRAMAS DE CLASE 
+¿Qué es un Diagrama de Clase? 
+El Diagrama de Clase es un modelo estático que representa las clases del sistema, sus 
+atributos, métodos y las relaciones entre ellas dentro de un diseño orientado a objetos. 
+Este diagrama permite capturar: 
+
+=== PAGE 74 ===
+ 
+ 
+• 
+La estructura de datos 
+• 
+Las responsabilidades de cada clase 
+• 
+Las asociaciones, herencias y dependencias 
+Es una herramienta fundamental en el diseño detallado del sistema antes de su 
+implementación. 
+¿Para qué sirve un Diagrama de Clase? 
+El Diagrama de Clase sirve para: 
+• 
+Definir la estructura interna del software 
+• 
+Identificar responsabilidades por clase 
+• 
+Visualizar las relaciones entre clases 
+• 
+Servir de guía para la implementación del código 
+• 
+Facilitar el mantenimiento y extensibilidad 
+• 
+Integrar requisitos con diseño técnico 
+¿Qué debe contener este apartado? 
+Este apartado debe incluir: 
+12.5.1. Descripción general del diagrama 
+Un párrafo que explique: 
+• 
+Qué representa el diagrama 
+• 
+Por qué se genera 
+• 
+Cómo se relaciona con el modelo entidad–relación y los casos de uso 
+Ejemplo de texto: 
+“El diagrama de clases describe la estructura interna del sistema propuesto, mostrando las 
+clases, sus atributos, operaciones y relaciones. A partir de los casos de uso y el modelo 
+entidad–relación, este diagrama permite organizar la lógica de negocio en clases que podrán 
+implementarse en el código fuente.” 
+12.5.2. Identificación de clases principales 
+Cada clase debe identificarse con: 
+• 
+Nombre de la clase 
+• 
+Responsabilidad principal 
+• 
+Atributos 
+• 
+Métodos relevantes 
+Ejemplo de clases posibles: 
+
+=== PAGE 75 ===
+ 
+ 
+• 
+Cliente 
+• 
+Pedido 
+• 
+Reporte 
+• 
+Producto (si aplica) 
+• 
+DetallePedido 
+12.5.3. Relaciones entre clases 
+Se deben especificar: 
+• 
+Asociación (con multiplicidad) 
+• 
+Herencia (si aplica) 
+• 
+Agregación o composición (si aplica) 
+• 
+Dependencias 
+12.5.4. Diagrama gráfico de clases 
+Debe presentarse el diagrama completo, con: 
+• 
+Clases con atributos y métodos 
+• 
+Relaciones claramente identificadas 
+• 
+Multiplicidades 
+La notación puede ser UML (Unified Modeling Language). 
+12.5.5. Explicación de relaciones y decisiones de diseño 
+Después del gráfico, se debe justificar: 
+• 
+Por qué se modeló así 
+• 
+Cómo responde a los requisitos 
+• 
+Cómo se apoya en los casos de uso 
+Ejemplo aplicado al sistema propuesto 
+Descripción general 
+El Diagrama de Clase para el sistema de gestión de clientes y pedidos organiza las 
+responsabilidades del software en clases orientadas a objetos. Cada clase representa una 
+entidad significativa del dominio del sistema, con atributos y métodos que permiten gestionar 
+datos y operaciones de acuerdo con los requerimientos funcionales y casos de uso. 
+ 
+Clases principales 
+Clase: Cliente 
+
+=== PAGE 76 ===
+ 
+ 
+Elemento 
+Descripción 
+Atributos 
+idCliente: int 
+nombre: String 
+identificacion: String 
+correo: String 
+Métodos registrarCliente() 
+consultarCliente() 
+ 
+Clase: Pedido 
+Elemento 
+Descripción 
+Atributos 
+idPedido: int 
+fecha: Date 
+total: double 
+Métodos registrarPedido() 
+consultarPedido() 
+ 
+Clase: ReporteVentas 
+Elemento 
+Descripción 
+Atributos fechaInicio: Date 
+fechaFin: Date 
+Métodos generarReporte() 
+ 
+Relaciones entre clases 
+• 
+Cliente 1 ── * (uno a muchos) Pedido 
+o Un cliente puede tener múltiples pedidos. 
+• 
+Pedido depende del Cliente 
+o Cada pedido está asociado a un cliente. 
+• 
+ReporteVentas 
+o No guarda relación directa de clase con Cliente o Pedido, pero consulta 
+instancias de estas para generar análisis. 
+Diagrama de Clases (texto descriptivo) 
+
+=== PAGE 77 ===
+ 
+ 
++------------------+         +------------------+ 
+|     Cliente      | 1     * |      Pedido      | 
++------------------+         +------------------+ 
+| - idCliente      |         | - idPedido       | 
+| - nombre         |         | - fecha          | 
+| - identificacion |         | - total          | 
+| - correo         |         +------------------+ 
+| + registrar()    |         | + registrar()    | 
+| + consultar()    |         | + consultar()    | 
++------------------+         +------------------+ 
+ 
+           ^ 
+           | 
+      <<uses>> 
+           | 
++-----------------------+ 
+|    ReporteVentas      | 
++-----------------------+ 
+| - fechaInicio         | 
+| - fechaFin            | 
++-----------------------+ 
+| + generarReporte()    | 
++-----------------------+ 
+Este es un diagrama simplificado; en UML real se usarían cajas estructuradas con secciones 
+para atributos y métodos, y flechas con multiplicidad. 
+Diferencia con otros diagramas 
+Diagrama 
+Propósito 
+Modelo entidad–relación 
+Representa datos del negocio (conceptual) 
+Diagrama de casos de uso Representa interacciones usuario–sistema 
+Diagrama de clases 
+Representa estructura interna del software (objetos y relaciones) 
+ 
+Relación con requisitos y casos de uso 
+El diagrama de clases no se crea aisladamente. Debe sustentarse en: 
+• 
+Requerimientos funcionales (qué debe hacer el sistema) 
+• 
+Casos de uso (cómo se interactúa con el sistema) 
+• 
+Diccionario de datos y modelo conceptual (qué información se maneja) 
+ 
+Errores comunes que deben evitarse 
+❌ Incluir métodos sin relación con los requerimientos 
+❌ No indicar multiplicidades 
+
+=== PAGE 78 ===
+ 
+ 
+❌ Mezclar clases de presentación con clases del dominio 
+❌ No justificar decisiones de diseño 
+Referencias bibliográficas recientes 
+Aquí tienes fuentes académicas y profesionales que puedes recomendar a tus estudiantes: 
+• 
+Fowler, M. (2018). UML Distilled: A Brief Guide to the Standard Object Modeling 
+Language (3rd Edition). Addison-Wesley. 
+• 
+Larman, C., & Vodde, B. (2016). Raising the Bar with Agile Methods. Addison-Wesley 
+(capítulos sobre diseño de software orientado a objetos). 
+• 
+Ambler, S. (2018). The Object Primer: Agile Model-Driven Development with UML. 
+Cambridge University Press. 
+• 
+Perez, J., & Sun, Y. (2020). “Using UML Class Diagrams for Teaching Object-Oriented 
+Design: A Systematic Approach,” Journal of Systems and Software, Elsevier. 
+• 
+OMG. (2017). UML® 2.5.1 Specification. Object Management Group. 
+ 
+12.6 DIAGRAMAS DE COLABORACIÓN 
+¿Qué es un Diagrama de Colaboración? 
+Un Diagrama de Colaboración es un tipo de diagrama de interacción utilizado en UML 
+(Unified Modeling Language) que muestra cómo los objetos del sistema se comunican entre 
+sí para cumplir un comportamiento o flujo funcional específico, haciendo énfasis en: 
+• 
+Objetos e instancias 
+• 
+Mensajes que se intercambian 
+• 
+Secuencia de interacción 
+• 
+Estructura de relaciones entre objetos 
+A diferencia del Diagrama de Secuencia, que se enfoca en el orden temporal, el Diagrama 
+de Colaboración enfatiza la estructura de relaciones y la comunicación entre los objetos 
+durante la ejecución de una funcionalidad. 
+¿Para qué sirve este diagrama? 
+Este diagrama permite: 
+• 
+Visualizar cómo los objetos colaboran para ejecutar una función del sistema 
+• 
+Comprender la estructura de mensajes entre objetos 
+• 
+Precisar responsabilidades y dependencias entre clases/objetos 
+• 
+Servir de base para la implementación orientada a objetos 
+Beneficio clave: complementa casos de uso y diagramas de secuencia al mostrar quién 
+interactúa con quién y cómo dentro de una ejecución funcional. 
+¿Qué debe contener el apartado? 
+
+=== PAGE 79 ===
+ 
+ 
+Este apartado debe incluir los siguientes elementos: 
+12.6.1. Descripción general del propósito 
+Un párrafo introductorio donde se explique: 
+• 
+La función del diagrama 
+• 
+Cómo se relaciona con los casos de uso 
+• 
+Por qué se incluye en el diseño del sistema 
+Ejemplo de texto inicial: 
+El diagrama de colaboración describe cómo interactúan los objetos del sistema propuesto para 
+ejecutar una funcionalidad clave. Este modelo complementa los casos de uso y proporciona 
+una visión de la comunicación entre instancias durante la ejecución de un proceso del negocio. 
+12.6.2. Selección de un caso de uso representativo 
+No es necesario modelar todos los casos de uso con diagramas de colaboración (aunque 
+puede hacerse). 
+Se recomienda seleccionar uno o dos que muestren comunicación entre múltiples 
+objetos. 
+Ejemplo: 
+• 
+Registro de pedido 
+• 
+Generación de reporte de ventas 
+12.6.3. Identificación de los objetos involucrados 
+Enumera los objetos o instancias que participan en el caso de uso seleccionado. 
+Ejemplo: 
+• 
+objetoCliente 
+• 
+objetoPedido 
+• 
+objetoReporteVentas 
+• 
+objetoPersistencia (para acceso a BD) 
+12.6.4. Mensajes intercambiados entre objetos 
+Describe los mensajes (comunicación) entre objetos, con su propósito. 
+12.6.5. Diagrama gráfico de colaboración 
+Debe incluir: 
+
+=== PAGE 80 ===
+ 
+ 
+• 
+Objetos (rectángulos etiquetados con nombre de instancia:Clase) 
+• 
+Enlaces entre objetos (líneas) 
+• 
+Mensajes numerados (etiquetado con el orden y el nombre del mensaje) 
+El diagrama debe ser coherente con la funcionalidad del caso de uso seleccionado. 
+12.6.6. Explicación de la interacción 
+Un texto que describa paso a paso cómo los mensajes entre objetos producen la ejecución 
+de la funcionalidad. 
+Ejemplo aplicado (sistema de gestión de pedidos) 
+Caso de uso seleccionado: 
+Registrar pedido 
+Identificación de objetos 
+Objeto 
+Clase correspondiente 
+vendedorObj 
+Cliente (actor interno) 
+pedidoObj 
+Pedido 
+persistenciaObj ManejadorBD 
+clienteObj 
+Cliente 
+ 
+Mensajes intercambiados 
+1. vendedorObj → pedidoObj: crearPedido(datos) 
+2. pedidoObj → clienteObj: validarCliente(id) 
+3. clienteObj → pedidoObj: confirmarCliente(válido) 
+4. pedidoObj → persistenciaObj: guardarPedido(pedido) 
+5. persistenciaObj → pedidoObj: confirmarGuardado 
+6. pedidoObj → vendedorObj: notificarResultado 
+ 
+ 
+
+=== PAGE 81 ===
+ 
+ 
+Diagrama de colaboración (representación textual) 
+  vendedorObj:Cliente 
+         | 
+         | 1: crearPedido(datos) 
+         v 
+  pedidoObj:Pedido 
+         | 
+         | 2: validarCliente(id) 
+         v 
+  clienteObj:Cliente 
+         | 
+         | 3: confirmarCliente(válido) 
+         v 
+  pedidoObj:Pedido 
+         | 
+         | 4: guardarPedido(pedido) 
+         v 
+persistenciaObj:ManejadorBD 
+         | 
+         | 5: confirmarGuardado 
+         v 
+  pedidoObj:Pedido 
+         | 
+         | 6: notificarResultado 
+         v 
+  vendedorObj:Cliente 
+ 
+Explicación de la interacción 
+1. El objeto vendedorObj envía el mensaje crearPedido(datos) al objeto pedidoObj para 
+iniciar el proceso de registro de pedido. 
+2. pedidoObj solicita a clienteObj la validación de que el cliente existe (validarCliente(id)). 
+3. clienteObj responde con la confirmación de validez del cliente. 
+4. pedidoObj envía la instrucción guardarPedido(pedido) a persistenciaObj para 
+almacenar el pedido en la base de datos. 
+5. persistenciaObj confirma que el pedido fue guardado. 
+6. Finalmente, pedidoObj notifica a vendedorObj el resultado de la operación. 
+¿Cómo se diferencia del diagrama de secuencia? 
+Diagrama de Colaboración 
+Diagrama de Secuencia 
+Enfocado en la estructura de relaciones entre 
+objetos 
+Enfocado en el orden temporal de 
+mensajes 
+Resalta quién comunica con quién 
+Resalta cuándo ocurre cada mensaje 
+Mensajes numerados estructuralmente 
+Mensajes listados sobre líneas de 
+tiempo 
+
+=== PAGE 82 ===
+ 
+ 
+Ambos se complementan para un diseño completo. 
+Errores comunes que los estudiantes deben evitar 
+❌ Usar nombres ambiguos para objetos 
+❌ No numerar los mensajes 
+❌ No relacionar el diagrama con el caso de uso seleccionado 
+❌ Mezclar objetos de diseño con actores del mundo real 
+Referencias bibliográficas 
+Aquí tienes fuentes actuales que puedes recomendar: 
+• 
+Cohn, M. (2018). User Stories Applied: For Agile Software Development. Addison-
+Wesley. 
+• 
+Fowler, M. (2018). UML Distilled: A Brief Guide to the Standard Object Modeling 
+Language (3ª ed.). Addison-Wesley. 
+• 
+Larman, C. (2017). Applying UML and Patterns: An Introduction to Object-Oriented 
+Analysis and Design and Iterative Development (3ª ed.). Pearson. 
+• 
+OMG. (2017). UML® 2.5.1 Specification. Object Management Group. 
+• 
+Ambler, S. (2018). The Object Primer: Agile Model-Driven Development with UML 2.0. 
+Cambridge University Press. 
+Estas fuentes explican tanto la teoría como la práctica de diagramas de interacción y diseño 
+orientado a objetos. 
+ 
+ 
+
+=== PAGE 83 ===
+ 
+ 
+ 
+13 ANÁLISIS DE RIESGOS 
+ 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+El análisis de riesgos tiene como propósito identificar, evaluar y priorizar los eventos que 
+pueden afectar negativamente el desarrollo o implementación del sistema propuesto, 
+permitiendo definir estrategias preventivas o correctivas. 
+Este apartado debe demostrar que el estudiante: 
+• 
+Anticipa posibles amenazas 
+• 
+Evalúa su impacto 
+• 
+Propone acciones de mitigación 
+• 
+Utiliza la matriz de riesgos institucional 
+13.1 DEFINICIÓN DE ESCALAS 
+Aquí se establecen los criterios cuantitativos para medir: 
+• 
+Impacto 
+• 
+Probabilidad 
+• 
+Nivel de riesgo 
+Debe incluir: 
+1. Escala de Impacto (1–5) 
+Valor Descripción Ejemplo aplicado 
+1 
+Muy bajo 
+Retraso menor de 1 día 
+2 
+Bajo 
+Ajuste menor en requerimientos 
+3 
+Medio 
+Retraso de 1 semana 
+4 
+Alto 
+Retraso significativo en entrega 
+5 
+Muy alto 
+Paralización del proyecto 
+ 
+ 
+
+=== PAGE 84 ===
+ 
+ 
+2. Escala de Probabilidad (1–5) 
+Valor Descripción 
+1 
+Muy improbable 
+2 
+Poco probable 
+3 
+Moderado 
+4 
+Probable 
+5 
+Muy probable 
+ 
+3. Cálculo del Nivel de Riesgo 
+Fórmula estándar: 
+Riesgo = Impacto × Probabilidad 
+Esta fórmula será usada en el archivo Excel para generar la matriz gráfica. 
+13.2 IDENTIFICACIÓN DE FACTORES 
+Se deben clasificar los riesgos por categorías. 
+Factores recomendados (alineados con ISO 31000): 
+• 
+Factor Humano 
+• 
+Factor Técnico/Tecnológico 
+• 
+Factor Organizacional 
+• 
+Factor Económico 
+• 
+Factor Externo/Ambiental 
+Ejemplo aplicado al sistema de gestión de clientes y pedidos 
+  Factor Humano 
+• 
+Falta de experiencia del desarrollador en base de datos. 
+• 
+Ausencia prolongada de un miembro del equipo. 
+  Factor Técnico 
+• 
+Fallo en el servidor donde se aloja la base de datos. 
+• 
+Pérdida de información por ausencia de backups. 
+  Factor Organizacional 
+• 
+Cambios frecuentes en los requerimientos. 
+• 
+Reducción del presupuesto asignado. 
+
+=== PAGE 85 ===
+ 
+ 
+13.3 EVALUACIÓN DE RIESGOS POR FACTORES 
+Aquí se construye la tabla. 
+Ejemplo completo aplicado 
+Nº 
+Riesgo 
+Factor 
+Probabilidad Impacto 
+Nivel 
+(PxI) 
+Estrategia 
+1 Cambio frecuente de 
+requerimientos 
+Organizacional 4 
+5 
+20 
+Mitigar 
+2 Pérdida de información en 
+BD 
+Técnico 
+3 
+5 
+15 
+Prevenir 
+3 Ausencia de desarrollador 
+Humano 
+2 
+4 
+8 
+Aceptar 
+4 Falla eléctrica 
+Externo 
+2 
+3 
+6 
+Mitigar 
+ 
+Estrategias posibles 
+• 
+Prevenir 
+• 
+Mitigar 
+• 
+Transferir 
+• 
+Aceptar 
+Uso del archivo Excel: MATRIZ DE RIESGOS.xls 
+El estudiante debe: 
+1 Ingresar cada riesgo identificado 
+2 Asignar valores de impacto y probabilidad 
+3 Calcular el nivel de riesgo 
+4 Verificar la ubicación en la matriz gráfica 
+La matriz generará un gráfico tipo: 
+• 
+Zona verde → riesgo bajo 
+• 
+Zona amarilla → riesgo medio 
+• 
+Zona roja → riesgo crítico 
+Este gráfico debe incluirse como figura en el informe. 
+13.4 CONCLUSIONES DEL ANÁLISIS DE RIESGOS 
+Aquí el estudiante debe redactar: 
+• 
+Cuáles son los riesgos críticos (nivel ≥15) 
+• 
+Cuáles requieren plan inmediato 
+
+=== PAGE 86 ===
+ 
+ 
+• 
+Qué riesgos son aceptables 
+• 
+Cómo impactan el cronograma y presupuesto 
+Ejemplo de conclusión redactada 
+Del análisis realizado se identificó que el riesgo más crítico corresponde a los cambios 
+frecuentes en los requerimientos (nivel 20), lo cual puede afectar significativamente el alcance 
+y el cronograma del proyecto. Se propone implementar control formal de cambios y validación 
+periódica con el cliente. 
+El riesgo de pérdida de información en la base de datos también representa un nivel alto (15), 
+por lo cual se implementarán copias de seguridad automáticas y redundancia de 
+almacenamiento. 
+Los demás riesgos se clasifican como moderados o bajos y serán monitoreados durante el 
+ciclo de desarrollo. 
+Referencias bibliográficas 
+• 
+ISO 31000:2018. Risk Management — Guidelines. 
+• 
+PMI (2021). PMBOK Guide – Seventh Edition. Project Management Institute. 
+• 
+Hopkin, P. (2018). Fundamentals of Risk Management. Kogan Page. 
+• 
+Hillson, D. (2019). Practical Project Risk Management. Management Concepts. 
+• 
+Aven, T. (2020). Risk, Surprises and Black Swans. Routledge. 
+ 
+ 
+ 
+
+=== PAGE 87 ===
+ 
+ 
+14 ANÁLISIS DEL PROYECTO 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+Este apartado tiene como finalidad demostrar que el sistema propuesto (gestión de clientes y 
+pedidos) no solo es técnicamente viable, sino también legal, ética, económica y 
+operativamente ejecutable dentro de un tiempo determinado. 
+Debe evidenciar que el estudiante puede analizar el proyecto desde una perspectiva 
+estratégica y gerencial, no únicamente técnica. 
+14.1 ESTUDIO DE FACTIBILIDAD 
+El estudio de factibilidad determina si el proyecto puede ejecutarse con éxito considerando: 
+• 
+Recursos disponibles 
+• 
+Restricciones técnicas 
+• 
+Normativa vigente 
+• 
+Costos 
+• 
+Tiempo 
+Debe responder a la pregunta: 
+¿Es viable desarrollar e implementar el sistema propuesto? 
+14.1.1 FACTIBILIDAD TÉCNICA 
+¿Qué debe contener? 
+• 
+Tecnologías requeridas 
+• 
+Infraestructura necesaria 
+• 
+Compatibilidad con sistemas existentes 
+• 
+Conocimiento técnico del equipo 
+• 
+Riesgos técnicos identificados 
+• 
+Justificación de herramientas seleccionadas 
+ 
+ 
+
+=== PAGE 88 ===
+ 
+ 
+Ejemplo aplicado (Sistema de gestión de clientes y pedidos) 
+Tecnologías propuestas: 
+• 
+Lenguaje: Java o Python 
+• 
+Framework: Spring Boot / Django 
+• 
+Base de datos: MySQL 
+• 
+Arquitectura: Cliente-servidor en 3 capas 
+• 
+Herramientas: Git, Visual Studio Code 
+Análisis técnico: (ojo, es un ejemplo, hay que ampliar con base en los resultados de este 
+proyecto) 
+El sistema es técnicamente viable dado que las tecnologías seleccionadas son de código 
+abierto, ampliamente documentadas y compatibles con la infraestructura existente de la 
+empresa. El equipo de desarrollo cuenta con conocimientos previos en programación orientada 
+a objetos y bases de datos relacionales, lo cual reduce la curva de aprendizaje. 
+14.1.2  FACTIBILIDAD LEGAL Y ÉTICA 
+ 
+¿Qué debe contener? 
+• 
+Normativa aplicable 
+• 
+Protección de datos personales 
+• 
+Licencias de software 
+• 
+Cumplimiento ético 
+• 
+Seguridad de la información 
+Ejemplo aplicado 
+Normativa relevante (Colombia): 
+• 
+Ley 1581 de 2012 (Protección de Datos Personales) 
+• 
+Decreto 1377 de 2013 
+• 
+Política de tratamiento de datos 
+Análisis redactado: 
+El sistema almacenará datos personales (nombre, identificación y correo electrónico), por lo 
+cual debe cumplir con la Ley 1581 de 2012. Se implementarán mecanismos de autorización 
+de tratamiento de datos y políticas de privacidad. El software utilizado es de código abierto, lo 
+cual evita conflictos de licenciamiento. 
+Aspectos éticos: 
+• 
+Confidencialidad 
+• 
+Integridad de datos 
+
+=== PAGE 89 ===
+ 
+ 
+• 
+Uso responsable de información 
+14.1.3  FACTIBILIDAD ECONÓMICA (PRESUPUESTO) 
+Aquí se debe realizar una estimación detallada de costos. 
+A) Recursos Humanos (Costos de Personal) 
+Debe incluir: 
+• 
+Rol 
+• 
+Tiempo estimado 
+• 
+Valor hora 
+• 
+Costo total 
+Ejemplo: 
+Rol 
+Horas estimadas Valor/hora Costo total 
+Analista 
+40 
+$40.000 
+$1.600.000 
+Desarrollador 120 
+$35.000 
+$4.200.000 
+Tester 
+40 
+$30.000 
+$1.200.000 
+Total 
+ 
+ 
+$7.000.000 
+ 
+B) Materiales (Hardware y Software) 
+Recurso 
+Costo 
+Servidor local 
+$2.000.000 
+Licencias (si aplica) $0 (Open Source) 
+Equipos existentes $0 
+Total 
+$2.000.000 
+ 
+C) Recursos Institucionales y Financieros 
+• 
+Espacio físico 
+• 
+Servicios de internet 
+• 
+Energía eléctrica 
+• 
+Apoyo institucional 
+
+=== PAGE 90 ===
+ 
+ 
+ 
+Conclusión económica redactada: 
+El proyecto requiere una inversión aproximada de $9.000.000 COP (dato consolidado de todo 
+el proyecto), la cual es viable considerando los beneficios operativos que generará el sistema, 
+como reducción de errores manuales y optimización del tiempo de registro de pedidos. 
+14.1.4 CRONOGRAMA DE ACTIVIDADES (DIAGRAMA DE GANTT) 
+Debe incluir: 
+• 
+Lista de actividades 
+• 
+Duración estimada 
+• 
+Dependencias 
+• 
+Representación gráfica 
+Ejemplo aplicado (Es una guía, pero favor presentarlo a modo de matriz de Gantt) 
+Actividad 
+Duración 
+Semana 
+Levantamiento de requisitos 2 semanas 1–2 
+Diseño del sistema 
+2 semanas 3–4 
+Desarrollo 
+4 semanas 5–8 
+Pruebas 
+2 semanas 9–10 
+Implementación 
+1 semana 11 
+Debe presentarse el diagrama de Gantt generado en Excel o software como: 
+• 
+MS Project 
+• 
+GanttProject 
+• 
+Trello (metodología ágil) 
+• 
+Excel 
+Redacción ejemplo: 
+El cronograma establece una duración total de 11 semanas, distribuidas en fases 
+secuenciales. Las actividades de desarrollo dependen directamente de la aprobación del 
+diseño, mientras que las pruebas inician una vez se completa el módulo principal del sistema. 
+Estructura mínima que debe entregar el estudiante 
+✔ Introducción al análisis del proyecto 
+✔ Factibilidad técnica justificada 
+✔ Factibilidad legal con normativa citada 
+✔ Presupuesto detallado 
+✔ Tabla de costos 
+
+=== PAGE 91 ===
+ 
+ 
+✔ Cronograma con diagrama de Gantt 
+✔ Conclusión general de viabilidad 
+Referencias bibliográficas 
+• 
+PMI (2021). PMBOK Guide – Seventh Edition. Project Management Institute. 
+• 
+ISO 31000:2018. Risk Management Guidelines. 
+• 
+Kerzner, H. (2022). Project Management: A Systems Approach. Wiley. 
+• 
+Laudon, K., & Laudon, J. (2020). Management Information Systems. Pearson. 
+• 
+Sommerville, I. (2019). Software Engineering (10th ed.). Pearson. 
+ 
+ 
+
+=== PAGE 92 ===
+ 
+ 
+15 PRUEBAS 
+ 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+Este apartado describe el proceso de validación del sistema, especificando la planificación 
+de las pruebas, su ejecución y el análisis de los resultados obtenidos. El objetivo es verificar 
+que el sistema cumple con los requisitos funcionales y no funcionales definidos. 
+15.1  PLANIFICACIÓN DE LAS PRUEBAS 
+Antes de ejecutar las pruebas, se debe definir el alcance, los objetivos y los recursos 
+necesarios para su realización. Se identificaron los tipos de prueba a aplicar, los módulos 
+involucrados y los criterios de aceptación que permiten determinar si una prueba es exitosa o 
+fallida. 
+Para el sistema desarrollado se establecieron las siguientes condiciones previas: 
+ 
+El sistema se encontraba instalado y operativo. 
+ 
+Los datos de prueba fueron definidos previamente. 
+ 
+El entorno de pruebas fue controlado. 
+ 
+Se establecieron resultados esperados para cada prueba. 
+El propósito de esta fase fue garantizar que las pruebas se realizaran de manera 
+ordenada y objetiva, evitando improvisaciones durante su ejecución. 
+15.2 EJECUCIÓN DE LAS PRUEBAS 
+Las pruebas se realizaron siguiendo los escenarios definidos en la fase de planificación. Para 
+cada prueba se ejecutaron las acciones previstas, se registraron los datos de entrada utilizados 
+y se observó el comportamiento del sistema. 
+Durante la ejecución se tuvo en cuenta: 
+ 
+La respuesta del sistema ante datos válidos e inválidos. 
+ 
+El tiempo de respuesta. 
+ 
+La aparición de errores o mensajes del sistema. 
+ 
+El cumplimiento de los resultados esperados. 
+Cada prueba fue documentada en una tabla de resultados, indicando si el comportamiento del 
+sistema fue satisfactorio o no. 
+
+=== PAGE 93 ===
+ 
+ 
+Ejemplo de prueba aplicada 
+Tipo de prueba: Prueba funcional 
+Módulo evaluado: Registro de clientes 
+Herramienta: Prueba manual 
+Escenario de prueba: 
+Registrar un nuevo cliente con información válida. 
+Elemento 
+Descripción 
+Datos de entrada 
+Nombre, identificación, correo electrónico 
+Resultado esperado El cliente se registra correctamente 
+Resultado obtenido El cliente se registra correctamente 
+Estado 
+Exitosa 
+ 
+15.3 ANÁLISIS DE RESULTADOS (DESPUÉS DE LA PRUEBA) 
+Una vez ejecutadas las pruebas, se realizó el análisis de los resultados obtenidos, 
+comparando el resultado esperado con el resultado real. Se identificaron pruebas exitosas y 
+pruebas fallidas, así como posibles causas de los errores detectados. 
+Los resultados permitieron concluir que: 
+ 
+El módulo de registro funciona correctamente bajo condiciones normales. 
+ 
+No se presentaron errores críticos durante la ejecución. 
+ 
+El sistema cumple con los requisitos funcionales evaluados. 
+En los casos donde se presentaron fallas, estas fueron documentadas para su corrección y 
+posterior revalidación. 
+15.4 RESULTADOS GENERALES DE LAS PRUEBAS 
+En total se ejecutaron X pruebas, de las cuales: 
+ 
+X fueron exitosas. 
+ 
+X presentaron fallas. 
+Los errores detectados estuvieron relacionados principalmente con validaciones de entrada, 
+los cuales fueron corregidos y sometidos nuevamente a prueba. 
+15.5 CONCLUSIONES DE LAS PRUEBAS 
+Con base en los resultados obtenidos, se concluye que el sistema se encuentra en condiciones 
+de ser utilizado en un entorno real, cumpliendo con los requisitos establecidos. No obstante, 
+se recomienda realizar pruebas adicionales en escenarios de mayor carga y con usuarios 
+reales para fortalecer la calidad del sistema. 
+
+=== PAGE 94 ===
+ 
+ 
+16 RECOMENDACIONES 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+En primer lugar, es importante tener en cuenta que las recomendaciones de tesis deben ser 
+claras y concisas. Esto significa que debes evitar el uso de jerga o terminología técnica que 
+pueda confundir al lector. En su lugar, utiliza un lenguaje claro y simple que cualquier persona 
+pueda entender. 
+Además, debes ser específico al presentar tus recomendaciones. En lugar de simplemente decir 
+que se deben realizar más investigaciones, debes identificar áreas específicas que necesitan 
+más investigación. De esta manera, el lector tendrá una mejor comprensión de lo que se 
+necesita para mejorar la tesis. 
+Otro aspecto importante de las recomendaciones de tesis es que deben ser realistas. Esto 
+significa que debes considerar las limitaciones de tiempo, recursos y conocimientos que puedan 
+existir. Si propones una recomendación que es imposible de implementar, no será útil para el 
+estudiante. 
+También es importante que las recomendaciones de tesis sean coherentes con los objetivos y 
+la metodología del trabajo de investigación. Debes asegurarte de que tus recomendaciones se 
+basen en los resultados y conclusiones de la tesis, y no sean simplemente una lista de ideas 
+sin fundamento. (Rodriguez, 2023) 
+Este apartado no es un resumen ni una repetición de conclusiones. 
+Las recomendaciones constituyen propuestas técnicas, estratégicas y operativas orientadas 
+a: 
+• 
+Mejorar el sistema propuesto 
+• 
+Asegurar su sostenibilidad 
+• 
+Reducir riesgos futuros 
+• 
+Facilitar su escalabilidad 
+• 
+Optimizar su mantenimiento 
+Este apartado demuestra madurez profesional: el estudiante pasa de describir lo hecho a 
+proyectar mejoras fundamentadas. 
+¿Qué debe contener este apartado? 
+Debe incluir: 
+1. Recomendaciones técnicas 
+2. Recomendaciones operativas 
+
+=== PAGE 95 ===
+ 
+ 
+3. Recomendaciones organizacionales 
+4. Recomendaciones de seguridad 
+5. Recomendaciones de escalabilidad y mejora futura 
+6. Fundamentación técnica o normativa 
+No deben ser afirmaciones generales como: 
+“Se recomienda usar tecnología moderna”. 
+Deben ser recomendaciones: 
+• 
+Específicas 
+• 
+Viables 
+• 
+Argumentadas 
+• 
+Relacionadas con el análisis realizado 
+Estructura sugerida 
+Cada recomendación debe redactarse así: 
+• 
+Problema o hallazgo detectado 
+• 
+Recomendación concreta 
+• 
+Justificación técnica 
+• 
+Beneficio esperado 
+Ejemplo articulado al sistema de gestión de clientes y pedidos 
+ 
+16.1 RECOMENDACIONES TÉCNICAS (Ejemplo a continuación) 
+ 
+1. Implementar autenticación robusta y control de roles 
+Hallazgo: 
+El sistema contempla registro y consulta de datos sensibles (identificación, correo). 
+Recomendación: 
+Implementar autenticación basada en roles (RBAC) y cifrado de contraseñas con estándares 
+actuales (bcrypt o equivalente). 
+Justificación: 
+La protección de datos personales exige mecanismos de control de acceso. 
+Beneficio esperado: 
+Reducción del riesgo de acceso no autorizado y cumplimiento normativo. 
+ 
+
+=== PAGE 96 ===
+ 
+ 
+2. Implementar copias de seguridad automatizadas 
+Hallazgo: 
+En el análisis de riesgos se identificó pérdida de información como riesgo alto. 
+Recomendación: 
+Configurar backups automáticos diarios y almacenamiento externo redundante. 
+Beneficio esperado: 
+Continuidad operativa y mitigación del riesgo crítico identificado. 
+ 
+16.2 RECOMENDACIONES OPERATIVAS 
+ 
+1. Capacitación al personal 
+Hallazgo: 
+La factibilidad técnica depende del uso adecuado por parte del personal. 
+Recomendación: 
+Desarrollar un plan de capacitación de al menos 8 horas para usuarios finales. 
+Beneficio esperado: 
+Reducción de errores operativos y mayor adopción del sistema. 
+2. Establecer política de gestión de cambios 
+Hallazgo: 
+Cambios frecuentes en requerimientos fueron identificados como riesgo crítico. 
+Recomendación: 
+Implementar un procedimiento formal de control de cambios (Change Request Form). 
+Beneficio esperado: 
+Mayor estabilidad del proyecto y control del alcance. 
+ 
+16.3 RECOMENDACIONES ORGANIZACIONALES 
+ 
+1. Crear responsable interno del sistema 
+Designar un “Administrador del Sistema” encargado de: 
+• 
+Validar requerimientos futuros 
+
+=== PAGE 97 ===
+ 
+ 
+• 
+Supervisar mantenimiento 
+• 
+Gestionar actualizaciones 
+16.4 RECOMENDACIONES DE SEGURIDAD 
+• 
+Implementar HTTPS 
+• 
+Auditoría de accesos 
+• 
+Registro de logs 
+• 
+Política de contraseñas seguras 
+• 
+Actualización periódica de dependencias 
+16.5 RECOMENDACIONES DE ESCALABILIDAD 
+• 
+Migrar a arquitectura en la nube si crece la demanda 
+• 
+Implementar API REST para integración futura 
+• 
+Diseñar módulo de reportes avanzados con análisis estadístico 
+Ejemplo de redacción modelo completa (ejemplo integrado) 
+Con base en el análisis técnico, económico y de riesgos del sistema de gestión de clientes y 
+pedidos, se recomienda implementar mecanismos de autenticación basados en roles y cifrado 
+seguro de contraseñas, con el fin de garantizar la confidencialidad de los datos personales. 
+Asimismo, se sugiere establecer un plan de copias de seguridad automatizadas para mitigar 
+el riesgo identificado de pérdida de información. 
+Desde el punto de vista organizacional, se recomienda designar un responsable del sistema y 
+establecer un procedimiento formal de gestión de cambios que permita controlar 
+modificaciones futuras en los requerimientos. 
+Finalmente, se propone planificar una futura migración hacia infraestructura en la nube para 
+garantizar escalabilidad y disponibilidad del sistema. 
+Se puede presentar a modo de viñeta o de la forma última a modo de párrafo. Escoja el que 
+desee. 
+Errores que deben evitar los estudiantes 
+❌ Repetir conclusiones 
+❌ Redactar recomendaciones genéricas 
+❌ No justificar técnicamente 
+❌ No relacionarlas con riesgos o factibilidad 
+❌ Incluir opiniones sin fundamento 
+Referencias bibliográficas 
+• 
+PMI (2021). PMBOK Guide – Seventh Edition. Project Management Institute. 
+• 
+ISO/IEC 27001:2022. Information Security Management Systems. 
+
+=== PAGE 98 ===
+ 
+ 
+• 
+Kerzner, H. (2022). Project Management: A Systems Approach. Wiley. 
+• 
+Sommerville, I. (2019). Software Engineering (10th ed.). Pearson. 
+• 
+NIST (2020). Security and Privacy Controls for Information Systems and Organizations 
+(SP 800-53 Rev. 5). 
+ 
+ 
+
+=== PAGE 99 ===
+ 
+ 
+  
+17 CONCLUSIONES 
+ 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+Consta de: 
+ 
+Corresponde a la etapa final de un texto en la que se presenta la información más relevante o 
+aquello que se propone como ‘nuevo’ en el texto. En otras palabras, la conclusión es “a la que 
+se llega después de considerar una serie de datos o circunstancias” (RAE). De hecho, concluir 
+es definido como “inferir, deducir una verdad de otras que se admiten, demuestran o 
+presuponen” (RAE). Por lo tanto, la conclusión está en directa relación con algo que se admitió, 
+propuso o evidenció anteriormente en la introducción y el desarrollo del texto. Así, en la 
+conclusión se reitera la tesis que se defendió en el texto o la idea que se abordó en el trabajo; 
+se da respuesta a las preguntas iniciales o se revisa el cumplimiento de los objetivos 
+presentados a la luz de lo elaborado en el desarrollo. De esta manera, podemos concebir la 
+conclusión como un reflejo de la introducción, pero con la información nueva que el trabajo 
+desarrolla. (Gallegos, 2025) 
+ 
+ ¿Qué debe contener este apartado? 
+Debe incluir: 
+1. Verificación del cumplimiento del objetivo general 
+2. Síntesis inferencial de los hallazgos técnicos 
+3. Resultados del análisis de riesgos y factibilidad 
+4. Aportes del proyecto a la organización 
+5. Valor académico o profesional del desarrollo 
+No debe incluir recomendaciones nuevas (eso pertenece al apartado anterior). 
+Estructura sugerida 
+Se recomienda redactar entre 4 y 6 conclusiones numeradas o a modo de viñetas, cada una 
+en párrafo independiente. 
+Cada conclusión debe: 
+• 
+Conectarse con los objetivos iniciales 
+• 
+Basarse en evidencia desarrollada 
+• 
+Formular una inferencia clara 
+
+=== PAGE 100 ===
+ 
+ 
+Ejemplo articulado al sistema de gestión de clientes y pedidos, donde se haga énfasis en los 
+criterios indicados: 
+ 
+Conclusión 1 – Cumplimiento del objetivo general 
+El objetivo general del proyecto consistió en analizar, diseñar y desarrollar un sistema de 
+gestión de clientes y pedidos que optimizara los procesos administrativos de la organización. 
+A partir del levantamiento de requerimientos, el modelado conceptual, el diseño arquitectónico 
+y la evaluación de factibilidad, se evidencia que el sistema propuesto responde de manera 
+coherente a las necesidades identificadas, logrando estructurar una solución técnica viable y 
+alineada con los procesos internos de la empresa. 
+Conclusión 2 – Validez del diseño técnico 
+El diseño del sistema, fundamentado en arquitectura en capas, modelo entidad–relación y 
+diagramas UML, permitió establecer una estructura organizada y escalable. La coherencia 
+entre requerimientos, casos de uso y diagramas de clase demuestra consistencia 
+metodológica en el proceso de desarrollo. Esta alineación técnica confirma que el sistema no 
+fue concebido de manera improvisada, sino bajo principios formales de ingeniería de software. 
+Conclusión 3 – Evaluación de riesgos y factibilidad 
+El análisis de riesgos evidenció factores críticos asociados a cambios en requerimientos y 
+pérdida de información, los cuales fueron abordados mediante estrategias de mitigación 
+específicas. Asimismo, el estudio de factibilidad técnica, legal y económica confirmó la 
+viabilidad del proyecto, considerando recursos disponibles y cumplimiento normativo en 
+materia de protección de datos personales. Esto demuestra que la solución no solo es 
+funcional, sino también sostenible y legalmente adecuada. 
+Conclusión 4 – Impacto organizacional 
+La implementación del sistema propuesto permite reducir errores manuales, mejorar tiempos 
+de registro y facilitar la generación de reportes para la toma de decisiones. Desde una 
+perspectiva organizacional, el proyecto contribuye a la modernización de procesos internos y 
+fortalece la gestión de información estructurada, lo cual representa un avance significativo 
+frente al manejo manual previamente identificado. 
+Conclusión 5 – Aporte formativo y metodológico 
+El desarrollo del proyecto integró análisis, diseño, evaluación de riesgos y planificación, 
+evidenciando la aplicación práctica de principios de ingeniería de software y gestión de 
+proyectos. Esta integración metodológica confirma que la solución no solo cumple con una 
+necesidad empresarial, sino que también refleja una apropiación académica rigurosa de 
+herramientas conceptuales y técnicas. 
+Errores que deben evitar los estudiantes 
+
+=== PAGE 101 ===
+ 
+ 
+❌ Repetir literalmente partes del desarrollo 
+❌ Incluir recomendaciones nuevas 
+❌ Usar frases vagas (“se logró todo satisfactoriamente”) 
+❌ Hacer conclusiones demasiado extensas 
+❌ No relacionarlas con objetivos iniciales 
+ 
+ 
+
+=== PAGE 102 ===
+ 
+ 
+18 REFERENCIAS BIBLIOGRÁFICAS 
+ 
+Coyle, J. J. (2021). Supply Chain Management: A Logistics Perspective (11th ed.). Obtenido de Cengage 
+Learning.: 
+https://faculty.cengage.com/works/9780357442135?_gl=1*dmn77r*_ga*MTgyNTMzMzUwMy
+4xNzcyMTU3NTYy*_ga_668HWQ0W99*czE3NzIxNTc1ODIkbzEkZzAkdDE3NzIxNTc3MjgkajYwJG
+wwJGgw*_fplc*bGIlMkZSMEwxdExuekxXRGx0d0NNMjRMWHpGMUdhb1hOZSUyQkQlMkJBaT
+Q2ZFYyamFNRDVzJTJGVVQwRU1OaWR 
+Davis, D. (2000). http://ri.uaemex.mx. (T. editores., Ed.) Recuperado el 23 de Enero de 2025, de 
+http://ri.uaemex.mx/bitstream/handle/20.500.11799/103743/secme-
+27284_1.pdf?sequence=1#:~:text=Se%20refiere%20a%20la%20ubicaci%C3%B3n,o%20se%20r
+ealiza%20la%20investigaci%C3%B3n. 
+Enago Academy. (22 de Enero de 2025). https://www.enago.com. Obtenido de 
+https://www.enago.com/academy/latam/write-thesis-statement/ 
+Gallegos, P. C. (2025). https://comunicacionacademica.uc.cl. (C. P. Lobato, Ed.) Recuperado el 24 de 
+Enero de 2025, de https://comunicacionacademica.uc.cl: 
+https://comunicacionacademica.uc.cl/images/recursos/espanol/escritura/recurso_en_pdf_ext
+enso/17_Como_elaborar_una_conclusion.pdf 
+Hernández, R., Fernández, C., & Baptista, P. (2014). http://ri.uaemex.mx. (M. Hill, Ed.) Obtenido de 
+http://ri.uaemex.mx/bitstream/handle/20.500.11799/103743/secme-
+27284_1.pdf?sequence=1#:~:text=Se%20refiere%20a%20la%20ubicaci%C3%B3n,%3A%20mun
+icipio%2C%20ciudad%2C%20pa%C3%ADs. 
+Instituto Colombiano de Normas Técnicas y Certificación (ICONTEC). (16 de Marzo de 2022). 
+ecollection-icontec-org.unipiloto.basesdedatosezproxy.com. Obtenido de ecollection-icontec-
+org.unipiloto.basesdedatosezproxy.com: https://ecollection-icontec-
+org.unipiloto.basesdedatosezproxy.com/pdfview/viewer.aspx?locale=es-
+ES&Q=A465F2DDA6B0FDB83A33B01BCED1EBDEC9E021851AB8BA96&Req= 
+Instituto PACCELLY. (2025). https://sbbd9736625373ac7.jimcontent.com. Recuperado el 23 de Enero 
+de 2025, de 
+https://sbbd9736625373ac7.jimcontent.com/download/version/1573572800/module/169269
+68196/name/CAP%C3%8DTULO%205.pdf 
+Ivanov, D. (2021). Global Supply Chain and Operations Management: A Decision-Oriented Introduction 
+to the Creation of Value. . Obtenido de Springer Nature.: 
+https://link.springer.com/book/10.1007/978-3-030-72331-6 
+
+=== PAGE 103 ===
+ 
+ 
+Jocher, G. C. (2023). Ultralytics YOLOv8 (Version 8.0) [Software]. . Obtenido de Ultralytics. : 
+https://github.com/ultralytics/ultralytics 
+Muñoz, A. G. (2016). https://www.ucm.es. Obtenido de https://www.ucm.es: 
+https://www.ucm.es/data/cont/media/www/pag-135806/4%20el-desarrollo.pdf 
+Pressman, R. S. (2020). Software engineering: A practitioner’s approach (9th ed.). . Obtenido de 
+McGraw-Hill Education. : https://www.mheducation.com/highered/product/software-
+engineering-practitioner-s-approach-pressman-maxim/M9781259872976.html 
+Redmon, J. D. (2016). You only look once: Unified, real-time object detection. Obtenido de Proceedings 
+of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR).: 
+https://arxiv.org/abs/1506.02640 
+Rivera, G. P. (Mayo de 1998). www.uv.mx. Recuperado el 23 de Enero de 2025, de 
+https://www.uv.mx/apps/bdh/investigacion/documents/2/Marco_Teorico_Referencial.pdf 
+Rodriguez, V. (3 de Mayo de 2023). https://es.linkedin.com. Obtenido de 
+https://es.linkedin.com/pulse/consejos-y-mejores-pr%C3%A1cticas-para-redactar-de-tesis-
+inincim 
+Torres, R. A., & Monroy, M. J. (13 de Octubre de 2020). Universidad Autónoma del Estado de Hidalgo. 
+Obtenido de 
+https://repository.uaeh.edu.mx/revistas/index.php/atotonilco/article/download/5265/9468/ 
+Universidad Autónoma del Estado de México. (s.f.). http://ri.uaemex.mx. Recuperado el 23 de Enero 
+de 2025, de http://ri.uaemex.mx/bitstream/handle/20.500.11799/103743/secme-
+27284_1.pdf?sequence=1#:~:text=Se%20refiere%20a%20la%20ubicaci%C3%B3n,o%20se%20r
+ealiza%20la%20investigaci%C3%B3n. 
+Universidad de Veracruz. (11 de Febrero de 2010). www.uv.mx. Obtenido de 
+https://www.uv.mx/veracruz/insting/files/2013/02/propuesta-de-protocolo-final.doc 
+Universidad del ISTMO. (2025). https://cmsudi.udelistmo.edu. Recuperado el 23 de Enero de 2025, de 
+https://cmsudi.udelistmo.edu: 
+https://cmsudi.udelistmo.edu/sites/default/files/formato_inscripcion_y_guia_de_tesis.pdf 
+Universidad para la Cooperación Internacional. (4 de Junio de 2015). www.ucipfg.com. Obtenido de 
+www.ucipfg.com/Repositorio: https://www.ucipfg.com/Repositorio/MAP/MAPD-
+12/BLOQUE_ACADEMICO/UNIDAD_1/002.pdf 
+ Departamento Administrativo Nacional de Estadística. (2018). Censo nacional de población y 
+vivienda 2018. 
+https://www.dane.gov.co/index.php/estadisticas-por-tema/demografia-y-poblacion 
+ 
+
+=== PAGE 104 ===
+ 
+ 
+ 
+ 
+
+=== PAGE 105 ===
+ 
+ 
+ANEXOS 
+ 
+ 
+Fuente y tamaño: Texto en Arial – 12; Interlineado: sencillo; Titulo: debe comenzar en una 
+hoja independiente; Contenido: El texto debe llegar hasta el margen inferior establecido; Evitar 
+subtítulos solos al final de la página; redactar en forma interpersonal (tercera persona del 
+singular); Numeración de páginas: consecutiva y en números arábigos (cubierta y portada se 
+cuentan, pero no se numeran). Nota: Presentación del documento con la norma ICONTEC, 
+citas y referencias con la norma APA. 
+ 
+ 

@@ -605,3 +605,23 @@ QDialog {
     font-family: 'Consolas', monospace;
     font-size: 12px;
 }
+
+/* --- Audit Result Badge --- */
+#auditResultBadge {
+    font-size: 13px;
+    font-weight: 900;
+    color: #6c7086;
+    background: transparent;
+    border-radius: 6px;
+    padding: 2px 8px;
+}
+#auditResultBadge[result="CONFORME"]     { color: #a6e3a1; background: rgba(166,227,161,0.10); }
+#auditResultBadge[result="DISCREPANCIA"]{ color: #f38ba8; background: rgba(243,139,168,0.10); }
+
+/* --- Comparison Table (small, compact) --- */
+QTableWidget#comparisonTable {
+    background-color: #11111b;
+    border: 1px solid #313244;
+    border-radius: 8px;
+    font-size: 11px;
+}

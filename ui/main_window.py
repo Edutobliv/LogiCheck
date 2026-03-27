@@ -20,6 +20,12 @@ from core import logger as app_logger
 from ui.users_page import UsersPage
 from ui.logs_page import LogsPage
 from core.yolo_manager import YoloAnalyzerWorker, VideoPlayerWorker
+import torch
+import winsound
+from core.audit_store import (save_audit, get_audits, get_dashboard_stats, 
+                             init_audits_table, get_monthly_trends)
+from ui.trend_chart import ModernTrendChart
+from core.report_exporter import export_excel, export_pdf
 
 
 class ScrubThumbnailWidget(QFrame):
@@ -237,6 +243,9 @@ class StatCard(GlowCard):
         self.anim.valueChanged.connect(update_val)
         self.anim.setEasingCurve(QEasingCurve.OutQuart)
         self.anim.start()
+
+
+
 
 
 class ToastNotification(QFrame):
@@ -539,16 +548,52 @@ class MainWindow(QMainWindow):
         
         root_layout.addWidget(self.content_area)
         
-        # --- Status bar ---
-        status = QStatusBar()
-        status.setObjectName("statusBar")
+        # --- Status bar con indicador GPU ---
+        self._status_bar = QStatusBar()
+        self._status_bar.setObjectName("statusBar")
         _role_display = get_role_display(self._role)
-        status.showMessage(f"  ✅ Sistema listo  |  LogiCheck v1.2  |  Usuario: {self._user.get('full_name', '')}  |  Rol: {_role_display}")
-        self.setStatusBar(status)
+        self._status_bar.showMessage(f"  ✅ Sistema listo  |  LogiCheck v1.2  |  Usuario: {self._user.get('full_name', '')}  |  Rol: {_role_display}")
+        self.setStatusBar(self._status_bar)
+
+        # ── GPU Status widget en la statusbar (derecha) ───────
+        self._lbl_gpu = QLabel("🔵 CPU")
+        self._lbl_gpu.setStyleSheet("font-size: 11px; color: #6c7086; padding: 0 10px;")
+        self._status_bar.addPermanentWidget(self._lbl_gpu)
+        self._gpu_timer = QTimer(self)
+        self._gpu_timer.timeout.connect(self._update_gpu_status)
+        self._gpu_timer.start(2500)
+        self._update_gpu_status()
+
+        # Inicializar tabla de auditorías al arrancar
+        try:
+            init_audits_table()
+        except Exception:
+            pass
 
         # ── Aplicar permisos según el rol activo ──────────────
         self._apply_role_permissions()
     
+    def _update_gpu_status(self):
+        """Actualiza el indicador de GPU en la barra de estado con uso real (tipo Task Manager)."""
+        try:
+            import torch
+            if torch.cuda.is_available():
+                # mem_get_info retorna (free_bytes, total_bytes)
+                free, total = torch.cuda.mem_get_info(0)
+                used_gb = (total - free) / (1024 ** 3)
+                total_gb = total / (1024 ** 3)
+                # Obtenemos el nombre dinámicamente (p.ej. RTX 3050 Laptop)
+                name = torch.cuda.get_device_properties(0).name.replace("NVIDIA ", "")
+                
+                self._lbl_gpu.setText(f"🟢 {name}  {used_gb:.1f}/{total_gb:.1f} GB")
+                self._lbl_gpu.setStyleSheet("font-size: 11px; color: #a6e3a1; font-weight: bold; padding: 0 10px;")
+            else:
+                self._lbl_gpu.setText("🔵 CPU (Modo Conservador)")
+                self._lbl_gpu.setStyleSheet("font-size: 11px; color: #6c7086; padding: 0 10px;")
+        except Exception:
+            self._lbl_gpu.setText("🔵 CPU")
+            self._lbl_gpu.setStyleSheet("font-size: 11px; color: #6c7086; padding: 0 10px;")
+
     # ----------------------------------------------------------------
     # PAGE BUILDERS
     # ----------------------------------------------------------------
@@ -618,16 +663,16 @@ class MainWindow(QMainWindow):
         # Bottom section: Recent activity + Model status
         bottom_row = QHBoxLayout()
         bottom_row.setSpacing(15)
-        
-        # Recent activity card
+
+        # Recent activity card (datos reales de SQLite)
         activity_card = GlowCard()
         activity_card.setObjectName("glowCard")
         activity_layout = QVBoxLayout(activity_card)
         activity_layout.setContentsMargins(20, 18, 20, 18)
-        activity_header = QLabel("📋  Actividad Reciente")
+        activity_header = QLabel("📋  Auditorías Recientes")
         activity_header.setObjectName("cardTitle")
         activity_layout.addWidget(activity_header)
-        
+
         self.table_recent = QTableWidget(0, 4)
         self.table_recent.setHorizontalHeaderLabels(["Fecha", "Factura", "Resultado", "Vehículo"])
         self.table_recent.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -636,16 +681,32 @@ class MainWindow(QMainWindow):
         self.table_recent.verticalHeader().setVisible(False)
         self.table_recent.setMinimumHeight(180)
         activity_layout.addWidget(self.table_recent)
-        
-        # Placeholder row
-        self.table_recent.setRowCount(1)
-        self.table_recent.setItem(0, 0, QTableWidgetItem("—"))
-        self.table_recent.setItem(0, 1, QTableWidgetItem("Sin auditorías aún"))
-        self.table_recent.setItem(0, 2, QTableWidgetItem("—"))
-        self.table_recent.setItem(0, 3, QTableWidgetItem("—"))
-        
+
         bottom_row.addWidget(activity_card, 3)
+
+        # Trend Chart Card
+        trend_card = GlowCard()
+        trend_card.setObjectName("glowCard")
+        trend_layout = QVBoxLayout(trend_card)
+        trend_layout.setContentsMargins(20, 18, 20, 18)
+        trend_header = QHBoxLayout()
+        trend_title = QLabel("📈 Tendencia (Últimos 30 días)")
+        trend_title.setObjectName("cardTitle")
+        trend_header.addWidget(trend_title)
+        trend_header.addStretch()
+        legend_ia = QLabel("● Total")
+        legend_ia.setStyleSheet("color: #89b4fa; font-size: 10px; font-weight: bold;")
+        legend_disc = QLabel("● Discrepancias")
+        legend_disc.setStyleSheet("color: #f38ba8; font-size: 10px; font-weight: bold;")
+        trend_header.addWidget(legend_ia)
+        trend_header.addWidget(legend_disc)
+        trend_layout.addLayout(trend_header)
+
+        self.chart_trends = ModernTrendChart()
+        trend_layout.addWidget(self.chart_trends)
         
+        bottom_row.addWidget(trend_card, 4)
+
         # Model info card
         model_card = GlowCard()
         model_card.setObjectName("glowCard")
@@ -654,12 +715,14 @@ class MainWindow(QMainWindow):
         model_header = QLabel("🤖  Estado del Modelo IA")
         model_header.setObjectName("cardTitle")
         model_layout.addWidget(model_header)
-        
+
+        _cuda_state = ("✅ Precargado" if self._preloaded_model else "⏳ Carga en frío")
+        _device_name = (self._preloaded_device or "CPU").upper()
         model_items = [
-            ("Motor", "YOLOv8 (Ultralytics)"),
-            ("Estado", "⏳ Sin entrenar"),
-            ("Clases", "Cemento, Tubería Presión, Tubería Sanitaria"),
-            ("Precisión", "— (Pendiente entrenamiento)"),
+            ("Motor",    "YOLO11 (Ultralytics)"),
+            ("Estado",   f"{_cuda_state} en {_device_name}"),
+            ("Clase",    "Bulto de cemento (0)"),
+            ("Modelo",   "bultos_cemento2/best.pt"),
         ]
         for key, val in model_items:
             row = QHBoxLayout()
@@ -671,11 +734,9 @@ class MainWindow(QMainWindow):
             v_label.setObjectName("modelValue")
             row.addWidget(v_label)
             model_layout.addLayout(row)
-        
+
         model_layout.addStretch()
-        
         bottom_row.addWidget(model_card, 2)
-        
         layout.addLayout(bottom_row)
         layout.addStretch()
         
@@ -917,23 +978,48 @@ class MainWindow(QMainWindow):
             self.table_conteo.setItem(i, 2, QTableWidgetItem("—"))
         
         results_layout.addWidget(self.table_conteo)
-        
-        results_layout.addSpacing(10)
-        
-        # Alertas -> Registro de eventos
+
+        results_layout.addSpacing(8)
+
+        # ── Panel Comparación IA vs Factura ───────────────────
+        cmp_header = QLabel("📊  IA vs Factura")
+        cmp_header.setObjectName("cardTitle")
+        results_layout.addWidget(cmp_header)
+
+        self.lbl_audit_result = QLabel("—  Sin análisis")
+        self.lbl_audit_result.setObjectName("auditResultBadge")
+        self.lbl_audit_result.setAlignment(Qt.AlignCenter)
+        self.lbl_audit_result.setFixedHeight(32)
+        results_layout.addWidget(self.lbl_audit_result)
+
+        self.table_comparison = QTableWidget(0, 4)
+        self.table_comparison.setHorizontalHeaderLabels(["Material", "Factura", "IA", "Δ"])
+        self.table_comparison.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table_comparison.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table_comparison.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.table_comparison.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.table_comparison.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table_comparison.setAlternatingRowColors(True)
+        self.table_comparison.verticalHeader().setVisible(False)
+        self.table_comparison.setMaximumHeight(120)
+        results_layout.addWidget(self.table_comparison)
+
+        results_layout.addSpacing(8)
+
+        # Registro de eventos (con salto a frame)
         alertas_header = QLabel("🔔  Registro de Detecciones")
         alertas_header.setObjectName("cardTitle")
         results_layout.addWidget(alertas_header)
-        
+
         self.list_detections = QListWidget()
         self.list_detections.setObjectName("detectionsList")
-        self.list_detections.setMinimumHeight(150)
+        self.list_detections.setMinimumHeight(120)
+        self.list_detections.setToolTip("Doble clic para saltar al frame de esa detección")
+        self.list_detections.itemDoubleClicked.connect(self._on_detection_jump)
         results_layout.addWidget(self.list_detections)
-        
+
         video_row.addWidget(results_panel)
-        
         layout.addLayout(video_row)
-        
         return page
     
     def _create_invoice_page(self):
@@ -1199,17 +1285,33 @@ class MainWindow(QMainWindow):
         history_layout = QVBoxLayout(history_card)
         history_layout.setContentsMargins(20, 18, 20, 18)
         
-        history_header = QLabel("🕐  Historial de Auditorías")
-        history_header.setObjectName("cardTitle")
-        history_layout.addWidget(history_header)
+        history_header = QHBoxLayout()
+        history_title = QLabel("🕐  Historial de Auditorías")
+        history_title.setObjectName("cardTitle")
+        history_header.addWidget(history_title)
         
-        self.table_history = QTableWidget(0, 6)
-        self.table_history.setHorizontalHeaderLabels(["Fecha", "Factura Nro.", "Materiales", "Discrepancias", "Vehículo", "Estado"])
-        self.table_history.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        history_header.addStretch()
+        btn_refresh_history = QPushButton("🔄 Actualizar")
+        btn_refresh_history.setCursor(Qt.PointingHandCursor)
+        btn_refresh_history.setObjectName("secondaryBtn")
+        btn_refresh_history.clicked.connect(self._refresh_history_table)
+        history_header.addWidget(btn_refresh_history)
+        history_layout.addLayout(history_header)
+        
+        self.table_history = QTableWidget(0, 7)
+        self.table_history.setHorizontalHeaderLabels(["Fecha", "Factura", "Materiales", "Discrep.\n(IA - Fac)", "Vehículo", "Estado", "Acción"])
+        self.table_history.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.table_history.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table_history.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.table_history.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.table_history.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.table_history.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        self.table_history.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
         self.table_history.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table_history.setAlternatingRowColors(True)
         self.table_history.verticalHeader().setVisible(False)
-        self.table_history.setMinimumHeight(250)
+        self.table_history.setShowGrid(False)
+        self.table_history.setMinimumHeight(280)
         history_layout.addWidget(self.table_history)
         
         layout.addWidget(history_card)
@@ -1235,6 +1337,9 @@ class MainWindow(QMainWindow):
         
         layout.addWidget(captures_card)
         layout.addStretch()
+        
+        # Cargar datos iniciales
+        QTimer.singleShot(100, self._refresh_history_table)
         
         return page
     
@@ -1425,10 +1530,52 @@ class MainWindow(QMainWindow):
         super().keyPressEvent(event)
     
     def _animate_dashboard_stats(self):
-        # Demo data to show the animation effect
-        self.stat_despachos.animate_to(142)
-        self.stat_discrepancias.animate_to(3)
-        self.stat_vehiculos.animate_to(18)
+        """Lee datos REALES de SQLite para animar las tarjetas del Dashboard."""
+        try:
+            stats = get_dashboard_stats()
+            self.stat_despachos.animate_to(stats["despachos_hoy"])
+            self.stat_discrepancias.animate_to(stats["discrepancias_hoy"])
+            self.stat_vehiculos.animate_to(stats["vehiculos_hoy"])
+            acc = stats["accuracy_pct"]
+            self.stat_accuracy.set_value(f"{acc:.1f}%")
+
+            # Tabla de auditorías recientes
+            recent = stats.get("recent_audits", [])
+            self.table_recent.setRowCount(0)
+            if recent:
+                for row_data in recent:
+                    r = self.table_recent.rowCount()
+                    self.table_recent.insertRow(r)
+                    # Fecha abreviada
+                    fecha = str(row_data.get("fecha", ""))[:16]
+                    self.table_recent.setItem(r, 0, QTableWidgetItem(fecha))
+                    self.table_recent.setItem(r, 1, QTableWidgetItem(str(row_data.get("factura_no", "—"))))
+                    result_item = QTableWidgetItem(str(row_data.get("resultado", "—")))
+                    result_color = QColor("#a6e3a1") if row_data.get("resultado") == "CONFORME" else QColor("#f38ba8")
+                    result_item.setForeground(result_color)
+                    self.table_recent.setItem(r, 2, result_item)
+                    self.table_recent.setItem(r, 3, QTableWidgetItem(str(row_data.get("vehiculo", "—"))))
+            else:
+                self.table_recent.setRowCount(1)
+                self.table_recent.setItem(0, 0, QTableWidgetItem("—"))
+                self.table_recent.setItem(0, 1, QTableWidgetItem("Sin auditorías aún"))
+                self.table_recent.setItem(0, 2, QTableWidgetItem("—"))
+                self.table_recent.setItem(0, 3, QTableWidgetItem("—"))
+        except Exception as e:
+            print(f"[DASHBOARD] Error cargando stats reales: {e}")
+            self.stat_despachos.animate_to(0)
+            self.stat_discrepancias.animate_to(0)
+            self.stat_vehiculos.animate_to(0)
+
+        # Cargar Gráfica de Tendencia
+        try:
+            trends = get_monthly_trends()
+            # Si no hay datos, crear unos pocos dummy para visualización inicial (opcional)
+            if not trends:
+                trends = [{"total": 0, "discrepancies": 0} for _ in range(7)]
+            self.chart_trends.set_data(trends)
+        except Exception as e:
+            print(f"[DASHBOARD] Error cargando tendencias: {e}")
     
     # ----------------------------------------------------------------
     # THEME TOGGLE
@@ -1979,9 +2126,31 @@ class MainWindow(QMainWindow):
 
     def _on_detection_event(self, ts, msg):
         item = QListWidgetItem(f"[{ts}] {msg}")
+        item.setData(Qt.UserRole, ts)  # Guardar timestamp para jump-to-frame
         self.list_detections.insertItem(0, item)
         if self.list_detections.count() > 50:
             self.list_detections.takeItem(50)
+
+        # Captura automática de evidencia solo cuando se detecta el bulto
+        self._take_snapshot()
+
+        # Pulso visual: si la IA detecta más bultos que la factura = advertencia
+        try:
+            invoice = getattr(self, "_current_invoice", None)
+            if invoice and hasattr(self, "table_conteo"):
+                # Obtener conteo IA actual
+                ia_total = 0
+                for i in range(self.table_conteo.rowCount()):
+                    item_val = self.table_conteo.item(i, 1)
+                    if item_val:
+                        try: ia_total += int(item_val.text())
+                        except: pass
+                # Comparar con total de factura
+                fac_total = invoice.total_yolo_items
+                if ia_total > fac_total:
+                    self._pulse_warning()
+        except Exception:
+            pass
 
     def _on_player_progress(self, pct):
         # While scrubbing, don't fight user input
@@ -2133,9 +2302,153 @@ class MainWindow(QMainWindow):
 
     def _on_playback_finished(self):
         self.btn_play_pause.setText("▶")
-        self.show_toast("Reproducción finalizada", "info")
-        # keep ready state (can replay)
         self._set_video_status("ready")
+        # Guardar automáticamente la auditoría (sin diálogo)
+        QTimer.singleShot(300, self._auto_save_audit_summary)
+
+    def _auto_save_audit_summary(self):
+        """Guarda automáticamente la auditoría al terminar la reproducción visual."""
+        try:
+            # 1. Recopilar conteo IA final
+            final_counts = {}
+            for i in range(self.table_conteo.rowCount()):
+                mat_item = self.table_conteo.item(i, 0)
+                cnt_item = self.table_conteo.item(i, 1)
+                if mat_item and cnt_item:
+                    try: final_counts[mat_item.text()] = int(cnt_item.text())
+                    except: final_counts[mat_item.text()] = 0
+
+            # 2. Recopilar factura
+            invoice = getattr(self, "_current_invoice", None)
+            factura_counts   = {}
+            factura_no       = ""
+            cliente          = ""
+            if invoice:
+                factura_no = getattr(invoice, "numero_factura", "")
+                cliente    = getattr(invoice, "cliente", "")
+                for item in getattr(invoice, "items", []):
+                    desc = str(item.descripcion) if hasattr(item, "descripcion") else str(item)
+                    qty  = int(item.cantidad) if hasattr(item, "cantidad") else 0
+                    factura_counts[desc] = factura_counts.get(desc, 0) + qty
+
+            if not factura_counts and final_counts:
+                factura_counts = dict(final_counts)
+
+            # 3. Calcular discrepancias y resultado
+            mats = sorted(set(list(final_counts.keys()) + list(factura_counts.keys())))
+            discrepancias = {m: final_counts.get(m, 0) - factura_counts.get(m, 0)
+                             for m in mats if final_counts.get(m, 0) != factura_counts.get(m, 0)}
+            resultado = "CONFORME" if not discrepancias else "DISCREPANCIA"
+            disc_txt = "  |  ".join(f"{m}: {d:+d}" for m, d in discrepancias.items())
+
+            # 4. Actualizar panel lateral
+            self._update_comparison_panel(final_counts, factura_counts, resultado)
+
+            # 5. Extraer capturas asociadas
+            capturas = []
+            for i in range(self.list_captures.count()):
+                path = self.list_captures.item(i).data(Qt.UserRole)
+                if path and os.path.exists(path):
+                    capturas.append(path)
+
+            # 6. Preparar datos y guardar
+            audit_data = {
+                "factura_no":     factura_no,
+                "cliente":        cliente,
+                "video_nombre":   os.path.basename(getattr(self, "_video_path", "")),
+                "fecha":          datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "conteo_ia":      final_counts,
+                "conteo_factura": factura_counts,
+                "vehiculo":       "",
+                "usuario":        self._user.get("full_name", self._user.get("username", "")),
+                "resultado":      resultado,
+                "capturas":       capturas,
+            }
+
+            audit_id = save_audit(self._user, audit_data)
+            if audit_id > 0:
+                app_logger.log_action(self._user, "Auditoría Guardada (Auto)",
+                                      f"ID #{audit_id} | {resultado} | Vídeo: {audit_data['video_nombre']}")
+                if resultado == "DISCREPANCIA":
+                    app_logger.log_action(self._user, app_logger.DISCREPANCIA,
+                                          f"Auditoría #{audit_id}: {disc_txt if discrepancias else 'Sin datos'}")
+                self.show_toast("✅ Análisis finalizado y guardado automáticamente", "success")
+                self._refresh_history_table()
+            else:
+                self.show_toast("⚠️ Error guardando auditoría", "error")
+
+        except Exception as e:
+            print(f"[AUDIT] Error en auto-save de resumen: {e}")
+            self.show_toast("Reproducción finalizada", "info")
+
+    def _update_comparison_panel(self, conteo_ia: dict, conteo_factura: dict, resultado: str):
+        """Actualiza la tabla de comparación IA vs Factura en el panel lateral del video."""
+        try:
+            if not hasattr(self, "table_comparison"):
+                return
+            color = "#a6e3a1" if resultado == "CONFORME" else "#f38ba8"
+            emoji = "✅" if resultado == "CONFORME" else "⚠️"
+            self.lbl_audit_result.setText(f"{emoji}  {resultado}")
+            self.lbl_audit_result.setStyleSheet(
+                f"font-size: 13px; font-weight: 900; color: {color};"
+                "background: transparent; border-radius: 6px;"
+            )
+            mats = sorted(set(list(conteo_ia.keys()) + list(conteo_factura.keys())))
+            self.table_comparison.setRowCount(len(mats))
+            for r, mat in enumerate(mats):
+                ia_v  = conteo_ia.get(mat, 0)
+                fac_v = conteo_factura.get(mat, 0)
+                diff  = ia_v - fac_v
+                self.table_comparison.setItem(r, 0, QTableWidgetItem(mat))
+                self.table_comparison.setItem(r, 1, QTableWidgetItem(str(fac_v)))
+                self.table_comparison.setItem(r, 2, QTableWidgetItem(str(ia_v)))
+                diff_item = QTableWidgetItem(f"{diff:+d}")
+                diff_item.setForeground(QColor("#a6e3a1") if diff == 0
+                                        else QColor("#f9e2af") if diff > 0 else QColor("#f38ba8"))
+                self.table_comparison.setItem(r, 3, diff_item)
+        except Exception as e:
+            print(f"[COMPARISON] Error actualizando panel: {e}")
+
+    def _pulse_warning(self):
+        """Pulso visual rojo y alerta sonora cuando hay exceso de bultos."""
+        try:
+            # Alerta sonora sutil en Windows
+            try:
+                import winsound
+                winsound.Beep(880, 150) # Tono de advertencia sutil
+            except ImportError:
+                pass
+
+            if hasattr(self, "lbl_audit_result"):
+                self.lbl_audit_result.setStyleSheet(
+                    "font-size: 13px; font-weight: 900; color: #f38ba8;"
+                    "background: rgba(243,139,168,0.18); border-radius: 6px;"
+                    "border: 2px solid #f38ba8;"
+                )
+                QTimer.singleShot(600, lambda:
+                    self.lbl_audit_result.setStyleSheet(
+                        "font-size: 13px; font-weight: 900; color: #f38ba8;"
+                        "background: transparent; border-radius: 6px;"
+                    ) if hasattr(self, "lbl_audit_result") else None
+                )
+        except Exception:
+            pass
+
+    def _on_detection_jump(self, list_item):
+        """Salta al frame/tiempo del evento de detección seleccionado con doble clic."""
+        try:
+            ts = list_item.data(Qt.UserRole) or list_item.text()
+            # El timestamp tiene formato MM:SS
+            parts = str(ts).strip().split(":")
+            if len(parts) == 2:
+                minutes = int(parts[0])
+                seconds = float(parts[1])
+                target_msec = (minutes * 60 + seconds) * 1000.0
+                if hasattr(self, "player_worker") and self.player_worker.isRunning():
+                    self.player_worker.seek_to_msec(target_msec)
+                    self.show_toast(f"➡️  Saltando a {ts}", "info")
+        except Exception as e:
+            print(f"[JUMP] Error en jump-to-frame: {e}")
 
     def _on_line_slider_changed(self, val):
         self.lbl_line_val.setText(f"{val}%")
@@ -2175,6 +2488,7 @@ class MainWindow(QMainWindow):
         # Add to history list in Reports page
         item = QListWidgetItem(f"Snapshot {timestamp}")
         item.setIcon(QIcon(filename))
+        item.setData(Qt.UserRole, os.path.abspath(filename))
         self.list_captures.insertItem(0, item)
         
         self.show_toast(f"Captura guardada: {os.path.basename(filename)}", "success")
@@ -2276,19 +2590,73 @@ class MainWindow(QMainWindow):
         self.video_status.update()
 
     # ----------------------------------------------------------------
-    # REPORTES — LOG DE EXPORTACIÓN
+    # REPORTES — EXPORTACIÓN REAL
     # ----------------------------------------------------------------
     def _log_export(self, formato: str):
-        """Registra cuando el usuario exporta un reporte."""
-        factura_info = "Sin factura cargada"
+        """Genera y guarda un reporte real en Excel o PDF."""
+        # Construir datos de la auditoría actual
+        final_counts = {}
+        for i in range(self.table_conteo.rowCount()):
+            mat_item = self.table_conteo.item(i, 0)
+            cnt_item = self.table_conteo.item(i, 1)
+            if mat_item and cnt_item:
+                try: final_counts[mat_item.text()] = int(cnt_item.text())
+                except: final_counts[mat_item.text()] = 0
+
         invoice = getattr(self, "_current_invoice", None)
+        factura_counts = {}
+        factura_no = ""
+        cliente    = ""
         if invoice:
-            factura_info = (f"Factura {invoice.numero_factura} | "
-                            f"Cliente: {invoice.cliente}")
-        app_logger.log_action(
-            self._user, app_logger.REPORTE_EXPORTADO,
-            f"Formato: {formato} | {factura_info}"
+            factura_no = getattr(invoice, "numero_factura", "")
+            cliente    = getattr(invoice, "cliente",        "")
+            for item in getattr(invoice, "items", []):
+                desc = str(item.descripcion) if hasattr(item, "descripcion") else str(item)
+                qty  = int(item.cantidad) if hasattr(item, "cantidad") else 0
+                factura_counts[desc] = factura_counts.get(desc, 0) + qty
+
+        discrepancias = {m: final_counts.get(m, 0) - factura_counts.get(m, 0)
+                         for m in set(list(final_counts.keys()) + list(factura_counts.keys()))
+                         if final_counts.get(m, 0) != factura_counts.get(m, 0)}
+        resultado = "CONFORME" if not discrepancias else "DISCREPANCIA"
+
+        audit_data = {
+            "factura_no":     factura_no or "Sin factura",
+            "cliente":        cliente or "Desconocido",
+            "video_nombre":   os.path.basename(getattr(self, "_video_path", "") or ""),
+            "fecha":          datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "usuario":        self._user.get("full_name", self._user.get("username","")),
+            "vehiculo":       "",
+            "resultado":      resultado,
+            "conteo_ia":      final_counts,
+            "conteo_factura": factura_counts,
+        }
+
+        # Diálogo de guardado
+        ext = {"Excel": "xlsx", "PDF": "pdf"}.get(formato, "xlsx")
+        timestamp  = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_fn = f"logicheck_reporte_{timestamp}.{ext}"
+        path, _ = QFileDialog.getSaveFileName(
+            self, f"Exportar Reporte {formato}",
+            default_fn,
+            f"Archivos {formato} (*.{ext})"
         )
+        if not path:
+            return
+
+        if formato == "Excel":
+            ok = export_excel(audit_data, path)
+        else:
+            ok = export_pdf(audit_data, path)
+
+        if ok:
+            app_logger.log_action(
+                self._user, app_logger.REPORTE_EXPORTADO,
+                f"Formato: {formato} | Archivo: {os.path.basename(path)} | {resultado}"
+            )
+            self.show_toast(f"✅ Reporte {formato} guardado: {os.path.basename(path)}", "success")
+        else:
+            self.show_toast(f"⚠️ Error al generar el reporte {formato}", "error")
 
     # ----------------------------------------------------------------
     # ASIGNACIÓN VEHICULAR
@@ -2319,3 +2687,104 @@ class MainWindow(QMainWindow):
             "Asignación Registrada",
             f"✅ La asignación vehicular fue confirmada y registrada en el log de auditoría.\n\n{desc}"
         )
+
+    def _refresh_history_table(self):
+        from core.audit_store import get_audits
+        try:
+            audits = get_audits(limit=50)
+            self.table_history.setRowCount(0)
+            for r, audit in enumerate(audits):
+                self.table_history.insertRow(r)
+                self.table_history.setRowHeight(r, 48)
+                
+                # Fetching fields
+                fecha = audit.get("fecha", "")[:16]
+                fact = audit.get("factura_no", "") or "Sin factura"
+                
+                total_ia = sum(int(v) for v in audit.get("conteo_ia", {}).values())
+                total_fac = sum(int(v) for v in audit.get("conteo_factura", {}).values())
+                diff = total_ia - total_fac
+                
+                mats = ", ".join(audit.get("conteo_ia", {}).keys()) or "—"
+                vehic = audit.get("vehiculo", "") or "—"
+                estado = audit.get("resultado", "DESCONOCIDO")
+
+                self.table_history.setItem(r, 0, QTableWidgetItem(fecha))
+                self.table_history.setItem(r, 1, QTableWidgetItem(fact))
+                self.table_history.setItem(r, 2, QTableWidgetItem(mats))
+                
+                diff_str = f"{diff:+d}" if diff != 0 else "0"
+                diff_item = QTableWidgetItem(diff_str)
+                diff_item.setForeground(QColor("#a6e3a1") if diff == 0 else QColor("#f38ba8" if diff < 0 else "#f9e2af"))
+                diff_item.setTextAlignment(Qt.AlignCenter)
+                self.table_history.setItem(r, 3, diff_item)
+                
+                self.table_history.setItem(r, 4, QTableWidgetItem(vehic))
+                
+                estado_item = QTableWidgetItem("✅" if estado == "CONFORME" else "⚠️")
+                estado_item.setToolTip(estado)
+                estado_item.setTextAlignment(Qt.AlignCenter)
+                self.table_history.setItem(r, 5, estado_item)
+
+                # Acciones cell
+                w = QWidget()
+                l = QHBoxLayout(w)
+                l.setContentsMargins(4, 4, 4, 4)
+                l.setSpacing(8)
+                
+                btn_pdf = QPushButton("📄")
+                btn_pdf.setToolTip("Exportar a PDF")
+                btn_pdf.setFixedSize(32, 32)
+                btn_pdf.setCursor(Qt.PointingHandCursor)
+                btn_pdf.setObjectName("primaryBtn")
+                btn_pdf.clicked.connect(lambda _, a=audit: self._export_past_audit(a, "PDF"))
+                
+                btn_xls = QPushButton("📊")
+                btn_xls.setToolTip("Exportar a Excel")
+                btn_xls.setFixedSize(32, 32)
+                btn_xls.setCursor(Qt.PointingHandCursor)
+                btn_xls.setObjectName("successBtn")
+                btn_xls.clicked.connect(lambda _, a=audit: self._export_past_audit(a, "Excel"))
+
+                l.addStretch()
+                l.addWidget(btn_pdf)
+                l.addWidget(btn_xls)
+                l.addStretch()
+                self.table_history.setCellWidget(r, 6, w)
+        except Exception as e:
+            print(f"[HISTORY] Error refrescando tabla: {e}")
+
+    def _export_past_audit(self, audit_data: dict, formato: str):
+        from core.report_exporter import export_pdf, export_excel
+        
+        ext = {"Excel": "xlsx", "PDF": "pdf"}.get(formato, "xlsx")
+        timestamp  = audit_data.get("fecha", "").replace(":", "").replace("-", "").replace(" ", "_")
+        if not timestamp:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        default_fn = f"logicheck_reporte_{timestamp}.{ext}"
+        path, _ = QFileDialog.getSaveFileName(
+            self, f"Exportar Reporte {formato}",
+            default_fn,
+            f"Archivos {formato} (*.{ext})"
+        )
+        if not path:
+            return
+
+        # Adapt user name if missing
+        if not audit_data.get("usuario"):
+            audit_data["usuario"] = audit_data.get("username", "—")
+
+        if formato == "Excel":
+            ok = export_excel(audit_data, path)
+        else:
+            ok = export_pdf(audit_data, path)
+
+        if ok:
+            app_logger.log_action(
+                self._user, app_logger.REPORTE_EXPORTADO,
+                f"Formato: {formato} | Archivo: {os.path.basename(path)} | Histórico"
+            )
+            self.show_toast(f"✅ Reporte {formato} guardado", "success")
+        else:
+            self.show_toast(f"⚠️ Error al generar el reporte {formato}", "error")
+
