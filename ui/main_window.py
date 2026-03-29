@@ -1264,13 +1264,25 @@ class MainWindow(QMainWindow):
             
         cam_results_layout.addWidget(self.table_cam_conteo)
 
-        # Botón de Reporte WhatsApp
-        self.btn_cam_whatsapp = QPushButton("📲 Enviar Reporte WhatsApp")
+        # Botones de Reporte (WhatsApp y Telegram)
+        reports_row = QHBoxLayout()
+        reports_row.setSpacing(5)
+
+        self.btn_cam_whatsapp = QPushButton("📲 WhatsApp")
         self.btn_cam_whatsapp.setObjectName("primaryBtn")
         self.btn_cam_whatsapp.setCursor(Qt.PointingHandCursor)
         self.btn_cam_whatsapp.setFixedHeight(30)
         self.btn_cam_whatsapp.clicked.connect(self._on_cam_whatsapp_report)
-        cam_results_layout.addWidget(self.btn_cam_whatsapp)
+        reports_row.addWidget(self.btn_cam_whatsapp)
+
+        self.btn_cam_telegram = QPushButton("✈️ Telegram")
+        self.btn_cam_telegram.setObjectName("primaryBtn")
+        self.btn_cam_telegram.setCursor(Qt.PointingHandCursor)
+        self.btn_cam_telegram.setFixedHeight(30)
+        self.btn_cam_telegram.clicked.connect(self._on_cam_telegram_report)
+        reports_row.addWidget(self.btn_cam_telegram)
+        
+        cam_results_layout.addLayout(reports_row)
 
         cam_results_layout.addSpacing(10)
 
@@ -1466,12 +1478,48 @@ class MainWindow(QMainWindow):
         )
 
     def _on_cam_counts_updated(self, counts: dict):
+        if not hasattr(self, "_metas_notificadas"):
+            self._metas_notificadas = set()
+            
         for i in range(self.table_cam_conteo.rowCount()):
             mat_item = self.table_cam_conteo.item(i, 0)
             if mat_item and mat_item.text() in counts:
-                self.table_cam_conteo.setItem(
-                    i, 1, QTableWidgetItem(str(counts[mat_item.text()]))
-                )
+                material = mat_item.text()
+                val = counts[material]
+                
+                # Update table
+                self.table_cam_conteo.item(i, 1).setText(str(val))
+
+                # --- LÓGICA DE SEGURIDAD REFORZADA (TELEGRAM + FOTO) ---
+                # Si se detecta CUALQUIER material y NO hay factura cargada
+                invoice_present = hasattr(self, "_current_invoice") and self._current_invoice is not None
+                
+                if val > 0 and not invoice_present:
+                    if not hasattr(self, "_alerta_robo_enviada") or not self._alerta_robo_enviada:
+                        self._alerta_robo_enviada = True
+                        
+                        # Capturar evidencia visual
+                        foto_evidencia = self._take_cam_snapshot(auto=True)
+                        
+                        alert_msg = (
+                            "🚨 <b>¡ALERTA DE SEGURIDAD!</b> 🚨\n\n"
+                            f"⚠️ Se está moviendo <b>{material}</b> sin autorización (sin factura registrada).\n"
+                            f"📍 Canal: {self.cam_source_selector.currentText()}\n"
+                            f"📦 Cantidad captada: {val} bultos.\n"
+                            "<b>REVISA TUS CÁMARAS DE INMEDIATO.</b>"
+                        )
+                        notifier.send_telegram(alert_msg, photo_path=foto_evidencia)
+                        self.show_toast(f"¡ALERTA DE SEGURIDAD! ({material.upper()})", "danger")
+                
+                # Logic for AUTOMATIC TELEGRAM ALERT (Metas)
+                meta_str = self.table_cam_conteo.item(i, 2).text()
+                if meta_str.isdigit() and int(meta_str) > 0:
+                    meta = int(meta_str)
+                    if val >= meta and material not in self._metas_notificadas:
+                        self._metas_notificadas.add(material)
+                        msg = f"🔔 <b>META ALCANZADA: {material}</b>\n\nSe han detectado <b>{val}</b> bultos (Meta: {meta}).\n📍 Canal: {self.cam_source_selector.currentText()}"
+                        notifier.send_telegram(msg)
+                        self.show_toast(f"¡Meta de {material} cumplida!", "success")
 
     def _on_cam_detection_event(self, ts: str, msg: str):
         item = QListWidgetItem(f"[{ts}] {msg}")
@@ -1512,7 +1560,11 @@ class MainWindow(QMainWindow):
         for i in range(self.table_cam_conteo.rowCount()):
             self.table_cam_conteo.item(i, 1).setText("0")
         self.list_cam_detections.clear()
-        self.show_toast("Conteo reiniciado.", "info")
+        if hasattr(self, "_metas_notificadas"):
+            self._metas_notificadas.clear()
+        if hasattr(self, "_alerta_robo_enviada"):
+            self._alerta_robo_enviada = False
+        self.show_toast("Conteo y alertas reiniciados.", "info")
 
     def _on_cam_whatsapp_report(self):
         report_lines = ["*REPORTE DE BULTOS - LOGICHECK* 🚚\n"]
@@ -1548,8 +1600,49 @@ class MainWindow(QMainWindow):
             report_lines.append("\n⚠️ Hay discrepancias entre las facturas de recarga y el conteo en piso.")
         
         texto_mensaje = "\n".join(report_lines)
-        notifier.send_message(texto_mensaje)
-        self.show_toast("Reporte de seguridad reenviado por WhatsApp.", "success")
+        notifier.send_whatsapp(texto_mensaje)
+        app_logger.log_action(self._user, "REPORTE_WHATSAPP", "Reporte manual enviado")
+        self.show_toast("Reporte detallado enviado a WhatsApp.", "success")
+
+    def _on_cam_telegram_report(self):
+        """Versión Telegram del reporte usando formato HTML."""
+        report_lines = ["<b>📊 REPORTE DE BULTOS - LOGICHECK</b> 🚚\n"]
+        todas_metas_ok = True
+
+        for i in range(self.table_cam_conteo.rowCount()):
+            num_obj = self.table_cam_conteo.item(i, 0)
+            if not num_obj: continue
+            material = num_obj.text()
+            
+            conteo_str = self.table_cam_conteo.item(i, 1).text()
+            conteo = int(conteo_str) if conteo_str.isdigit() else 0
+            
+            meta_str = self.table_cam_conteo.item(i, 2).text()
+            meta = int(meta_str) if meta_str.isdigit() else 0
+            
+            if meta > 0:
+                if conteo == meta:
+                    estado = "🟢 COMPLETO"
+                elif conteo < meta:
+                    estado = f"🔴 FALTAN {meta - conteo}"
+                    todas_metas_ok = False
+                else:
+                    estado = f"🟡 SOBRAN {conteo - meta}"
+                    todas_metas_ok = False
+                report_lines.append(f"• {material}: <b>{conteo}</b> / {meta} (Meta) → {estado}")
+            else:
+                report_lines.append(f"• {material}: <b>{conteo}</b>")
+
+        if todas_metas_ok:
+            report_lines.append("\n🎉 Todas las recargas están correctas.")
+        else:
+            report_lines.append("\n⚠️ Hay discrepancias detectadas.")
+        
+        texto_mensaje = "\n".join(report_lines)
+        notifier.send_telegram(texto_mensaje)
+        app_logger.log_action(self._user, "REPORTE_TELEGRAM", "Reporte manual enviado")
+        self.show_toast("Reporte detallado enviado a Telegram.", "success")
+
 
 
     def _on_cam_zone_changed(self):
@@ -1587,9 +1680,9 @@ class MainWindow(QMainWindow):
 
 
     def _take_cam_snapshot(self, auto: bool = False):
-        """Captura el frame actual de la cámara en vivo."""
+        """Captura el frame actual de la cámara en vivo y retorna la ruta del archivo."""
         if not hasattr(self, "cam_frame") or self.cam_frame.pixmap() is None:
-            return
+            return None
         os.makedirs("captures", exist_ok=True)
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"captures/cam_snapshot_{timestamp}.png"
@@ -1604,6 +1697,8 @@ class MainWindow(QMainWindow):
 
         if not auto:
             self.show_toast(f"Captura guardada: {os.path.basename(filename)}", "success")
+            
+        return os.path.abspath(filename)
 
     def _update_cam_session_label(self):
         if hasattr(self, "_cam_session_start"):
@@ -2060,8 +2155,9 @@ class MainWindow(QMainWindow):
         self._overlay_anim.setDuration(120)
         
         try:
+            # Silence the warning by checking if there's anything to disconnect
             self._overlay_anim.finished.disconnect()
-        except RuntimeError:
+        except (RuntimeError, TypeError):
             pass
         self._overlay_anim.finished.connect(self._on_cover_done)
         self._overlay_anim.start()
