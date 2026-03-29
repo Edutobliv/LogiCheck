@@ -1,12 +1,12 @@
 from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, 
                                QPushButton, QLabel, QFrame, QTableWidget, QTableWidgetItem,
                                QHeaderView, QSizePolicy, QGraphicsDropShadowEffect,
-                               QGraphicsOpacityEffect,
+                               QGraphicsOpacityEffect, QLineEdit,
                                QScrollArea, QStackedWidget, QToolButton, QSpacerItem,
                                QProgressBar, QStatusBar, QFileDialog, QMessageBox, QListWidget, QListWidgetItem, QSlider,
                                QDialog, QStyle, QStyleOptionSlider)
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint, QVariantAnimation, QSequentialAnimationGroup, QParallelAnimationGroup, QThread, Signal, QEvent
-from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen, QPixmap, QGuiApplication
+from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen, QPixmap, QGuiApplication, QImage
 import datetime
 import os
 import sys
@@ -19,13 +19,14 @@ from core.permissions import can_access_page, can_do_action, get_role_display, R
 from core import logger as app_logger
 from ui.users_page import UsersPage
 from ui.logs_page import LogsPage
-from core.yolo_manager import YoloAnalyzerWorker, VideoPlayerWorker
+from core.yolo_manager import YoloAnalyzerWorker, VideoPlayerWorker, RtspCameraWorker
 import torch
 import winsound
 from core.audit_store import (save_audit, get_audits, get_dashboard_stats, 
                              init_audits_table, get_monthly_trends)
 from ui.trend_chart import ModernTrendChart
 from core.report_exporter import export_excel, export_pdf
+from core.notifier import notifier
 
 
 class ScrubThumbnailWidget(QFrame):
@@ -407,6 +408,7 @@ class MainWindow(QMainWindow):
             ("📊", "Dashboard"),
             ("📄", "Factura PDF"),
             ("📹", "Análisis de Video"),
+            ("📷", "Cámara en Vivo"),
             ("🚛", "Asignación Vehicular"),
             ("📋", "Reportes"),
             ("📜", "Actividad"),
@@ -535,14 +537,16 @@ class MainWindow(QMainWindow):
         self.stacked.addWidget(self._create_invoice_page())
         # Page 2: Análisis de Video
         self.stacked.addWidget(self._create_video_page())
-        # Page 3: Asignación Vehicular
+        # Page 3: Cámara en Vivo
+        self.stacked.addWidget(self._create_camera_page())
+        # Page 4: Asignación Vehicular
         self.stacked.addWidget(self._create_vehicle_page())
-        # Page 4: Reportes
+        # Page 5: Reportes
         self.stacked.addWidget(self._create_reports_page())
-        # Page 5: Actividad / Logs (todos los roles, filtrado por rol)
+        # Page 6: Actividad / Logs (todos los roles, filtrado por rol)
         self._logs_page = LogsPage(user_data=self._user)
         self.stacked.addWidget(self._logs_page)
-        # Page 6: Gestión de Usuarios (solo Admin)
+        # Page 7: Gestión de Usuarios (solo Admin)
         self._users_page = UsersPage(admin_user_data=self._user)
         self.stacked.addWidget(self._users_page)
         
@@ -1021,7 +1025,610 @@ class MainWindow(QMainWindow):
         video_row.addWidget(results_panel)
         layout.addLayout(video_row)
         return page
-    
+
+    # ----------------------------------------------------------------
+    # CÁMARA EN VIVO — PAGE BUILDER
+    # ----------------------------------------------------------------
+    def _create_camera_page(self):
+        """Página de monitoreo y conteo en tiempo real desde cámara IP."""
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(30, 25, 30, 25)
+        layout.setSpacing(15)
+
+        # ── Barra de conexión ────────────────────────────────────────
+        conn_card = GlowCard()
+        conn_layout = QHBoxLayout(conn_card)
+        conn_layout.setContentsMargins(18, 12, 18, 12)
+        conn_layout.setSpacing(10)
+
+        # Icono e indicador de estado
+        cam_status_box = QHBoxLayout()
+        cam_status_box.setSpacing(6)
+        
+        self.lbl_cam_status_dot = QLabel("⚫")
+        self.lbl_cam_status_dot.setStyleSheet("font-size: 14px; background: transparent; padding-top: 2px;")
+        cam_status_box.addWidget(self.lbl_cam_status_dot)
+
+        self.lbl_cam_status = QLabel("Desconectado")
+        self.lbl_cam_status.setObjectName("subtleText")
+        self.lbl_cam_status.setMinimumWidth(85)
+        self.lbl_cam_status.setStyleSheet("font-size: 13px; font-weight: 600;")
+        cam_status_box.addWidget(self.lbl_cam_status)
+        conn_layout.addLayout(cam_status_box)
+
+        # Divisor visual sutil
+        div1 = QFrame()
+        div1.setFrameShape(QFrame.VLine)
+        div1.setStyleSheet("color: #313244;")
+        conn_layout.addWidget(div1)
+
+        # Selector de canal
+        lbl_sel = QLabel("Cámara:")
+        lbl_sel.setObjectName("modelKey")
+        conn_layout.addWidget(lbl_sel)
+
+        from PySide6.QtWidgets import QComboBox
+        self.cam_selector = QComboBox()
+        self.cam_selector.setObjectName("camSelector")
+        self.cam_selector.addItems([f"Cámara {i}" for i in range(1, 12)])
+        self.cam_selector.setMinimumWidth(120)
+        self.cam_selector.currentIndexChanged.connect(self._on_cam_switch)
+        conn_layout.addWidget(self.cam_selector)
+
+        # Campo URL / IP (Preconfigurado)
+        lbl_url = QLabel("Host:")
+        lbl_url.setObjectName("modelKey")
+        lbl_url.setContentsMargins(10, 0, 0, 0) # Separación
+        conn_layout.addWidget(lbl_url)
+
+        self.cam_url_input = QLineEdit()
+        self.cam_url_input.setObjectName("camUrlInput")
+        self.cam_url_input.setText("ferreteria.viewdns.net")
+        self.cam_url_input.setPlaceholderText("ej: ferreteria.viewdns.net")
+        self.cam_url_input.setMinimumWidth(150)
+        self.cam_url_input.setFixedHeight(34)
+        conn_layout.addWidget(self.cam_url_input, 1)
+
+        conn_layout.addSpacing(10)
+
+        # Botones
+        self.btn_cam_connect = QPushButton("📡  Conectar")
+        self.btn_cam_connect.setObjectName("successBtn")
+        self.btn_cam_connect.setFixedHeight(34)
+        self.btn_cam_connect.setCursor(Qt.PointingHandCursor)
+        self.btn_cam_connect.clicked.connect(self._on_camera_connect)
+        conn_layout.addWidget(self.btn_cam_connect)
+
+        self.btn_cam_disconnect = QPushButton("⏹  Desconectar")
+        self.btn_cam_disconnect.setObjectName("dangerBtn")
+        self.btn_cam_disconnect.setFixedHeight(34)
+        self.btn_cam_disconnect.setEnabled(False)
+        self.btn_cam_disconnect.setCursor(Qt.PointingHandCursor)
+        self.btn_cam_disconnect.clicked.connect(self._on_camera_disconnect)
+        conn_layout.addWidget(self.btn_cam_disconnect)
+
+        # Divisor
+        div2 = QFrame()
+        div2.setFrameShape(QFrame.VLine)
+        div2.setStyleSheet("color: #313244;")
+        div2.setContentsMargins(5, 0, 5, 0)
+        conn_layout.addWidget(div2)
+
+        # Controles de zona de conteo (Agrupados por Altura y Ancho)
+        cam_zone_container = QHBoxLayout()
+        cam_zone_container.setSpacing(15)
+
+        def _make_zone_slider(label_txt, min_v, max_v, default_v, width=60):
+            row = QHBoxLayout()
+            row.setSpacing(3)
+            row.addWidget(QLabel(label_txt))
+            sl = QSlider(Qt.Horizontal)
+            sl.setRange(min_v, max_v)
+            sl.setValue(default_v)
+            sl.setFixedWidth(width)
+            sl.valueChanged.connect(self._on_cam_zone_changed)
+            row.addWidget(sl)
+            lbl = QLabel(f"{default_v}%")
+            lbl.setObjectName("modelValue")
+            lbl.setFixedWidth(28)
+            row.addWidget(lbl)
+            return sl, lbl, row
+
+        # Grupo de Altura
+        v_box = QVBoxLayout()
+        v_box.setSpacing(1)
+        v_lbl = QLabel("Altura")
+        v_lbl.setObjectName("subtleText")
+        v_lbl.setStyleSheet("font-size: 10px; margin-bottom: 2px;")
+        v_box.addWidget(v_lbl)
+        self.slider_cam_zone_top, self.lbl_cam_zone_top, row_t = _make_zone_slider("▲", 0, 95, 0)
+        self.slider_cam_zone_bot, self.lbl_cam_zone_bot, row_b = _make_zone_slider("▼", 1, 100, 19)
+        v_box.addLayout(row_t)
+        v_box.addLayout(row_b)
+        cam_zone_container.addLayout(v_box)
+
+        # Grupo de Ancho
+        h_box = QVBoxLayout()
+        h_box.setSpacing(1)
+        h_lbl = QLabel("Ancho")
+        h_lbl.setObjectName("subtleText")
+        h_lbl.setStyleSheet("font-size: 10px; margin-bottom: 2px;")
+        h_box.addWidget(h_lbl)
+        self.slider_cam_zone_left, self.lbl_cam_zone_left, row_l = _make_zone_slider("◄", 0, 95, 45)
+        self.slider_cam_zone_right, self.lbl_cam_zone_right, row_r = _make_zone_slider("►", 5, 100, 70)
+        h_box.addLayout(row_l)
+        h_box.addLayout(row_r)
+        cam_zone_container.addLayout(h_box)
+
+        conn_layout.addLayout(cam_zone_container)
+
+        layout.addWidget(conn_card)
+
+        # ── Área principal: video + panel lateral ────────────────────
+        cam_row = QHBoxLayout()
+        cam_row.setSpacing(15)
+
+        # Video container
+        cam_video_card = GlowCard()
+        cam_video_layout = QVBoxLayout(cam_video_card)
+        cam_video_layout.setContentsMargins(5, 5, 5, 5)
+        cam_video_layout.setSpacing(6)
+
+        # Pill de estado
+        cam_status_row = QHBoxLayout()
+        cam_status_row.setContentsMargins(10, 8, 10, 0)
+        self.cam_video_status = QLabel("📷  Sin señal")
+        self.cam_video_status.setObjectName("videoStatusPill")
+        self.cam_video_status.setProperty("state", "idle")
+        cam_status_row.addWidget(self.cam_video_status, alignment=Qt.AlignLeft)
+
+        # Indicador de FPS en vivo (top-right)
+        self.lbl_cam_fps = QLabel("")
+        self.lbl_cam_fps.setObjectName("subtleText")
+        self.lbl_cam_fps.setStyleSheet("font-size: 10px; color: #a6e3a1;")
+        cam_status_row.addStretch()
+        cam_status_row.addWidget(self.lbl_cam_fps)
+        cam_video_layout.addLayout(cam_status_row)
+
+        # Frame display
+        self.cam_frame = QLabel(
+            "📷\n\nIntroduzca la URL de la cámara IP\ny pulse Conectar para iniciar el monitoreo en tiempo real"
+        )
+        self.cam_frame.setObjectName("videoFrame")
+        self.cam_frame.setAlignment(Qt.AlignCenter)
+        self.cam_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.cam_frame.setMinimumHeight(400)
+        cam_video_layout.addWidget(self.cam_frame)
+
+        # Controles inferiores
+        cam_ctrl_bar = QHBoxLayout()
+        cam_ctrl_bar.setContentsMargins(10, 0, 10, 5)
+
+        self.btn_cam_pause = QPushButton("⏸  Pausar")
+        self.btn_cam_pause.setObjectName("playerBtn_small")
+        self.btn_cam_pause.setEnabled(False)
+        self.btn_cam_pause.setCursor(Qt.PointingHandCursor)
+        self.btn_cam_pause.clicked.connect(self._on_cam_pause_toggle)
+        cam_ctrl_bar.addWidget(self.btn_cam_pause)
+
+        self.btn_cam_reset = QPushButton("🔄  Reiniciar Conteo")
+        self.btn_cam_reset.setObjectName("playerBtn_small")
+        self.btn_cam_reset.setEnabled(False)
+        self.btn_cam_reset.setCursor(Qt.PointingHandCursor)
+        self.btn_cam_reset.clicked.connect(self._on_cam_reset_counts)
+        cam_ctrl_bar.addWidget(self.btn_cam_reset)
+
+        cam_ctrl_bar.addStretch()
+
+        self.btn_cam_snapshot = QPushButton("📸  Captura")
+        self.btn_cam_snapshot.setObjectName("playerBtn_accent")
+        self.btn_cam_snapshot.setEnabled(False)
+        self.btn_cam_snapshot.setCursor(Qt.PointingHandCursor)
+        self.btn_cam_snapshot.clicked.connect(self._take_cam_snapshot)
+        cam_ctrl_bar.addWidget(self.btn_cam_snapshot)
+
+        cam_video_layout.addLayout(cam_ctrl_bar)
+        cam_row.addWidget(cam_video_card, 3)
+
+        # ── Panel lateral de resultados ──────────────────────────────
+        cam_results = GlowCard()
+        cam_results.setFixedWidth(320)
+        cam_results_layout = QVBoxLayout(cam_results)
+        cam_results_layout.setContentsMargins(18, 15, 18, 15)
+
+        cam_header = QLabel("📊  Conteo en Tiempo Real")
+        cam_header.setObjectName("cardTitle")
+        cam_results_layout.addWidget(cam_header)
+
+        self.table_cam_conteo = QTableWidget(3, 3)
+        self.table_cam_conteo.setHorizontalHeaderLabels(["Material", "Conteo", "Meta"])
+        self.table_cam_conteo.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table_cam_conteo.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table_cam_conteo.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.table_cam_conteo.setAlternatingRowColors(True)
+        self.table_cam_conteo.verticalHeader().setVisible(False)
+
+        for i, mat in enumerate(["Cemento", "Tubería Presión", "Tubería Sanitaria"]):
+            item_mat = QTableWidgetItem(mat)
+            item_mat.setFlags(item_mat.flags() & ~Qt.ItemIsEditable)
+            self.table_cam_conteo.setItem(i, 0, item_mat)
+            
+            item_count = QTableWidgetItem("0")
+            item_count.setFlags(item_count.flags() & ~Qt.ItemIsEditable)
+            self.table_cam_conteo.setItem(i, 1, item_count)
+            
+            # La columna 'Meta' es editable para que pongas lo esperado (ej. 20)
+            item_meta = QTableWidgetItem("0")
+            self.table_cam_conteo.setItem(i, 2, item_meta)
+            
+        cam_results_layout.addWidget(self.table_cam_conteo)
+
+        # Botón de Reporte WhatsApp
+        self.btn_cam_whatsapp = QPushButton("📲 Enviar Reporte WhatsApp")
+        self.btn_cam_whatsapp.setObjectName("primaryBtn")
+        self.btn_cam_whatsapp.setCursor(Qt.PointingHandCursor)
+        self.btn_cam_whatsapp.setFixedHeight(30)
+        self.btn_cam_whatsapp.clicked.connect(self._on_cam_whatsapp_report)
+        cam_results_layout.addWidget(self.btn_cam_whatsapp)
+
+        cam_results_layout.addSpacing(10)
+
+        cam_det_header = QLabel("🔔  Detecciones en Vivo")
+        cam_det_header.setObjectName("cardTitle")
+        cam_results_layout.addWidget(cam_det_header)
+
+        self.list_cam_detections = QListWidget()
+        self.list_cam_detections.setObjectName("detectionsList")
+        self.list_cam_detections.setMinimumHeight(150)
+        cam_results_layout.addWidget(self.list_cam_detections)
+
+        # Info de sesión
+        cam_results_layout.addSpacing(8)
+        self.lbl_cam_session = QLabel("Sesión: —")
+        self.lbl_cam_session.setObjectName("subtleText")
+        self.lbl_cam_session.setStyleSheet("font-size: 10px;")
+        cam_results_layout.addWidget(self.lbl_cam_session)
+
+        cam_row.addWidget(cam_results)
+        layout.addLayout(cam_row)
+        return page
+
+    # ── Camera signal handlers ────────────────────────────────────────
+    def _on_cam_switch(self, index: int):
+        """Cambia de cámara de forma segura cuando el selector cambia."""
+        if not (hasattr(self, "_cam_worker") and self._cam_worker and self._cam_worker.isRunning()):
+            return  # No hay cámara activa, nada que hacer
+        # Matar el worker actual y arrancar el nuevo con un breve delay
+        self._kill_cam_worker()
+        QTimer.singleShot(400, self._on_camera_connect)
+
+    def _kill_cam_worker(self):
+        """
+        Detiene el worker actual de forma segura.
+        CRITÍCO: No hacemos self._cam_worker = None inmediatamente.
+        En Qt/PySide6, asignar None mientras el hilo sigue vivo
+        destruye el objeto C++ y provoca un segfault.
+        En su lugar lo movemos a una lista '_dead_workers' y dejamos
+        que se limpie solo cuando su señal 'finished' llegue.
+        """
+        if not (hasattr(self, "_cam_worker") and self._cam_worker is not None):
+            return
+
+        w = self._cam_worker
+        self._cam_worker = None
+
+        # 1) Desconectar TODAS las señales para que el hilo moribundo
+        #    no pueda afectar la UI mientras muere
+        try:
+            w.frame_ready.disconnect()
+            w.counts_updated.disconnect()
+            w.detection_event.disconnect()
+            w.connection_status.disconnect()
+            w.error_occurred.disconnect()
+            w.finished.disconnect()
+        except Exception:
+            pass
+
+        # 2) Ordenar la parada
+        try:
+            w.stop()
+        except Exception:
+            pass
+
+        # 3) Guardar referencia hasta que el hilo Qt termine de verdad
+        if not hasattr(self, "_dead_workers"):
+            self._dead_workers = []
+
+        self._dead_workers.append(w)
+
+        # Conectar finished a un limpiador que retire la referencia
+        def _cleanup(worker=w):
+            try:
+                if hasattr(self, "_dead_workers") and worker in self._dead_workers:
+                    self._dead_workers.remove(worker)
+            except Exception:
+                pass
+
+        try:
+            w.finished.connect(_cleanup)
+        except Exception:
+            pass
+
+    def _on_camera_connect(self):
+        """Inicia el RtspCameraWorker con la URL configurada y el canal seleccionado."""
+        host = self.cam_url_input.text().strip()
+        if not host:
+            self.show_toast("Ingrese el Host de la cámara.", "warning")
+            return
+
+        # Asegurarse de que no queda ningún worker vivo
+        self._kill_cam_worker()
+
+        # Construir URL (Dahua RTSP format)
+        channel = self.cam_selector.currentIndex() + 1
+        url = f"rtsp://Samuel:Samuel123.@{host}:554/cam/realmonitor?channel={channel}&subtype=1"
+
+        # Resolver ruta del modelo
+        if getattr(sys, "frozen", False):
+            base_dir = os.path.dirname(sys.executable)
+            internal = os.path.join(base_dir, "_internal")
+            if os.path.exists(internal):
+                base_dir = internal
+        else:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+        model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento2", "weights", "best.pt")
+        if not os.path.exists(model_path):
+            model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento", "weights", "best.pt")
+
+        self._cam_worker = RtspCameraWorker(
+            camera_url=url,
+            model_path=model_path,
+            zone_x1=self.slider_cam_zone_left.value() / 100.0,
+            zone_y1=self.slider_cam_zone_top.value() / 100.0,
+            zone_x2=self.slider_cam_zone_right.value() / 100.0,
+            zone_y2=self.slider_cam_zone_bot.value() / 100.0,
+            preloaded_model=self._preloaded_model,
+            preloaded_device=self._preloaded_device,
+        )
+        self._cam_worker.frame_ready.connect(self._on_cam_frame_ready)
+        self._cam_worker.counts_updated.connect(self._on_cam_counts_updated)
+        self._cam_worker.detection_event.connect(self._on_cam_detection_event)
+        self._cam_worker.connection_status.connect(self._on_cam_connection_status)
+        self._cam_worker.error_occurred.connect(self._on_cam_error)
+        self._cam_worker.finished.connect(self._on_cam_finished)
+        self._cam_worker.start()
+
+        # UI
+        self.btn_cam_connect.setEnabled(False)
+        self.btn_cam_disconnect.setEnabled(True)
+        self.cam_url_input.setEnabled(False)
+        self._cam_session_start = datetime.datetime.now()
+        self.lbl_cam_session.setText(
+            f"Sesión: {self._cam_session_start.strftime('%H:%M:%S')}"
+        )
+        app_logger.log_action(self._user, "CAMARA_CONECTADA", f"URL: {url}")
+        self.show_toast("Conectando a la cámara…", "info")
+
+    def _on_camera_disconnect(self):
+        """Detiene el worker de cámara limpiamente sin bloquear la interfaz."""
+        url_log = self.cam_url_input.text().strip()
+        self._kill_cam_worker()
+        self._reset_cam_ui()
+        app_logger.log_action(self._user, "CAMARA_DESCONECTADA", f"URL: {url_log}")
+        self.show_toast("Cámara desconectada.", "info")
+
+    def _reset_cam_ui(self):
+        self.btn_cam_connect.setEnabled(True)
+        self.btn_cam_disconnect.setEnabled(False)
+        self.btn_cam_pause.setEnabled(False)
+        self.btn_cam_reset.setEnabled(False)
+        self.btn_cam_snapshot.setEnabled(False)
+        self.cam_url_input.setEnabled(True)
+        self.cam_frame.setText(
+            "📷\n\nIntroduzca la URL de la cámara IP\ny pulse Conectar para iniciar el monitoreo en tiempo real"
+        )
+        self.cam_frame.setAlignment(Qt.AlignCenter)
+        self._set_cam_status("idle")
+        self.lbl_cam_fps.setText("")
+
+    def _on_cam_connection_status(self, status: str):
+        if status == "connecting":
+            self._set_cam_status("connecting")
+            self.lbl_cam_status.setText("Conectando…")
+            self.lbl_cam_status_dot.setText("🟡")
+        elif status == "ok":
+            self._set_cam_status("ok")
+            self.lbl_cam_status.setText("En vivo")
+            self.lbl_cam_status_dot.setText("🟢")
+            self.btn_cam_pause.setEnabled(True)
+            self.btn_cam_reset.setEnabled(True)
+            self.btn_cam_snapshot.setEnabled(True)
+            # Timer de actualización de FPS/sesión (每2s)
+            if not hasattr(self, "_cam_fps_timer"):
+                self._cam_fps_timer = QTimer(self)
+                self._cam_fps_timer.timeout.connect(self._update_cam_session_label)
+            self._cam_fps_timer.start(2000)
+        elif status == "lost":
+            self._set_cam_status("reconnecting")
+            self.lbl_cam_status.setText("Reconectando…")
+            self.lbl_cam_status_dot.setText("🟠")
+        elif status == "error":
+            self._set_cam_status("idle")
+            self.lbl_cam_status.setText("Error")
+            self.lbl_cam_status_dot.setText("🔴")
+
+    def _on_cam_frame_ready(self, qimg: QImage):
+        pixmap = QPixmap.fromImage(qimg)
+        self.cam_frame.setPixmap(
+            pixmap.scaled(self.cam_frame.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
+
+    def _on_cam_counts_updated(self, counts: dict):
+        for i in range(self.table_cam_conteo.rowCount()):
+            mat_item = self.table_cam_conteo.item(i, 0)
+            if mat_item and mat_item.text() in counts:
+                self.table_cam_conteo.setItem(
+                    i, 1, QTableWidgetItem(str(counts[mat_item.text()]))
+                )
+
+    def _on_cam_detection_event(self, ts: str, msg: str):
+        item = QListWidgetItem(f"[{ts}] {msg}")
+        self.list_cam_detections.insertItem(0, item)
+        if self.list_cam_detections.count() > 50:
+            self.list_cam_detections.takeItem(50)
+        # Captura automática de evidencia
+        self._take_cam_snapshot(auto=True)
+        # Alerta sonora sutil
+        try:
+            import winsound
+            winsound.Beep(880, 120)
+        except Exception:
+            pass
+
+    def _on_cam_error(self, msg: str):
+        self.show_toast(f"Error de cámara: {msg}", "error")
+        self._reset_cam_ui()
+        self.lbl_cam_status_dot.setText("🔴")
+        self.lbl_cam_status.setText("Error")
+        app_logger.log_action(self._user, "CAMARA_ERROR", msg)
+
+    def _on_cam_finished(self):
+        if hasattr(self, "_cam_fps_timer"):
+            self._cam_fps_timer.stop()
+        self._reset_cam_ui()
+
+    def _on_cam_pause_toggle(self):
+        if not (hasattr(self, "_cam_worker") and self._cam_worker and self._cam_worker.isRunning()):
+            return
+        paused = not self._cam_worker._is_paused
+        self._cam_worker.set_paused(paused)
+        self.btn_cam_pause.setText("▶  Reanudar" if paused else "⏸  Pausar")
+
+    def _on_cam_reset_counts(self):
+        if hasattr(self, "_cam_worker") and self._cam_worker and self._cam_worker.isRunning():
+            self._cam_worker.reset_counts()
+        for i in range(self.table_cam_conteo.rowCount()):
+            self.table_cam_conteo.item(i, 1).setText("0")
+        self.list_cam_detections.clear()
+        self.show_toast("Conteo reiniciado.", "info")
+
+    def _on_cam_whatsapp_report(self):
+        report_lines = ["*REPORTE DE BULTOS - LOGICHECK* 🚚\n"]
+        todas_metas_ok = True
+
+        for i in range(self.table_cam_conteo.rowCount()):
+            num_obj = self.table_cam_conteo.item(i, 0)
+            if not num_obj: continue
+            material = num_obj.text()
+            
+            conteo_str = self.table_cam_conteo.item(i, 1).text()
+            conteo = int(conteo_str) if conteo_str.isdigit() else 0
+            
+            meta_str = self.table_cam_conteo.item(i, 2).text()
+            meta = int(meta_str) if meta_str.isdigit() else 0
+            
+            if meta > 0:
+                if conteo == meta:
+                    estado = "✅ COMPLETO"
+                elif conteo < meta:
+                    estado = f"❌ FALTAN {meta - conteo}"
+                    todas_metas_ok = False
+                else:
+                    estado = f"⚠️ SOBRAN {conteo - meta}"
+                    todas_metas_ok = False
+                report_lines.append(f"- {material}: *{conteo}* / {meta} (Meta) -> {estado}")
+            else:
+                report_lines.append(f"- {material}: *{conteo}*")
+
+        if todas_metas_ok:
+            report_lines.append("\n🎉 Todas las recargas están correctas.")
+        else:
+            report_lines.append("\n⚠️ Hay discrepancias entre las facturas de recarga y el conteo en piso.")
+        
+        texto_mensaje = "\n".join(report_lines)
+        notifier.send_message(texto_mensaje)
+        self.show_toast("Reporte de seguridad reenviado por WhatsApp.", "success")
+
+
+    def _on_cam_zone_changed(self):
+        """Actualiza las etiquetas y envía las 4 coordenadas de zona al worker en vivo."""
+        top_val   = self.slider_cam_zone_top.value()
+        bot_val   = self.slider_cam_zone_bot.value()
+        left_val  = self.slider_cam_zone_left.value()
+        right_val = self.slider_cam_zone_right.value()
+
+        # Coherencia vertical: top no puede igualar o superar a bottom
+        if top_val >= bot_val:
+            bot_val = min(top_val + 5, 95)
+            self.slider_cam_zone_bot.blockSignals(True)
+            self.slider_cam_zone_bot.setValue(bot_val)
+            self.slider_cam_zone_bot.blockSignals(False)
+
+        # Coherencia horizontal: left no puede igualar o superar a right
+        if left_val >= right_val:
+            right_val = min(left_val + 10, 100)
+            self.slider_cam_zone_right.blockSignals(True)
+            self.slider_cam_zone_right.setValue(right_val)
+            self.slider_cam_zone_right.blockSignals(False)
+
+        self.lbl_cam_zone_top.setText(f"{top_val}%")
+        self.lbl_cam_zone_bot.setText(f"{bot_val}%")
+        self.lbl_cam_zone_left.setText(f"{left_val}%")
+        self.lbl_cam_zone_right.setText(f"{right_val}%")
+
+        if hasattr(self, "_cam_worker") and self._cam_worker and self._cam_worker.isRunning():
+            self._cam_worker.zone_x1 = left_val  / 100.0
+            self._cam_worker.zone_y1 = top_val   / 100.0
+            self._cam_worker.zone_x2 = right_val / 100.0
+            self._cam_worker.zone_y2 = bot_val   / 100.0
+
+
+
+    def _take_cam_snapshot(self, auto: bool = False):
+        """Captura el frame actual de la cámara en vivo."""
+        if not hasattr(self, "cam_frame") or self.cam_frame.pixmap() is None:
+            return
+        os.makedirs("captures", exist_ok=True)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"captures/cam_snapshot_{timestamp}.png"
+        self.cam_frame.pixmap().save(filename)
+
+        # Añadir al historial de capturas de la página de Reportes
+        item = QListWidgetItem(f"Cam {timestamp}")
+        item.setIcon(QIcon(filename))
+        item.setData(Qt.UserRole, os.path.abspath(filename))
+        if hasattr(self, "list_captures"):
+            self.list_captures.insertItem(0, item)
+
+        if not auto:
+            self.show_toast(f"Captura guardada: {os.path.basename(filename)}", "success")
+
+    def _update_cam_session_label(self):
+        if hasattr(self, "_cam_session_start"):
+            elapsed = datetime.datetime.now() - self._cam_session_start
+            h, rem = divmod(int(elapsed.total_seconds()), 3600)
+            m, s = divmod(rem, 60)
+            self.lbl_cam_session.setText(
+                f"Sesión activa: {h:02d}:{m:02d}:{s:02d}"
+            )
+
+    def _set_cam_status(self, state: str):
+        if not hasattr(self, "cam_video_status"):
+            return
+        label_map = {
+            "idle":         "📷  Sin señal",
+            "connecting":   "⏳  Conectando…",
+            "ok":           "🟢  En vivo",
+            "reconnecting": "🟠  Reconectando…",
+        }
+        self.cam_video_status.setText(label_map.get(state, state))
+        self.cam_video_status.setProperty("state", state)
+        self.cam_video_status.style().unpolish(self.cam_video_status)
+        self.cam_video_status.style().polish(self.cam_video_status)
+        self.cam_video_status.update()
+
     def _create_invoice_page(self):
         """Página para cargar y analizar factura PDF."""
         page = QWidget()
@@ -1382,6 +1989,12 @@ class MainWindow(QMainWindow):
             self.btn_stop_analysis.setVisible(can_video)
             self.btn_load_video.setVisible(can_video)
 
+        # Cámara en Vivo: solo Op. Video y Admin
+        if hasattr(self, "btn_cam_connect"):
+            can_cam = can_do_action(role, "camera.iniciar")
+            self.btn_cam_connect.setVisible(can_cam)
+            self.btn_cam_disconnect.setVisible(can_cam)
+
         # Si el rol no puede ver la primera página activa, ir al Dashboard
         if not can_access_page(role, "Dashboard"):
             # En principio todos ven el dashboard, pero por seguridad:
@@ -1406,13 +2019,14 @@ class MainWindow(QMainWindow):
             "Dashboard": 0,
             "Factura PDF": 1,
             "Análisis de Video": 2,
-            "Asignación Vehicular": 3,
-            "Reportes": 4,
-            "Actividad": 5,
-            "Gestión de Usuarios": 6,
+            "Cámara en Vivo": 3,
+            "Asignación Vehicular": 4,
+            "Reportes": 5,
+            "Actividad": 6,
+            "Gestión de Usuarios": 7,
         }
 
-        icons = ["📊", "📄", "📹", "🚛", "📋", "📜", "👥"]
+        icons = ["📊", "📄", "📹", "📷", "🚛", "📋", "📜", "👥"]
 
         # Refrescar páginas al navegar a ellas
         if page_name == "Gestión de Usuarios" and hasattr(self, "_users_page"):

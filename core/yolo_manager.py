@@ -393,3 +393,245 @@ class VideoPlayerWorker(QThread):
 
         cap.release()
         self.finished.emit()
+
+
+class RtspCameraWorker(QThread):
+    """Worker para captura y detección YOLO en tiempo real desde una cámara IP (RTSP/HTTP).
+    Cuenta objetos que intersectan una zona rectangular configurable (una vez por ID único).
+    """
+    frame_ready       = Signal(QImage)   # Frame procesado con overlays
+    counts_updated    = Signal(dict)     # {categoria: count}
+    detection_event   = Signal(str, str) # (timestamp, mensaje)
+    connection_status = Signal(str)      # "connecting", "ok", "lost", "error"
+    error_occurred    = Signal(str)
+    finished          = Signal()
+
+    def __init__(self, camera_url: str, model_path: str,
+                 zone_x1: float = 0.20, zone_y1: float = 0.40,
+                 zone_x2: float = 0.80, zone_y2: float = 0.70,
+                 preloaded_model=None, preloaded_device=None):
+        super().__init__()
+        self.camera_url  = camera_url
+        self.model_path  = model_path
+        # Zona de conteo normalizada (0.0 – 1.0)
+        self.zone_x1 = zone_x1
+        self.zone_y1 = zone_y1
+        self.zone_x2 = zone_x2
+        self.zone_y2 = zone_y2
+        self._is_running = True
+        self._is_paused  = False
+
+        # Conteo acumulado de la sesión en vivo
+        self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
+        self.counted_ids = set()   # IDs que ya fueron contados en esta sesión
+
+        # Cargar/reutilizar modelo
+        if preloaded_model is not None:
+            self.model = preloaded_model
+            self.device = preloaded_device or "cpu"
+            self.model_loaded = True
+            print(f"[RTSP] Modelo precargado en {self.device}")
+        else:
+            try:
+                from ultralytics import YOLO
+                import torch
+                self.model  = YOLO(model_path)
+                self.device = "cuda" if torch.cuda.is_available() else "cpu"
+                self.model.to(self.device)
+                self.model_loaded = True
+                print(f"[RTSP] Modelo cargado en {self.device}")
+            except Exception as e:
+                self.model_loaded = False
+                self.error_msg = str(e)
+
+    def set_paused(self, paused: bool):
+        self._is_paused = paused
+
+    def stop(self):
+        self._is_running = False
+
+    def reset_counts(self):
+        """Reinicia el conteo de la sesión en vivo."""
+        self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
+        self.counted_ids.clear()
+
+    def _boxes_overlap(self, bx1, by1, bx2, by2, zx1, zy1, zx2, zy2) -> bool:
+        """Retorna True si el bounding box del objeto se solapa con la zona de conteo."""
+        return not (bx2 < zx1 or bx1 > zx2 or by2 < zy1 or by1 > zy2)
+
+    def run(self):
+        if not self.model_loaded:
+            self.error_occurred.emit(
+                f"Error cargando modelo: {getattr(self, 'error_msg', 'desconocido')}"
+            )
+            self.finished.emit()
+            return
+
+        self.connection_status.emit("connecting")
+        print(f"[RTSP] Conectando a: {self.camera_url}")
+
+        RECONNECT_DELAY_MS = 3000
+        MAX_RECONNECT      = 5
+        FRAME_SKIP         = 2
+        reconnect_count    = 0
+
+        while self._is_running:
+            cap = cv2.VideoCapture(self.camera_url)
+            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+            if not cap.isOpened():
+                reconnect_count += 1
+                print(f"[RTSP] Fallo de conexión (intento {reconnect_count}/{MAX_RECONNECT})")
+                self.connection_status.emit("lost")
+                if reconnect_count >= MAX_RECONNECT:
+                    self.error_occurred.emit(
+                        f"No se pudo conectar a la cámara después de {MAX_RECONNECT} intentos.\n"
+                        f"URL: {self.camera_url}"
+                    )
+                    break
+                self.msleep(RECONNECT_DELAY_MS)
+                continue
+
+            # Conexión exitosa
+            reconnect_count = 0
+            fps    = cap.get(cv2.CAP_PROP_FPS) or 25.0
+            self.connection_status.emit("ok")
+            print(f"[RTSP] Conectado OK — FPS declarados: {fps:.1f}")
+
+            frame_local = 0
+
+            while self._is_running and cap.isOpened():
+                if self._is_paused:
+                    self.msleep(30)
+                    continue
+
+                ret, frame = cap.read()
+                if not ret:
+                    print("[RTSP] Pérdida de señal, reconectando…")
+                    self.connection_status.emit("lost")
+                    break
+
+                frame_local += 1
+                h, w = frame.shape[:2]
+
+                # Píxeles de la zona de conteo
+                zx1 = int(self.zone_x1 * w)
+                zy1 = int(self.zone_y1 * h)
+                zx2 = int(self.zone_x2 * w)
+                zy2 = int(self.zone_y2 * h)
+
+                # ── Frames sin inferencia → solo dibujar zona ──────────
+                if frame_local % FRAME_SKIP != 0:
+                    self._draw_zone(frame, zx1, zy1, zx2, zy2, active=False)
+                    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    hh, ww, ch = rgb.shape
+                    qimg = QImage(rgb.data, ww, hh, ch * ww, QImage.Format_RGB888)
+                    self.frame_ready.emit(qimg.copy())
+                    continue
+
+                start_t = time.time()
+
+                results = self.model.track(
+                    frame, persist=True, device=self.device,
+                    verbose=False, conf=0.20, iou=0.5
+                )
+                result = results[0]
+
+                frame_boxes = []
+                zone_active = False  # Se pondrá True si algún objeto toca la zona
+
+                if result.boxes is not None and len(result.boxes) > 0:
+                    boxes_xyxy = result.boxes.xyxy.cpu().numpy()
+                    clss       = result.boxes.cls.int().cpu().tolist()
+                    track_ids  = (result.boxes.id.int().cpu().tolist()
+                                  if result.boxes.id is not None
+                                  else [None] * len(boxes_xyxy))
+                    names = self.model.names
+
+                    for box, track_id, cls_id in zip(boxes_xyxy, track_ids, clss):
+                        x1, y1, x2, y2 = box
+                        cls_name = names[cls_id]
+
+                        ui_cat = None
+                        if cls_name.lower() in ["bulto", "cemento", "bag"]:
+                            ui_cat = "Cemento"
+                        elif "tuberia" in cls_name.lower() and "presion" in cls_name.lower():
+                            ui_cat = "Tubería Presión"
+                        elif "tuberia" in cls_name.lower() and "sanitaria" in cls_name.lower():
+                            ui_cat = "Tubería Sanitaria"
+
+                        if ui_cat is None:
+                            continue
+
+                        ix1, iy1, ix2, iy2 = int(x1), int(y1), int(x2), int(y2)
+                        in_zone = self._boxes_overlap(ix1, iy1, ix2, iy2, zx1, zy1, zx2, zy2)
+
+                        frame_boxes.append((ix1, iy1, ix2, iy2, track_id, ui_cat, in_zone))
+
+                        # ── Conteo por zona ────────────────────────────
+                        if in_zone:
+                            zone_active = True
+                            if track_id is not None and track_id not in self.counted_ids:
+                                self.cumulative_counts[ui_cat] += 1
+                                self.counted_ids.add(track_id)
+                                ts = time.strftime("%H:%M:%S")
+                                self.detection_event.emit(
+                                    ts, f"{ui_cat} contado (ID:{track_id})"
+                                )
+
+                # ── Dibujar zona y bounding boxes ─────────────────────
+                self._draw_zone(frame, zx1, zy1, zx2, zy2, active=zone_active)
+
+                for ix1, iy1, ix2, iy2, track_id, ui_cat, in_zone in frame_boxes:
+                    # Verde si está en zona, blanco si no
+                    color = (0, 255, 80) if in_zone else (200, 200, 200)
+                    thickness = 3 if in_zone else 1
+                    cv2.rectangle(frame, (ix1, iy1), (ix2, iy2), color, thickness)
+                    tid_str = f"ID:{track_id}" if track_id is not None else ""
+                    label = f"{tid_str} {ui_cat}"
+                    cv2.putText(frame, label, (ix1, max(iy1 - 5, 12)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 1)
+
+                # ── FPS ───────────────────────────────────────────────
+                elapsed_ms = (time.time() - start_t) * 1000.0
+                infer_fps  = 1000.0 / max(elapsed_ms, 1.0)
+                cv2.putText(frame, f"IA:{infer_fps:.1f}fps", (w - 110, 22),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (180, 255, 180), 2)
+
+                # ── Emitir frame y conteos ─────────────────────────────
+                self.counts_updated.emit(dict(self.cumulative_counts))
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                hh, ww, ch = rgb.shape
+                qimg = QImage(rgb.data, ww, hh, ch * ww, QImage.Format_RGB888)
+                self.frame_ready.emit(qimg.copy())
+
+                # ── Timing ────────────────────────────────────────────
+                target_ms = (1000.0 / fps) * FRAME_SKIP
+                sleep_ms  = target_ms - elapsed_ms
+                if sleep_ms > 0:
+                    self.msleep(int(sleep_ms))
+
+            cap.release()
+            print("[RTSP] Cámara liberada.")
+
+            if self._is_running:
+                self.msleep(RECONNECT_DELAY_MS)
+
+        self.finished.emit()
+
+    def _draw_zone(self, frame, zx1: int, zy1: int, zx2: int, zy2: int, active: bool):
+        """Dibuja la zona de conteo sobre el frame con un efecto semitransparente."""
+        overlay = frame.copy()
+        # Color: amarillo dorado cuando está inactivo, verde brillante cuando hay detección
+        color = (0, 220, 60) if active else (0, 200, 255)
+        alpha = 0.18 if active else 0.10
+        cv2.rectangle(overlay, (zx1, zy1), (zx2, zy2), color, -1)  # Relleno
+        cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+        # Borde sólido
+        border_color = (0, 255, 80) if active else (0, 200, 255)
+        cv2.rectangle(frame, (zx1, zy1), (zx2, zy2), border_color, 2)
+        # Etiqueta
+        label = "ZONA DE CONTEO ●" if active else "ZONA DE CONTEO"
+        label_color = (0, 255, 80) if active else (0, 200, 255)
+        cv2.putText(frame, label, (zx1 + 6, zy1 + 20),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.55, label_color, 2)

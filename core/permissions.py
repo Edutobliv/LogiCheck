@@ -29,6 +29,7 @@ SYSTEM_FUNCTIONS = {
         "page.view.Dashboard":          "🏠 Ver Dashboard Operativo",
         "page.view.Factura PDF":        "📄 Acciones de Facturación",
         "page.view.Análisis de Video": "📹 Acciones de Análisis de Video",
+        "page.view.Cámara en Vivo":    "📷 Ver Stream de Cámara en Vivo",
         "page.view.Asignación Vehicular": "🚛 Realizar Cálculo de Vehículos",
         "page.view.Reportes":           "📊 Consultar Histórico / Reportes",
         "page.view.Actividad":          "📜 Ver Bitácora de Actividad",
@@ -38,6 +39,7 @@ SYSTEM_FUNCTIONS = {
         "factura.cargar":       "📤 Cargar y Procesar PDFs de Facturas",
         "video.iniciar":        "▶️ Iniciar Análisis de IA (YOLO)",
         "video.detener":        "⏹️ Detener Procesamiento de Video",
+        "camera.iniciar":       "📷 Conectar y Operar Cámara en Vivo",
         "vehiculo.gestionar":   "📝 Modificar Datos de Vehículos",
         "reportes.exportar":    "📥 Descargar Reportes Excel/CSV",
         "admin.usuarios":       "🔑 Cambiar Claves / Editar Usuarios",
@@ -94,13 +96,14 @@ def can_do_action(user: dict | str, action: str) -> bool:
 def _base_page_access(role: str, page: str) -> bool:
     """Lógica interna de acceso a páginas por rol."""
     data = {
-        "Dashboard":         ["admin", "op_factura", "op_video", "gerente", "dueno"],
-        "Factura PDF":       ["admin", "op_factura", "op_video", "gerente"],
-        "Análisis de Video": ["admin", "op_factura", "op_video", "gerente"],
-        "Asignación Vehicular":["admin", "op_video", "gerente"],
-        "Reportes":          ["admin", "op_factura", "op_video", "gerente", "dueno"],
-        "Actividad":         ["admin", "op_factura", "op_video", "gerente", "dueno"],
-        "Gestión de Usuarios":["admin"],
+        "Dashboard":            ["admin", "op_factura", "op_video", "gerente", "dueno"],
+        "Factura PDF":          ["admin", "op_factura", "op_video", "gerente"],
+        "Análisis de Video":    ["admin", "op_factura", "op_video", "gerente"],
+        "Cámara en Vivo":       ["admin", "op_video", "gerente"],
+        "Asignación Vehicular": ["admin", "op_video", "gerente"],
+        "Reportes":             ["admin", "op_factura", "op_video", "gerente", "dueno"],
+        "Actividad":            ["admin", "op_factura", "op_video", "gerente", "dueno"],
+        "Gestión de Usuarios":  ["admin"],
     }
     return role in data.get(page, [])
 
@@ -110,6 +113,7 @@ def _base_action_access(role: str, action: str) -> bool:
         "factura.cargar":     ["admin", "op_factura"],
         "video.iniciar":      ["admin", "op_video"],
         "video.detener":      ["admin", "op_video"],
+        "camera.iniciar":     ["admin", "op_video"],
         "vehiculo.gestionar": ["admin", "op_video", "gerente"],
         "reportes.exportar":  ["admin", "op_factura", "op_video", "gerente", "dueno"],
         "admin.usuarios":     ["admin"],
@@ -122,13 +126,13 @@ def get_role_permissions(role: str) -> dict:
     perms = {"páginas": [], "acciones": []}
     
     # 1. Páginas
-    all_pages = ["Dashboard", "Factura PDF", "Análisis de Video", "Asignación Vehicular", "Reportes", "Actividad", "Gestión de Usuarios"]
+    all_pages = ["Dashboard", "Factura PDF", "Análisis de Video", "Cámara en Vivo", "Asignación Vehicular", "Reportes", "Actividad", "Gestión de Usuarios"]
     for pg in all_pages:
         if _base_page_access(role, pg):
             perms["páginas"].append(pg)
             
     # 2. Acciones
-    all_actions = ["factura.cargar", "video.iniciar", "video.detener", "vehiculo.gestionar", "reportes.exportar", "admin.usuarios", "admin.config"]
+    all_actions = ["factura.cargar", "video.iniciar", "video.detener", "camera.iniciar", "vehiculo.gestionar", "reportes.exportar", "admin.usuarios", "admin.config"]
     for action in all_actions:
         if _base_action_access(role, action):
             # Obtener el label legible desde SYSTEM_FUNCTIONS
