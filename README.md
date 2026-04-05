@@ -1,15 +1,21 @@
 # 🚛 LogiCheck IA: Sistema de Auditoría y Seguridad Inteligente
 
-**LogiCheck** es una plataforma avanzada de visión artificial diseñada específicamente para la automatización de inventarios y seguridad perimetral en ferreterías y centros logísticos. Utilizando modelos de Deep Learning (YOLOv11), el sistema supervisa el flujo de mercancía en tiempo real a través de cámaras RTSP.
+**LogiCheck** es una plataforma avanzada de visión artificial diseñada específicamente para la automatización de inventarios y seguridad perimetral en ferreterías y centros logísticos. Utilizando modelos de Deep Learning (YOLOv11), el sistema supervisa el flujo de mercancía en tiempo real a través de cámaras RTSP y permite auditorías históricas profundas.
 
 ---
 
 ## 🚀 Características Principales
 
 ### 👁️ Monitoreo y Visión Artificial
-- **Compatibilidad RTSP Multi-canal:** Soporte para hasta 11 cámaras de alta definición con reconexión automática y cambio de stream sin interrupciones.
+- **Compatibilidad RTSP Multi-canal:** Soporte para hasta 16 cámaras de alta definición con reconexión automática y cambio de stream sin interrupciones.
 - **Detección Especializada:** Optimizado para el conteo preciso de bultos (cemento), tubería de presión y tubería sanitaria.
 - **Zona de Conteo Interactiva:** Interfaz de 4 ejes (Arriba, Abajo, Izquierda, Derecha) para delimitar con exactitud el área de detección según la perspectiva de cada cámara.
+
+### 📼 Gestión de Historial (Dahua Playback)
+- **Extracción Inteligente:** Motor de descarga paralela distribuido en 32 hilos para bajar fragmentos de video históricos en tiempo récord.
+- **Reproducción Fluida:** Interfaz táctil con control de velocidad dinámico (0.5x a 15x).
+- **IA Retroactiva:** Capacidad de analizar videos grabados previamente con el mismo motor de IA usado en vivo.
+- **Seguridad de Rango:** Validación inteligente que bloquea selecciones futuras y garantiza la integridad de los datos.
 
 ### 🛡️ Seguridad y Vigilancia Activa
 - **Detección de Movimiento No Autorizado:** Alerta inmediata si se detecta movimiento de mercancía sin una factura cargada en el sistema.
@@ -32,8 +38,9 @@
 
 ## 🛠️ Stack Tecnológico
 - **Lenguaje:** Python 3.12+
-- **Interfaz (GUI):** PySide6 (Qt) con diseño *Premium Glow* y modo oscuro.
+- **Interfaz (GUI):** PySide6 (Qt) con diseño *Premium Glow* y modo oscuro/claro integrado.
 - **IA/Visión:** Ultralytics YOLOv11, OpenCV (Detección y Tracking).
+- **Procesamiento de Video:** FFmpeg (Descarga paralela y concatenación de streams).
 - **Notificaciones:** Telegram Bot API (Requests) y CallMeBot API.
 - **Base de Datos:** SQLite3 para logs de actividad y gestión de usuarios.
 
@@ -62,11 +69,11 @@ Para recibir alertas con fotos en tu móvil:
 ---
 
 ## 📂 Estructura del Proyecto
-- `ui/`: Interfaz gráfica completa y lógica de ventanas.
+- `ui/`: Interfaz gráfica completa y lógica de ventanas (incluyendo el nuevo `dahua_history_dialog.py`).
 - `core/`: Motores de IA, sistema de logs, exportación de reportes y notificaciones.
-- `resources/`: Estilos CSS/QSS y recursos de audio.
-- `training/`: Scritps para el re-entrenamiento y refinamiento del modelo YOLO.
-- `captures/`: Historial de evidencia visual capturada automáticamente.
+- `resources/`: Estilos CSS/QSS (Soporte Dual Tema) y recursos de audio.
+- `training/`: Scripts para el re-entrenamiento y refinamiento del modelo YOLO.
+- `captures/`: Historial de evidencia visual y fragmentos temporales de video.
 
 ---
 
