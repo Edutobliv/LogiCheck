@@ -301,6 +301,22 @@ QPushButton#dangerBtn:hover {
         stop:0 #f5a0b8, stop:1 #f0b8c0);
 }
 
+QPushButton#warningBtn {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #fab387, stop:1 #f9e2af);
+    color: #11111b;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+QPushButton#warningBtn:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #f9c88a, stop:1 #fcd5a8);
+}
+QPushButton#warningBtn:disabled { background: #45475a; color: #6c7086; }
+
 /* --- Tables --- */
 QTableWidget {
     background-color: #1e1e2e;
@@ -547,12 +563,23 @@ QComboBox::down-arrow {
 
 /* Fix for transparent dropdown backgrounds */
 QComboBox QAbstractItemView {
-    background-color: #181825 !important; /* Forzar fondo sólido */
-    border: 1px solid #45475a;
+    background-color: #11111b !important;
+    border: 1px solid #313244;
     border-radius: 8px;
-    selection-background-color: #313244;
     color: #cdd6f4;
     outline: none;
+    padding: 4px;
+}
+
+QComboBox QAbstractItemView::item {
+    min-height: 28px;
+    padding-left: 8px;
+}
+
+QComboBox QAbstractItemView::item:selected {
+    background-color: #313244;
+    color: #89b4fa;
+    border-radius: 4px;
 }
 
 /* Tooltips y Menús */
@@ -673,3 +700,76 @@ QTableWidget#comparisonTable {
 }
 #playerBtn_small:hover { background-color: rgba(205, 214, 244, 0.13); }
 #playerBtn_small:disabled { color: #45475a; border-color: #313244; }
+
+/* --- Dahua History Dialog --- */
+#videoPreviewFrame {
+    background-color: #11111b;
+    border: 2px solid #313244;
+    border-radius: 10px;
+    color: #585b70;
+    font-size: 14px;
+}
+
+#actionsCard {
+    background-color: #181825;
+    border: 1px solid #313244;
+    border-radius: 10px;
+}
+
+/* --- Shared Dialog Components global styles --- */
+QGroupBox {
+    background-color: #1a1a26;
+    border: 1px solid #313244;
+    border-radius: 10px;
+    margin-top: 14px;
+    padding: 10px;
+    color: #89b4fa;
+    font-weight: 700;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 5px;
+}
+
+QCalendarWidget {
+    background-color: #11111b;
+    border: 1px solid #313244;
+    border-radius: 8px;
+}
+QCalendarWidget QAbstractItemView:enabled {
+    background-color: #11111b;
+    selection-background-color: #89b4fa;
+    selection-color: #11111b;
+    color: #cdd6f4;
+}
+QCalendarWidget QWidget#qt_calendar_navigationbar {
+    background-color: #181825;
+}
+QCalendarWidget QToolButton {
+    color: #89b4fa;
+    font-weight: 700;
+    background: transparent;
+    border-radius: 4px;
+    padding: 4px;
+}
+QCalendarWidget QToolButton:hover { background: #313244; }
+QCalendarWidget QSpinBox {
+    background: #181825;
+    border: 1px solid #313244;
+    color: #cdd6f4;
+}
+QCalendarWidget QHeaderView { 
+    outline: none;
+    border: none;
+}
+
+#speedLabel {
+    font-size: 24px;
+    font-weight: 900;
+    color: #89b4fa;
+    background: #181825;
+    border-radius: 8px;
+    padding: 10px;
+    border: 1px solid #313244;
+}

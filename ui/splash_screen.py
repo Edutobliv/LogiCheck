@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import (
     Qt, QTimer, QPropertyAnimation, QEasingCurve,
     QThread, Signal, QSequentialAnimationGroup,
-    QRect
+    QRect, QVariantAnimation
 )
 from PySide6.QtGui import (
     QFont, QColor, QPainter, QLinearGradient,
@@ -62,14 +62,14 @@ class InitWorker(QThread):
             time.sleep(0.15)
 
             if self.load_yolo:
-                self.progress.emit(70, "Preparando motor de visión artificial...")
+                self.progress.emit(68, "Preparando motor de visión artificial...")
                 time.sleep(0.1)
                 preloaded_model, preloaded_device = self._load_yolo_model()
             else:
                 self.progress.emit(70, "Preparando interfaz de usuario...")
                 time.sleep(0.2)
 
-            self.progress.emit(90, "Preparando interfaz de usuario...")
+            self.progress.emit(95, "Preparando interfaz de usuario...")
             time.sleep(0.2)
 
             self.progress.emit(100, "¡Listo!")
@@ -84,10 +84,12 @@ class InitWorker(QThread):
         """Carga el modelo YOLO en CUDA. Retorna (model, device) o (None, None) si falla."""
         import time
         try:
+            self.progress.emit(72, "Importando librerías neuronales (PyTorch)...")
             from ultralytics import YOLO
             import torch
 
             # Determinar ruta del modelo
+            self.progress.emit(76, "Localizando modelo IA en disco...")
             if getattr(sys, 'frozen', False):
                 base_dir = os.path.dirname(sys.executable)
                 internal = os.path.join(base_dir, "_internal")
@@ -110,18 +112,19 @@ class InitWorker(QThread):
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-            self.progress.emit(75, f"Cargando modelo IA en {device.upper()}...")
-            time.sleep(0.1)
-
+            self.progress.emit(81, f"Cargando pesos computacionales en {device.upper()}...")
             model = YOLO(model_path)
+            
+            self.progress.emit(86, "Transfiriendo tensores a memoria...")
             model.to(device)
 
             # Warm-up: ejecutar una inferencia dummy para que CUDA inicialice kernels
-            self.progress.emit(85, "Calentando motor de inferencia...")
+            self.progress.emit(90, "Calentando motor de inferencia (Warm-Up)...")
             import numpy as np
             dummy = np.zeros((480, 640, 3), dtype=np.uint8)
             model.predict(dummy, verbose=False, conf=0.5)
 
+            self.progress.emit(93, "Optimizando red neuronal terminada.")
             print(f"[YOLO] Modelo precargado en {device}. Clases: {model.names}")
             return model, device
 
@@ -148,7 +151,18 @@ class GradientProgressBar(QWidget):
         super().__init__(parent)
         self._value   = 0
         self._maximum = 100
+        self._offset_px = 0.0
         self.setFixedHeight(6)
+
+        self._anim_timer = QTimer(self)
+        self._anim_timer.timeout.connect(self._animate_gradient)
+        self._anim_timer.start(30)  # ~30 FPS para dar sensación continua de actividad
+
+    def _animate_gradient(self):
+        self._offset_px += 2.0
+        if self._offset_px >= 100.0:
+            self._offset_px = 0.0
+        self.update()
 
     def setValue(self, v: int):
         self._value = max(0, min(v, self._maximum))
@@ -167,13 +181,16 @@ class GradientProgressBar(QWidget):
         bg_path.addRoundedRect(0, 0, w, h, r, r)
         painter.drawPath(bg_path)
 
-        # Progreso con gradiente
+        # Progreso intermitente con gradiente infinito (Repetición)
         fill_w = int(w * self._value / self._maximum)
         if fill_w > 0:
-            grad = QLinearGradient(0, 0, fill_w, 0)
+            grad = QLinearGradient(self._offset_px, 0, self._offset_px + 100, 0)
+            grad.setSpread(QLinearGradient.RepeatSpread)
             grad.setColorAt(0.0, QColor("#89b4fa"))
-            grad.setColorAt(0.5, QColor("#cba6f7"))
-            grad.setColorAt(1.0, QColor("#74c7ec"))
+            grad.setColorAt(0.33, QColor("#cba6f7"))
+            grad.setColorAt(0.66, QColor("#74c7ec"))
+            grad.setColorAt(1.0, QColor("#89b4fa"))
+            
             painter.setBrush(grad)
             fg_path = QPainterPath()
             fg_path.addRoundedRect(0, 0, fill_w, h, r, r)
@@ -459,8 +476,12 @@ class SplashScreen(QWidget):
         self._worker.start()
 
     def _on_progress(self, value: int, message: str):
-        # Animar la barra suavemente
-        self._bar_anim = QPropertyAnimation(duration=180, parent=self)
+        # Animar la barra muy suavemente (interpolación duradera para llenar huecos de carga pesada)
+        if hasattr(self, '_bar_anim') and self._bar_anim.state() == QVariantAnimation.Running:
+            self._bar_anim.stop()
+
+        self._bar_anim = QVariantAnimation(self)
+        self._bar_anim.setDuration(800)  # 800ms fade smooth
         self._bar_anim.setStartValue(self.progress._value)
         self._bar_anim.setEndValue(value)
         self._bar_anim.valueChanged.connect(

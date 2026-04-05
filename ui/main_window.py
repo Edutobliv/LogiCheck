@@ -27,6 +27,7 @@ from core.audit_store import (save_audit, get_audits, get_dashboard_stats,
 from ui.trend_chart import ModernTrendChart
 from core.report_exporter import export_excel, export_pdf
 from core.notifier import notifier
+from ui.dahua_history_dialog import DahuaHistoryDialog
 
 
 class ScrubThumbnailWidget(QFrame):
@@ -1219,6 +1220,17 @@ class MainWindow(QMainWindow):
         self.btn_cam_reset.clicked.connect(self._on_cam_reset_counts)
         cam_ctrl_bar.addWidget(self.btn_cam_reset)
 
+        # ── NUEVO: Botón de Historial de Grabaciones Dahua ────────────────
+        self.btn_cam_history = QPushButton("📼  Ver Historial")
+        self.btn_cam_history.setObjectName("playerBtn_small")
+        self.btn_cam_history.setCursor(Qt.PointingHandCursor)
+        self.btn_cam_history.setToolTip(
+            "Acceder y previsualizar grabaciones históricas almacenadas en el NVR Dahua"
+        )
+        self.btn_cam_history.clicked.connect(self._on_cam_history)
+        cam_ctrl_bar.addWidget(self.btn_cam_history)
+        # ─────────────────────────────────────────────────────────────────
+
         cam_ctrl_bar.addStretch()
 
         self.btn_cam_snapshot = QPushButton("📸  Captura")
@@ -1430,6 +1442,87 @@ class MainWindow(QMainWindow):
         self._reset_cam_ui()
         app_logger.log_action(self._user, "CAMARA_DESCONECTADA", f"URL: {url_log}")
         self.show_toast("Cámara desconectada.", "info")
+
+    # ── HISTORIAL DE GRABACIONES DAHUA ────────────────────────────────────
+    def _on_cam_history(self):
+        """
+        Abre el diálogo de Historial de Grabaciones Dahua.
+        Toma las credenciales (host, usuario, contraseña) ya configuradas en
+        la página de Cámara en Vivo, por lo que el usuario no tiene que
+        volver a ingresarlas.
+
+        Si el usuario confirma 'Analizar con IA', el fragmento descargado
+        se carga automáticamente en la página de Análisis de Video.
+        """
+        host = self.cam_url_input.text().strip()
+        if not host:
+            self.show_toast(
+                "Ingrese el Host de la cámara antes de abrir el historial.",
+                "warning"
+            )
+            return
+
+        # Credenciales extraídas de la URL actual (mismo usuario/contraseña que en vivo)
+        # La URL en vivo tiene formato: rtsp://Samuel:Samuel123.@host:554/...
+        # Reutilizamos las mismas credenciales
+        current_channel = self.cam_selector.currentIndex() + 1
+
+        dlg = DahuaHistoryDialog(
+            host=host,
+            user="Samuel",
+            password="Samuel123.",
+            port=554,
+            current_channel=current_channel,
+            parent=self
+        )
+
+        # Conectar la señal de 'Analizar con IA'
+        dlg.analyze_requested.connect(self._on_history_analyze_requested)
+
+        app_logger.log_action(
+            self._user, "HISTORIAL_ABIERTO",
+            f"Host: {host} | Canal: {current_channel}"
+        )
+        dlg.exec()
+
+    def _on_history_analyze_requested(self, video_path: str):
+        """
+        Llamado cuando el usuario confirma 'Analizar con IA' en el diálogo
+        de historial. Redirige automáticamente a la página de Análisis de Video
+        y carga el archivo descargado como si el usuario lo hubiera seleccionado
+        manualmente. El archivo temporal se borrará automáticamente al finalizar
+        el análisis (lógica de limpieza en _on_video_analysis_done).
+        """
+        if not os.path.exists(video_path):
+            self.show_toast("El fragmento descargado no se encontró.", "error")
+            return
+
+        # Cambiar a la página de Análisis de Video
+        self._on_nav_click("Análisis de Video")
+
+        # Cargar el archivo descargado en el analizador de video
+        self._video_path = video_path
+        self.lbl_video_name.setText(
+            f"📼 Historial: {os.path.basename(video_path)}"
+        )
+        self.btn_start_analysis.setEnabled(True)
+        self.video_status.setText("⏸  Video histórico listo para análisis")
+        self.video_status.setProperty("state", "idle")
+        self.video_status.style().unpolish(self.video_status)
+        self.video_status.style().polish(self.video_status)
+
+        # Guardar que este video es temporal (para borrarlo después del análisis)
+        self._history_temp_video = video_path
+
+        self.show_toast(
+            "Fragmento histórico listo. Pulse 'Iniciar Análisis YOLO'.",
+            "success"
+        )
+        app_logger.log_action(
+            self._user, "HISTORIAL_CARGADO_PARA_IA",
+            f"Archivo: {os.path.basename(video_path)}"
+        )
+    # ── FIN HISTORIAL ─────────────────────────────────────────────────────
 
     def _reset_cam_ui(self):
         self.btn_cam_connect.setEnabled(True)

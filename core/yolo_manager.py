@@ -62,7 +62,7 @@ class YoloAnalyzerWorker(QThread):
         # Crossing detection state
         self.crossing_frames = []
         self.prev_positions = {} # {track_id: y_center}
-        self.crossed_ids = set()
+        self.currently_outside_ids = set()
         self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
 
         while self._is_running and cap.isOpened():
@@ -106,12 +106,18 @@ class YoloAnalyzerWorker(QThread):
                         if track_id is not None:
                             if track_id in self.prev_positions:
                                 prev_y = self.prev_positions[track_id]
-                                crossed = (prev_y < line_y <= center_y) or (prev_y > line_y >= center_y)
-                                if crossed and track_id not in self.crossed_ids:
+                                is_exiting = (prev_y < line_y <= center_y)
+                                is_entering = (prev_y > line_y >= center_y)
+                                if is_exiting and track_id not in self.currently_outside_ids:
                                     if ui_cat in self.cumulative_counts:
                                         self.cumulative_counts[ui_cat] += 1
                                         self.crossing_frames.append(frame_idx)
-                                    self.crossed_ids.add(track_id)
+                                    self.currently_outside_ids.add(track_id)
+                                elif is_entering and track_id in self.currently_outside_ids:
+                                    if ui_cat in self.cumulative_counts:
+                                        self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
+                                        self.crossing_frames.append(frame_idx)
+                                    self.currently_outside_ids.remove(track_id)
                             self.prev_positions[track_id] = center_y
                         else:
                             # Proximity fallback for crossing
@@ -126,11 +132,16 @@ class YoloAnalyzerWorker(QThread):
                             
                             if best_match:
                                 prev_y = self.prev_positions[best_match]
-                                crossed = (prev_y < line_y <= center_y) or (prev_y > line_y >= center_y)
-                                if crossed and best_match not in self.crossed_ids:
+                                is_exiting = (prev_y < line_y <= center_y)
+                                is_entering = (prev_y > line_y >= center_y)
+                                if is_exiting and best_match not in self.currently_outside_ids:
                                     self.cumulative_counts[ui_cat] += 1
                                     self.crossing_frames.append(frame_idx)
-                                    self.crossed_ids.add(best_match)
+                                    self.currently_outside_ids.add(best_match)
+                                elif is_entering and best_match in self.currently_outside_ids:
+                                    self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
+                                    self.crossing_frames.append(frame_idx)
+                                    self.currently_outside_ids.remove(best_match)
                                 self.prev_positions[best_match] = center_y
                             else:
                                 proxy_id = f"proxy_{len(self.prev_positions)}_{int((x1+x2)/2)}"
@@ -191,7 +202,7 @@ class VideoPlayerWorker(QThread):
         
         # Incremental Counting per playback session
         self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
-        self.crossed_ids = set()
+        self.currently_outside_ids = set()
         self.prev_positions = {}
 
     def set_speed(self, speed):
@@ -258,7 +269,7 @@ class VideoPlayerWorker(QThread):
                 self._frame_idx = max(0, int(round((target_msec / 1000.0) * fps)))
                 # Reset counting state
                 self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
-                self.crossed_ids.clear()
+                self.currently_outside_ids.clear()
                 self.prev_positions.clear()
 
             if self._seek_offset_msec is not None:
@@ -270,7 +281,7 @@ class VideoPlayerWorker(QThread):
                 self._frame_idx = max(0, int(round((new_msec / 1000.0) * fps)))
                 # Reset counting state
                 self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
-                self.crossed_ids.clear()
+                self.currently_outside_ids.clear()
                 self.prev_positions.clear()
 
             if self._step_dir != 0:
@@ -313,14 +324,20 @@ class VideoPlayerWorker(QThread):
                     if track_id is not None:
                         if track_id in self.prev_positions:
                             prev_y = self.prev_positions[track_id]
-                            crossed = (prev_y < line_y <= center_y) or (prev_y > line_y >= center_y)
-                            if crossed and track_id not in self.crossed_ids:
+                            is_exiting = (prev_y < line_y <= center_y)
+                            is_entering = (prev_y > line_y >= center_y)
+                            if is_exiting and track_id not in self.currently_outside_ids:
                                 if ui_cat in self.cumulative_counts:
                                     self.cumulative_counts[ui_cat] += 1
-                                    # Emitir evento de detección
                                     timestamp = time.strftime("%H:%M:%S")
-                                    self.detection_event.emit(timestamp, f"{ui_cat} detectado (ID:{track_id})")
-                                self.crossed_ids.add(track_id)
+                                    self.detection_event.emit(timestamp, f"{ui_cat} despachado (ID:{track_id})")
+                                self.currently_outside_ids.add(track_id)
+                            elif is_entering and track_id in self.currently_outside_ids:
+                                if ui_cat in self.cumulative_counts:
+                                    self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
+                                    timestamp = time.strftime("%H:%M:%S")
+                                    self.detection_event.emit(timestamp, f"{ui_cat} retornado (ID:{track_id})")
+                                self.currently_outside_ids.remove(track_id)
                         new_prev_positions[track_id] = center_y
                     else:
                         # 2. Fallback: Proximidad simple para objetos sin ID
@@ -336,14 +353,20 @@ class VideoPlayerWorker(QThread):
                         
                         if best_match:
                             prev_y = self.prev_positions[best_match]
-                            crossed = (prev_y < line_y <= center_y) or (prev_y > line_y >= center_y)
-                            if crossed and best_match not in self.crossed_ids:
+                            is_exiting = (prev_y < line_y <= center_y)
+                            is_entering = (prev_y > line_y >= center_y)
+                            if is_exiting and best_match not in self.currently_outside_ids:
                                 if ui_cat in self.cumulative_counts:
                                     self.cumulative_counts[ui_cat] += 1
-                                    # Emitir evento de detección para proxy
                                     timestamp = time.strftime("%H:%M:%S")
-                                    self.detection_event.emit(timestamp, f"{ui_cat} detectado (ID:Proxy)")
-                                self.crossed_ids.add(best_match)
+                                    self.detection_event.emit(timestamp, f"{ui_cat} despachado (ID:Proxy)")
+                                self.currently_outside_ids.add(best_match)
+                            elif is_entering and best_match in self.currently_outside_ids:
+                                if ui_cat in self.cumulative_counts:
+                                    self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
+                                    timestamp = time.strftime("%H:%M:%S")
+                                    self.detection_event.emit(timestamp, f"{ui_cat} retornado (ID:Proxy)")
+                                self.currently_outside_ids.remove(best_match)
                             new_prev_positions[best_match] = center_y
                         else:
                             # Nuevo objeto "proxy"
@@ -423,7 +446,8 @@ class RtspCameraWorker(QThread):
 
         # Conteo acumulado de la sesión en vivo
         self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
-        self.counted_ids = set()   # IDs que ya fueron contados en esta sesión
+        self.counted_ids = set()   # IDs que están actualmente "afuera"
+        self.prev_positions = {}
 
         # Cargar/reutilizar modelo
         if preloaded_model is not None:
@@ -454,6 +478,7 @@ class RtspCameraWorker(QThread):
         """Reinicia el conteo de la sesión en vivo."""
         self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
         self.counted_ids.clear()
+        self.prev_positions.clear()
 
     def _boxes_overlap(self, bx1, by1, bx2, by2, zx1, zy1, zx2, zy2) -> bool:
         """Retorna True si el bounding box del objeto se solapa con la zona de conteo."""
@@ -548,6 +573,9 @@ class RtspCameraWorker(QThread):
                                   else [None] * len(boxes_xyxy))
                     names = self.model.names
 
+                    new_prev_positions = {}
+                    line_y = (zy1 + zy2) / 2.0  # Mitad de la zona para el conteo bidireccional
+
                     for box, track_id, cls_id in zip(boxes_xyxy, track_ids, clss):
                         x1, y1, x2, y2 = box
                         cls_name = names[cls_id]
@@ -568,16 +596,31 @@ class RtspCameraWorker(QThread):
 
                         frame_boxes.append((ix1, iy1, ix2, iy2, track_id, ui_cat, in_zone))
 
-                        # ── Conteo por zona ────────────────────────────
                         if in_zone:
                             zone_active = True
-                            if track_id is not None and track_id not in self.counted_ids:
-                                self.cumulative_counts[ui_cat] += 1
-                                self.counted_ids.add(track_id)
-                                ts = time.strftime("%H:%M:%S")
-                                self.detection_event.emit(
-                                    ts, f"{ui_cat} contado (ID:{track_id})"
-                                )
+
+                        # ── Conteo Bidireccional Integrado ──────────────────
+                        cy = (iy1 + iy2) / 2.0
+                        if track_id is not None:
+                            if track_id in self.prev_positions:
+                                prev_y = self.prev_positions[track_id]
+                                is_exiting = (prev_y < line_y <= cy)
+                                is_entering = (prev_y > line_y >= cy)
+
+                                if is_exiting and track_id not in self.counted_ids:
+                                    self.cumulative_counts[ui_cat] += 1
+                                    self.counted_ids.add(track_id)
+                                    ts = time.strftime("%H:%M:%S")
+                                    self.detection_event.emit(ts, f"{ui_cat} despachado (ID:{track_id})")
+                                elif is_entering and track_id in self.counted_ids:
+                                    self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
+                                    self.counted_ids.remove(track_id)
+                                    ts = time.strftime("%H:%M:%S")
+                                    self.detection_event.emit(ts, f"{ui_cat} retornado (ID:{track_id})")
+
+                            new_prev_positions[track_id] = cy
+
+                    self.prev_positions = new_prev_positions
 
                 # ── Dibujar zona y bounding boxes ─────────────────────
                 self._draw_zone(frame, zx1, zy1, zx2, zy2, active=zone_active)
