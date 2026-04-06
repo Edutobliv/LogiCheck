@@ -467,6 +467,10 @@ class RtspCameraWorker(QThread):
             except Exception as e:
                 self.model_loaded = False
                 self.error_msg = str(e)
+        
+        # Silenciar logs molestos de Ultralytics (not enough matching points)
+        import logging
+        logging.getLogger("ultralytics").setLevel(logging.ERROR)
 
     def set_paused(self, paused: bool):
         self._is_paused = paused

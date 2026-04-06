@@ -1278,51 +1278,49 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(30, 25, 30, 25)
         layout.setSpacing(15)
 
-        # ── Barra de conexión ────────────────────────────────────────
+        # ── Barra de conexión y ajustes ────────────────────────────────
         conn_card = GlowCard()
-        conn_layout = QHBoxLayout(conn_card)
-        conn_layout.setContentsMargins(18, 12, 18, 12)
-        conn_layout.setSpacing(10)
+        conn_layout_main = QVBoxLayout(conn_card)
+        conn_layout_main.setContentsMargins(18, 12, 18, 12)
+        conn_layout_main.setSpacing(10)
 
-        # Icono e indicador de estado
+        # ── Fila 1: Conexión ──
+        top_row = QHBoxLayout()
+        top_row.setSpacing(10)
+
         cam_status_box = QHBoxLayout()
         cam_status_box.setSpacing(6)
-        
         self.lbl_cam_status_dot = QLabel("⚫")
         self.lbl_cam_status_dot.setStyleSheet("font-size: 14px; background: transparent; padding-top: 2px;")
         cam_status_box.addWidget(self.lbl_cam_status_dot)
-
         self.lbl_cam_status = QLabel("Desconectado")
         self.lbl_cam_status.setObjectName("subtleText")
         self.lbl_cam_status.setMinimumWidth(85)
         self.lbl_cam_status.setStyleSheet("font-size: 13px; font-weight: 600;")
         cam_status_box.addWidget(self.lbl_cam_status)
-        conn_layout.addLayout(cam_status_box)
+        top_row.addLayout(cam_status_box)
 
-        # Divisor visual sutil
         div1 = QFrame()
         div1.setFrameShape(QFrame.VLine)
         div1.setStyleSheet("color: #313244;")
-        conn_layout.addWidget(div1)
+        top_row.addWidget(div1)
 
-        # Selector de canal
         lbl_sel = QLabel("Cámara:")
         lbl_sel.setObjectName("modelKey")
-        conn_layout.addWidget(lbl_sel)
+        top_row.addWidget(lbl_sel)
 
-        from PySide6.QtWidgets import QComboBox
+        from PySide6.QtWidgets import QComboBox, QCheckBox, QButtonGroup, QRadioButton
         self.cam_selector = QComboBox()
         self.cam_selector.setObjectName("camSelector")
         self.cam_selector.addItems([f"Cámara {i}" for i in range(1, 12)])
         self.cam_selector.setMinimumWidth(120)
         self.cam_selector.currentIndexChanged.connect(self._on_cam_switch)
-        conn_layout.addWidget(self.cam_selector)
+        top_row.addWidget(self.cam_selector)
 
-        # Campo URL / IP (Preconfigurado)
         lbl_url = QLabel("Host:")
         lbl_url.setObjectName("modelKey")
-        lbl_url.setContentsMargins(10, 0, 0, 0) # Separación
-        conn_layout.addWidget(lbl_url)
+        lbl_url.setContentsMargins(10, 0, 0, 0)
+        top_row.addWidget(lbl_url)
 
         self.cam_url_input = QLineEdit()
         self.cam_url_input.setObjectName("camUrlInput")
@@ -1330,17 +1328,22 @@ class MainWindow(QMainWindow):
         self.cam_url_input.setPlaceholderText("ej: ferreteria.viewdns.net")
         self.cam_url_input.setMinimumWidth(150)
         self.cam_url_input.setFixedHeight(34)
-        conn_layout.addWidget(self.cam_url_input, 1)
+        top_row.addWidget(self.cam_url_input)
 
-        conn_layout.addSpacing(10)
+        self.check_dual_mode = QCheckBox("Modo Triangulación (9+10)")
+        self.check_dual_mode.setObjectName("subtleText")
+        self.check_dual_mode.setStyleSheet("font-weight: 700; color: #fab387; padding: 0 10px;")
+        self.check_dual_mode.stateChanged.connect(self._on_dual_mode_toggled)
+        top_row.addWidget(self.check_dual_mode)
 
-        # Botones
+        top_row.addStretch()
+
         self.btn_cam_connect = QPushButton("📡  Conectar")
         self.btn_cam_connect.setObjectName("successBtn")
         self.btn_cam_connect.setFixedHeight(34)
         self.btn_cam_connect.setCursor(Qt.PointingHandCursor)
         self.btn_cam_connect.clicked.connect(self._on_camera_connect)
-        conn_layout.addWidget(self.btn_cam_connect)
+        top_row.addWidget(self.btn_cam_connect)
 
         self.btn_cam_disconnect = QPushButton("⏹  Desconectar")
         self.btn_cam_disconnect.setObjectName("dangerBtn")
@@ -1348,62 +1351,94 @@ class MainWindow(QMainWindow):
         self.btn_cam_disconnect.setEnabled(False)
         self.btn_cam_disconnect.setCursor(Qt.PointingHandCursor)
         self.btn_cam_disconnect.clicked.connect(self._on_camera_disconnect)
-        conn_layout.addWidget(self.btn_cam_disconnect)
+        top_row.addWidget(self.btn_cam_disconnect)
 
-        # Divisor
+        conn_layout_main.addLayout(top_row)
+
+        # Separador Horizontal
+        h_line = QFrame()
+        h_line.setFrameShape(QFrame.HLine)
+        h_line.setStyleSheet("color: #313244; margin: 2px 0;")
+        conn_layout_main.addWidget(h_line)
+
+        # ── Fila 2: Ajustes de Zona ──
+        bot_row = QHBoxLayout()
+        bot_row.setSpacing(15)
+        
+        lbl_adj = QLabel("⚙️ Ajustes de Zona:")
+        lbl_adj.setObjectName("modelKey")
+        bot_row.addWidget(lbl_adj)
+
+        # Los sliders ahora solo controlan la Cam 9 según petición del usuario.
+        # La Cam 10 tendrá una zona fija optimizada.
+        lbl_adj.setText("⚙️ Ajuste de Zona (Cam 9):")
+        
+        cfg_row = QHBoxLayout()
+        # Se eliminan los radio buttons para evitar errores de selección.
+        bot_row.addLayout(cfg_row)
+
         div2 = QFrame()
         div2.setFrameShape(QFrame.VLine)
         div2.setStyleSheet("color: #313244;")
-        div2.setContentsMargins(5, 0, 5, 0)
-        conn_layout.addWidget(div2)
+        bot_row.addWidget(div2)
 
-        # Controles de zona de conteo (Agrupados por Altura y Ancho)
-        cam_zone_container = QHBoxLayout()
-        cam_zone_container.setSpacing(15)
+        self._cam_zones = {
+            9: {"top": 0, "bot": 10, "left": 25, "right": 72},
+            10: {"top": 90, "bot": 100, "left": 0, "right": 100} # Zona fija inferior C10
+        }
 
-        def _make_zone_slider(label_txt, min_v, max_v, default_v, width=60):
+        def _make_zone_slider(label_txt, min_v, max_v, default_v, width=80):
             row = QHBoxLayout()
-            row.setSpacing(3)
-            row.addWidget(QLabel(label_txt))
+            row.setSpacing(5)
+            lbl = QLabel(label_txt)
+            lbl.setFixedWidth(15)
+            row.addWidget(lbl)
             sl = QSlider(Qt.Horizontal)
             sl.setRange(min_v, max_v)
             sl.setValue(default_v)
             sl.setFixedWidth(width)
             sl.valueChanged.connect(self._on_cam_zone_changed)
             row.addWidget(sl)
-            lbl = QLabel(f"{default_v}%")
-            lbl.setObjectName("modelValue")
-            lbl.setFixedWidth(28)
-            row.addWidget(lbl)
-            return sl, lbl, row
+            val_lbl = QLabel(f"{default_v}%")
+            val_lbl.setObjectName("modelValue")
+            val_lbl.setFixedWidth(30)
+            row.addWidget(val_lbl)
+            return sl, val_lbl, row
 
-        # Grupo de Altura
-        v_box = QVBoxLayout()
-        v_box.setSpacing(1)
-        v_lbl = QLabel("Altura")
+        # Grupo Altura
+        v_box = QHBoxLayout()
+        v_box.setSpacing(10)
+        v_lbl = QLabel("Altura:")
         v_lbl.setObjectName("subtleText")
-        v_lbl.setStyleSheet("font-size: 10px; margin-bottom: 2px;")
         v_box.addWidget(v_lbl)
         self.slider_cam_zone_top, self.lbl_cam_zone_top, row_t = _make_zone_slider("▲", 0, 95, 0)
-        self.slider_cam_zone_bot, self.lbl_cam_zone_bot, row_b = _make_zone_slider("▼", 1, 100, 19)
+        self.slider_cam_zone_bot, self.lbl_cam_zone_bot, row_b = _make_zone_slider("▼", 1, 100, 10)
         v_box.addLayout(row_t)
         v_box.addLayout(row_b)
-        cam_zone_container.addLayout(v_box)
+        bot_row.addLayout(v_box)
 
-        # Grupo de Ancho
-        h_box = QVBoxLayout()
-        h_box.setSpacing(1)
-        h_lbl = QLabel("Ancho")
+        div3 = QFrame()
+        div3.setFrameShape(QFrame.VLine)
+        div3.setStyleSheet("color: #313244;")
+        bot_row.addWidget(div3)
+
+        # Grupo Ancho
+        h_box = QHBoxLayout()
+        h_box.setSpacing(10)
+        h_lbl = QLabel("Ancho:")
         h_lbl.setObjectName("subtleText")
-        h_lbl.setStyleSheet("font-size: 10px; margin-bottom: 2px;")
         h_box.addWidget(h_lbl)
-        self.slider_cam_zone_left, self.lbl_cam_zone_left, row_l = _make_zone_slider("◄", 0, 95, 45)
-        self.slider_cam_zone_right, self.lbl_cam_zone_right, row_r = _make_zone_slider("►", 5, 100, 70)
+        self.slider_cam_zone_left, self.lbl_cam_zone_left, row_l = _make_zone_slider("◄", 0, 95, 25)
+        self.slider_cam_zone_right, self.lbl_cam_zone_right, row_r = _make_zone_slider("►", 5, 100, 72)
         h_box.addLayout(row_l)
         h_box.addLayout(row_r)
-        cam_zone_container.addLayout(h_box)
+        bot_row.addLayout(h_box)
 
-        conn_layout.addLayout(cam_zone_container)
+        bot_row.addStretch()
+        conn_layout_main.addLayout(bot_row)
+
+        # Sincronizar UI inicial
+        self._on_config_cam_changed()
 
         layout.addWidget(conn_card)
 
@@ -1433,15 +1468,45 @@ class MainWindow(QMainWindow):
         cam_status_row.addWidget(self.lbl_cam_fps)
         cam_video_layout.addLayout(cam_status_row)
 
-        # Frame display
-        self.cam_frame = QLabel(
-            "📷\n\nIntroduzca la URL de la cámara IP\ny pulse Conectar para iniciar el monitoreo en tiempo real"
-        )
+        # Frame display (Container for Dual View)
+        self.cam_view_container = QHBoxLayout()
+        self.cam_view_container.setSpacing(10)
+
+        # Panel Izquierdo (Primario) — siempre visible
+        left_panel = QVBoxLayout()
+        self.lbl_title_cam_primary = QLabel("📹 Cámara 9")
+        self.lbl_title_cam_primary.setStyleSheet("font-weight: bold; color: #a6e3a1; font-size: 14px;")
+        self.lbl_title_cam_primary.setAlignment(Qt.AlignCenter)
+        self.lbl_title_cam_primary.setVisible(False)  # Oculto en modo simple
+        self.cam_frame = QLabel("📷\n\nIntroduzca la URL de la cámara IP\ny pulse Conectar")
         self.cam_frame.setObjectName("videoFrame")
         self.cam_frame.setAlignment(Qt.AlignCenter)
-        self.cam_frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.cam_frame.setMinimumHeight(400)
-        cam_video_layout.addWidget(self.cam_frame)
+        left_panel.addWidget(self.lbl_title_cam_primary)
+        left_panel.addWidget(self.cam_frame, 1)
+        self.cam_view_container.addLayout(left_panel, 1)
+
+        # Panel Derecho (Secundario) — dentro de un QWidget para poder ocultarlo
+        self.cam_alt_container = QWidget()
+        right_panel = QVBoxLayout(self.cam_alt_container)
+        right_panel.setContentsMargins(0, 0, 0, 0)
+        right_panel.setSpacing(4)
+        self.lbl_title_cam_alt = QLabel("📹 Cámara 10")
+        self.lbl_title_cam_alt.setStyleSheet("font-weight: bold; color: #89b4fa; font-size: 14px;")
+        self.lbl_title_cam_alt.setAlignment(Qt.AlignCenter)
+        self.cam_frame_alt = QLabel("📷\n\nEsperando Señal...")
+        self.cam_frame_alt.setObjectName("videoFrame")
+        self.cam_frame_alt.setAlignment(Qt.AlignCenter)
+        self.cam_frame_alt.setMinimumHeight(400)
+        right_panel.addWidget(self.lbl_title_cam_alt)
+        right_panel.addWidget(self.cam_frame_alt, 1)
+        self.cam_alt_container.setVisible(False)  # Oculto por defecto
+        self.cam_view_container.addWidget(self.cam_alt_container, 1)
+
+        cam_video_layout.addLayout(self.cam_view_container)
+
+        # Flag de re-entrancia para _on_cam_zone_changed
+        self._zone_updating = False
 
         # Controles inferiores
         cam_ctrl_bar = QHBoxLayout()
@@ -1569,56 +1634,45 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(400, self._on_camera_connect)
 
     def _kill_cam_worker(self):
-        """
-        Detiene el worker actual de forma segura.
-        CRITÍCO: No hacemos self._cam_worker = None inmediatamente.
-        En Qt/PySide6, asignar None mientras el hilo sigue vivo
-        destruye el objeto C++ y provoca un segfault.
-        En su lugar lo movemos a una lista '_dead_workers' y dejamos
-        que se limpie solo cuando su señal 'finished' llegue.
-        """
-        if not (hasattr(self, "_cam_worker") and self._cam_worker is not None):
-            return
+        """Detiene ambos workers de cámara (primario y alt) de forma segura."""
+        workers_to_kill = []
+        if hasattr(self, "_cam_worker") and self._cam_worker:
+            workers_to_kill.append(self._cam_worker)
+            self._cam_worker = None
+        if hasattr(self, "_cam_worker_alt") and self._cam_worker_alt:
+            workers_to_kill.append(self._cam_worker_alt)
+            self._cam_worker_alt = None
 
-        w = self._cam_worker
-        self._cam_worker = None
+        if not workers_to_kill: return
+        if not hasattr(self, "_dead_workers"): self._dead_workers = []
 
-        # 1) Desconectar TODAS las señales para que el hilo moribundo
-        #    no pueda afectar la UI mientras muere
-        try:
-            w.frame_ready.disconnect()
-            w.counts_updated.disconnect()
-            w.detection_event.disconnect()
-            w.connection_status.disconnect()
-            w.error_occurred.disconnect()
-            w.finished.disconnect()
-        except Exception:
-            pass
+        for w in workers_to_kill:
+            # Desconectar señales una por una con seguridad
+            for signal_name in ["frame_ready", "counts_updated", "detection_event", "connection_status", "error_occurred", "finished"]:
+                try:
+                    sig = getattr(w, signal_name)
+                    sig.disconnect()
+                except Exception:
+                    pass
 
-        # 2) Ordenar la parada
-        try:
-            w.stop()
-        except Exception:
-            pass
-
-        # 3) Guardar referencia hasta que el hilo Qt termine de verdad
-        if not hasattr(self, "_dead_workers"):
-            self._dead_workers = []
-
-        self._dead_workers.append(w)
-
-        # Conectar finished a un limpiador que retire la referencia
-        def _cleanup(worker=w):
             try:
-                if hasattr(self, "_dead_workers") and worker in self._dead_workers:
-                    self._dead_workers.remove(worker)
+                w.stop()
             except Exception:
                 pass
 
-        try:
-            w.finished.connect(_cleanup)
-        except Exception:
-            pass
+            self._dead_workers.append(w)
+            # Limpiador
+            def _cleanup(worker=w):
+                try: 
+                    if hasattr(self, "_dead_workers") and worker in self._dead_workers:
+                        self._dead_workers.remove(worker)
+                except Exception: pass
+            
+            try: w.finished.connect(_cleanup)
+            except Exception: pass
+            
+        # Reiniciar buffers de conteo dual
+        self._last_dual_counts = [{}, {}]
 
     def _on_camera_connect(self):
         """Inicia el RtspCameraWorker con la URL configurada y el canal seleccionado."""
@@ -1630,10 +1684,6 @@ class MainWindow(QMainWindow):
         # Asegurarse de que no queda ningún worker vivo
         self._kill_cam_worker()
 
-        # Construir URL (Dahua RTSP format)
-        channel = self.cam_selector.currentIndex() + 1
-        url = f"rtsp://Samuel:Samuel123.@{host}:554/cam/realmonitor?channel={channel}&subtype=1"
-
         # Resolver ruta del modelo
         if getattr(sys, "frozen", False):
             base_dir = os.path.dirname(sys.executable)
@@ -1643,38 +1693,189 @@ class MainWindow(QMainWindow):
         else:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento2", "weights", "best.pt")
+        model_path = os.path.join(base_dir, "models", "estacion_bultos_v1.pt")
         if not os.path.exists(model_path):
-            model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento", "weights", "best.pt")
+            model_path = os.path.join(base_dir, "models", "yolo26n.pt")
 
+        is_dual = self.check_dual_mode.isChecked()
+        
+        # --- CANAL PRIMARIO ---
+        # Si es dual, la UI "Cam 9" apunta al RTSP 10 dado el cruce físico reportado por el usuario.
+        if is_dual:
+            channel_primary = 9
+            zone_id_primary = 9
+        else:
+            channel_primary = self.cam_selector.currentIndex() + 1
+            zone_id_primary = channel_primary if channel_primary in self._cam_zones else 9
+            
+        url_primary = f"rtsp://Samuel:Samuel123.@{host}:554/cam/realmonitor?channel={channel_primary}&subtype=1"
+        
+        # Actualizar labels de UI
+        if is_dual:
+            self.lbl_title_cam_primary.setText("📹 Cámara 9")
+            self.lbl_title_cam_primary.setVisible(True)
+            self.lbl_title_cam_alt.setText("📹 Cámara 10")
+            self.cam_alt_container.setVisible(True)
+        else:
+            self.lbl_title_cam_primary.setText(f"📹 Cámara {channel_primary}")
+            self.lbl_title_cam_primary.setVisible(False)
+            self.cam_alt_container.setVisible(False)
+        
         self._cam_worker = RtspCameraWorker(
-            camera_url=url,
+            camera_url=url_primary,
             model_path=model_path,
-            zone_x1=self.slider_cam_zone_left.value() / 100.0,
-            zone_y1=self.slider_cam_zone_top.value() / 100.0,
-            zone_x2=self.slider_cam_zone_right.value() / 100.0,
-            zone_y2=self.slider_cam_zone_bot.value() / 100.0,
+            zone_x1=self._cam_zones[zone_id_primary]["left"] / 100.0,
+            zone_y1=self._cam_zones[zone_id_primary]["top"] / 100.0,
+            zone_x2=self._cam_zones[zone_id_primary]["right"] / 100.0,
+            zone_y2=self._cam_zones[zone_id_primary]["bot"] / 100.0,
             preloaded_model=self._preloaded_model,
             preloaded_device=self._preloaded_device,
         )
         self._cam_worker.frame_ready.connect(self._on_cam_frame_ready)
-        self._cam_worker.counts_updated.connect(self._on_cam_counts_updated)
+        self._cam_worker.counts_updated.connect(lambda c: self._on_cam_counts_updated(c, 0)) # 0 = primary
         self._cam_worker.detection_event.connect(self._on_cam_detection_event)
         self._cam_worker.connection_status.connect(self._on_cam_connection_status)
         self._cam_worker.error_occurred.connect(self._on_cam_error)
         self._cam_worker.finished.connect(self._on_cam_finished)
         self._cam_worker.start()
 
+        # --- CANAL SECUNDARIO ---
+        if is_dual:
+            # Revertido: Cam 10 apunta al RTSP 10.
+            url_alt = f"rtsp://Samuel:Samuel123.@{host}:554/cam/realmonitor?channel=10&subtype=1"
+            self._cam_worker_alt = RtspCameraWorker(
+                camera_url=url_alt,
+                model_path=model_path,
+                zone_x1=self._cam_zones[10]["left"] / 100.0,
+                zone_y1=self._cam_zones[10]["top"] / 100.0,
+                zone_x2=self._cam_zones[10]["right"] / 100.0,
+                zone_y2=self._cam_zones[10]["bot"] / 100.0,
+                preloaded_model=self._preloaded_model,
+                preloaded_device=self._preloaded_device,
+            )
+            self._cam_worker_alt.frame_ready.connect(self._on_cam_frame_ready_alt)
+            self._cam_worker_alt.counts_updated.connect(lambda c: self._on_cam_counts_updated(c, 1)) # 1 = alt
+            self._cam_worker_alt.start()
+
         # UI
         self.btn_cam_connect.setEnabled(False)
         self.btn_cam_disconnect.setEnabled(True)
         self.cam_url_input.setEnabled(False)
         self._cam_session_start = datetime.datetime.now()
-        self.lbl_cam_session.setText(
-            f"Sesión: {self._cam_session_start.strftime('%H:%M:%S')}"
+        self.lbl_cam_session.setText(f"Sesión: {self._cam_session_start.strftime('%H:%M:%S')}")
+        self.show_toast("Modo Triangulación activado" if is_dual else "Conectando a cámara...", "info")
+
+    def _on_cam_frame_ready_alt(self, qimg: QImage):
+        pixmap = QPixmap.fromImage(qimg)
+        self.cam_frame_alt.setPixmap(
+            pixmap.scaled(self.cam_frame_alt.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         )
-        app_logger.log_action(self._user, "CAMARA_CONECTADA", f"URL: {url}")
-        self.show_toast("Conectando a la cámara…", "info")
+
+    def _on_dual_mode_toggled(self, state):
+        is_on = (state == 2)  # Qt.Checked
+        self.cam_alt_container.setVisible(is_on)
+        self.lbl_title_cam_primary.setVisible(is_on)
+        self.cam_selector.setEnabled(not is_on)
+        if is_on:
+            self.cam_selector.setCurrentIndex(8)  # Canal 9 index 8
+
+    def _on_config_cam_changed(self):
+        """Los sliders ahora cargan siempre la Cam 9."""
+        cam_id = 9
+        zone = self._cam_zones[cam_id]
+        
+        # Bloquear señales para evitar rebote infinito
+        self.slider_cam_zone_top.blockSignals(True)
+        self.slider_cam_zone_bot.blockSignals(True)
+        self.slider_cam_zone_left.blockSignals(True)
+        self.slider_cam_zone_right.blockSignals(True)
+        
+        try:
+            self.slider_cam_zone_top.setValue(zone["top"])
+            self.slider_cam_zone_bot.setValue(zone["bot"])
+            self.slider_cam_zone_left.setValue(zone["left"])
+            self.slider_cam_zone_right.setValue(zone["right"])
+        finally:
+            self.slider_cam_zone_top.blockSignals(False)
+            self.slider_cam_zone_bot.blockSignals(False)
+            self.slider_cam_zone_left.blockSignals(False)
+            self.slider_cam_zone_right.blockSignals(False)
+        
+        # Actualizar labels manualmente
+        self.lbl_cam_zone_top.setText(f"{zone['top']}%")
+        self.lbl_cam_zone_bot.setText(f"{zone['bot']}%")
+        self.lbl_cam_zone_left.setText(f"{zone['left']}%")
+        self.lbl_cam_zone_right.setText(f"{zone['right']}%")
+        
+        print(f"[DEBUG] _on_config_cam_changed -> Seleccionada Cam: {cam_id} | Zona cargada: {zone}")
+        
+        # PUSH MANUAL: Forzar que el worker actual reciba estas coordenadas
+        # al cambiar de radio botón para que el dibujo se actualice inmediatamente.
+        self._on_cam_zone_changed()
+
+    def _on_cam_zone_changed(self):
+        """Aplica cambios únicamente a Cam 9. Cam 10 permanece fija."""
+        if getattr(self, '_zone_updating', False):
+            return
+        self._zone_updating = True
+        
+        try:
+            cam_id = 9 # Forzado a Cam 9
+            
+            top = self.slider_cam_zone_top.value()
+            bot = self.slider_cam_zone_bot.value()
+            left = self.slider_cam_zone_left.value()
+            right = self.slider_cam_zone_right.value()
+            
+            print(f"[DEBUG] Slider movido -> ID Cámara: {cam_id} | T:{top} B:{bot} L:{left} R:{right}")
+            
+            # Coherencia básica
+            if top >= bot:
+                bot = min(top + 5, 100)
+                self.slider_cam_zone_bot.setValue(bot)
+            if left >= right:
+                right = min(left + 5, 100)
+                self.slider_cam_zone_right.setValue(right)
+
+            # Guardar en diccionario persistente para la cámara seleccionada
+            self._cam_zones[cam_id] = {"top": top, "bot": bot, "left": left, "right": right}
+            
+            self.lbl_cam_zone_top.setText(f"{top}%")
+            self.lbl_cam_zone_bot.setText(f"{bot}%")
+            self.lbl_cam_zone_left.setText(f"{left}%")
+            self.lbl_cam_zone_right.setText(f"{right}%")
+
+            # Aplicar al worker correspondiente de manera estricta
+            worker = None
+            worker_name = "Ninguno"
+            
+            # Recuperar workers actuales
+            main_w = getattr(self, '_cam_worker', None)
+            alt_w = getattr(self, '_cam_worker_alt', None)
+
+            if self.check_dual_mode.isChecked():
+                if cam_id == 9:
+                    worker = main_w
+                    worker_name = "Principal (Cam 9)"
+                elif cam_id == 10:
+                    worker = alt_w
+                    worker_name = "Alternativo (Cam 10)"
+            else:
+                worker = main_w
+                worker_name = "Principal (Modo Simple)"
+            
+            if worker and worker.isRunning():
+                print(f"[DEBUG] Aplicando zona a worker: {worker_name} (ID: {id(worker)})")
+                worker.zone_x1 = left / 100.0
+                worker.zone_y1 = top / 100.0
+                worker.zone_x2 = right / 100.0
+                worker.zone_y2 = bot / 100.0
+            else:
+                print(f"[DEBUG] ERROR: No se encontró worker activo para {worker_name}")
+                print(f"        Estado main_w: {main_w.isRunning() if main_w else 'None'}")
+                print(f"        Estado alt_w: {alt_w.isRunning() if alt_w else 'None'}")
+        finally:
+            self._zone_updating = False
 
     def _on_camera_disconnect(self):
         """Detiene el worker de cámara limpiamente sin bloquear la interfaz."""
@@ -1765,6 +1966,12 @@ class MainWindow(QMainWindow):
         )
     # ── FIN HISTORIAL ─────────────────────────────────────────────────────
 
+    def _on_cam_frame_ready(self, qimg: QImage):
+        pixmap = QPixmap.fromImage(qimg)
+        self.cam_frame.setPixmap(
+            pixmap.scaled(self.cam_frame.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
+
     def _reset_cam_ui(self):
         self.btn_cam_connect.setEnabled(True)
         self.btn_cam_disconnect.setEnabled(False)
@@ -1772,12 +1979,18 @@ class MainWindow(QMainWindow):
         self.btn_cam_reset.setEnabled(False)
         self.btn_cam_snapshot.setEnabled(False)
         self.cam_url_input.setEnabled(True)
-        self.cam_frame.setText(
-            "📷\n\nIntroduzca la URL de la cámara IP\ny pulse Conectar para iniciar el monitoreo en tiempo real"
-        )
+        self.cam_frame.setText("📷\n\nIntroduzca la URL de la cámara IP\ny pulse Conectar")
+        self.cam_frame_alt.setText("📷\n\nEsperando Señal...")
         self.cam_frame.setAlignment(Qt.AlignCenter)
+        self.cam_frame_alt.setAlignment(Qt.AlignCenter)
+        # Ocultar panel dual si estaba activo
+        if not self.check_dual_mode.isChecked():
+            self.cam_alt_container.setVisible(False)
+            self.lbl_title_cam_primary.setVisible(False)
         self._set_cam_status("idle")
         self.lbl_cam_fps.setText("")
+        self._last_dual_counts = [{}, {}]
+
 
     def _on_cam_connection_status(self, status: str):
         if status == "connecting":
@@ -1811,15 +2024,31 @@ class MainWindow(QMainWindow):
             pixmap.scaled(self.cam_frame.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
         )
 
-    def _on_cam_counts_updated(self, counts: dict):
+    def _on_cam_counts_updated(self, counts: dict, source_id: int = 0):
+        """Recibe conteos de C9 (0) o C10 (1) y los reconcilia."""
+        if not hasattr(self, "_last_dual_counts"):
+            self._last_dual_counts = [{}, {}]
+            
+        # Actualizar buffer del canal correspondiente
+        self._last_dual_counts[source_id] = counts
+        
+        # RECONCILIACIÓN (Triangulación): Elegimos el valor máximo entre ambas cámaras
+        # para cada material. Si una cámara perdió un bulto pero la otra lo vió,
+        # confiamos en la que vió más (lógica redundante).
+        reconciled = {}
+        for mat in ["Cemento", "Tubería Presión", "Tubería Sanitaria"]:
+            c1 = self._last_dual_counts[0].get(mat, 0)
+            c2 = self._last_dual_counts[1].get(mat, 0)
+            reconciled[mat] = max(c1, c2)
+
         if not hasattr(self, "_metas_notificadas"):
             self._metas_notificadas = set()
             
         for i in range(self.table_cam_conteo.rowCount()):
             mat_item = self.table_cam_conteo.item(i, 0)
-            if mat_item and mat_item.text() in counts:
+            if mat_item and mat_item.text() in reconciled:
                 material = mat_item.text()
-                val = counts[material]
+                val = reconciled[material]
                 
                 # Update table
                 self.table_cam_conteo.item(i, 1).setText(str(val))
@@ -2369,6 +2598,7 @@ class MainWindow(QMainWindow):
         self.list_captures.setResizeMode(QListWidget.Adjust)
         self.list_captures.setSpacing(10)
         self.list_captures.setIconSize(QSize(120, 90))
+        self.list_captures.itemDoubleClicked.connect(self._on_capture_double_clicked)
         captures_layout.addWidget(self.list_captures)
         
         layout.addWidget(captures_card)
@@ -2378,7 +2608,25 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(100, self._refresh_history_table)
         
         return page
-    
+
+    def _on_capture_double_clicked(self, item):
+        """Abre la imagen de evidencia seleccionada en el visor del sistema."""
+        path = item.data(Qt.UserRole)
+        if path and os.path.exists(path):
+            try:
+                import os as _os
+                import sys as _sys
+                if _sys.platform == "win32":
+                    _os.startfile(path)
+                else:
+                    import subprocess
+                    subprocess.call(["open", path])
+                self.show_toast("Abriendo evidencia visual...", "info")
+            except Exception as e:
+                self.show_toast(f"Error al abrir imagen: {e}", "error")
+        else:
+            self.show_toast("No se encontró el archivo de imagen.", "warning")
+
     # ----------------------------------------------------------------
     # PERMISOS POR ROL
     # ----------------------------------------------------------------
@@ -3005,13 +3253,10 @@ class MainWindow(QMainWindow):
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         # Usamos el modelo entrenado con YOLO11
-        model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento2", "weights", "best.pt")
-        if not os.path.exists(model_path): # Fallback a otro entrenamiento
-            model_path = os.path.join(base_dir, "training", "runs", "bultos_cemento", "weights", "best.pt")
-        
-        # Si sigue sin existir, buscar en el CWD (fallback final)
+        model_path = os.path.join(base_dir, "models", "estacion_bultos_v1.pt")
+        # Fallback a yolo26n básico si no existe (poco probable)
         if not os.path.exists(model_path):
-             model_path = "training/runs/bultos_cemento2/weights/best.pt"
+            model_path = os.path.join(base_dir, "models", "yolo26n.pt")
 
         self.analyzer = YoloAnalyzerWorker(
             self._video_path,

@@ -55,7 +55,7 @@ def prepare_and_train():
     
     print(f"Dataset creado: {len(train_files)} para entrenamiento, {len(val_files)} para validación.")
     print("==========================================================")
-    print("🚀 INICIANDO ENTRENAMIENTO CON YOLOv11 🚀")
+    print("🚀 INICIANDO ENTRENAMIENTO CON YOLOV26 🚀")
     print("==========================================================")
     
     yaml_path = os.path.join(base_dir, "data.yaml")
@@ -65,15 +65,15 @@ def prepare_and_train():
     device = "0" if torch.cuda.is_available() else "cpu"
     print(f"Entrenando en: {'GPU' if device == '0' else 'CPU'}")
     
-    model = YOLO("yolo11n.pt")  # Use YOLO11 nano model
+    model = YOLO("yolo26n.pt")  # Modelo solicitado por el usuario
     model.train(
         data=yaml_path,
-        epochs=50,
+        epochs=100,             # Aumentamos épocas para mayor precisión
         imgsz=640,
         batch=16,
         device=device,
         project=os.path.join(base_dir, "runs"),
-        name="bultos_cemento"
+        name="estacion_yolo26"
     )
 
 if __name__ == "__main__":

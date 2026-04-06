@@ -98,17 +98,11 @@ class InitWorker(QThread):
             else:
                 base_dir = _BASE
 
-            model_path = os.path.join(
-                base_dir, "training", "runs", "bultos_cemento2", "weights", "best.pt"
-            )
-            # Fallback a entrenamiento anterior
+            model_path = os.path.join(base_dir, "models", "estacion_bultos_v1.pt")
+            
+            # Fallback a yolo26n básico si no existe (poco probable)
             if not os.path.exists(model_path):
-                model_path = os.path.join(
-                    base_dir, "training", "runs", "bultos_cemento", "weights", "best.pt"
-                )
-            # Fallback relativo
-            if not os.path.exists(model_path):
-                model_path = "training/runs/bultos_cemento2/weights/best.pt"
+                model_path = os.path.join(base_dir, "models", "yolo26n.pt")
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
 

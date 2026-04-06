@@ -43,14 +43,15 @@ def extract_frames(video_path, output_folder, interval=0.5):
 
 if __name__ == "__main__":
     base_dir = r"C:\Users\samuv\Desktop\Programas_mios\LogiCheck"
-    video_dir = os.path.join(base_dir, "resources", "Videos")
+    video_dir = os.path.join(base_dir, "resources", "Entrenamiento")
     output_dir = os.path.join(base_dir, "training", "raw_frames")
     
-    videos = ["bulto.mp4", "bulto2.mp4", "bulto_dawkgdhu.mp4"]
+    # Escanear todos los videos en la carpeta Entrenamiento
+    videos = [f for f in os.listdir(video_dir) if f.lower().endswith(('.mp4', '.avi', '.mov'))]
+    
+    print(f"Encontrados {len(videos)} videos para procesar.")
     
     for v in videos:
         v_path = os.path.join(video_dir, v)
-        if os.path.exists(v_path):
-            extract_frames(v_path, output_dir)
-        else:
-            print(f"Skipping {v}, file not found.")
+        # Extraemos un frame cada 2 segundos para evitar saturación de datos similares
+        extract_frames(v_path, output_dir, interval=2.0)

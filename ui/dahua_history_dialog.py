@@ -205,6 +205,7 @@ class HistoryDownloadWorker(QThread):
     status_updated   = Signal(str)   # mensaje descriptivo de estado
 
     # Número de conexiones paralelas — ajustable (máx 32 recomendado)
+    # Número de conexiones paralelas — vuelto a 32 por petición del usuario
     NUM_WORKERS = 32
 
     def __init__(self, url: str, output_path: str, duration_secs: int,
@@ -349,6 +350,9 @@ class HistoryDownloadWorker(QThread):
                 )
                 t.start()
                 print(f"[HISTORIAL-DL] ▶ Segmento {i+1}/{n} iniciado ({seg_dur}s) → {os.path.basename(seg_path)}")
+                
+                # Pequeña pausa para no saturar el NVR con peticiones instantáneas
+                time.sleep(0.15)
             except Exception as e:
                 print(f"[HISTORIAL-DL] ✗ Error al iniciar proceso: {e}")
                 with progress_lock:
@@ -1598,6 +1602,8 @@ class DahuaHistoryDialog(QDialog):
             if self._download_worker and self._download_worker.isRunning():
                 print("[HISTORIAL] Deteniendo download_worker...")
                 self._download_worker.stop()
+                # Crucial: esperar a que el hilo termine realmente (max 2s) para evitar el crash de Qt
+                self._download_worker.wait(2000) 
                 
             # Si el usuario no confirmó usar el archivo, limpiarlo
             if not self._confirmed:
@@ -1606,7 +1612,7 @@ class DahuaHistoryDialog(QDialog):
                 
             print("[HISTORIAL] Limpieza de closeEvent exitosa.")
         except Exception as e:
-            print(f"[HISTORIAL] EXCEPCIÓN DETECTADA Y PREVENIDA (Crash evitado) en closeEvent: {e}")
+            print(f"[HISTORIAL] EXCEPCIÓN en closeEvent: {e}")
             
         super().closeEvent(event)
         print("[HISTORIAL] Diálogo de historial cerrado.")
