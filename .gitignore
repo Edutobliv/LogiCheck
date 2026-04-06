@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+ENV/
+
+# Distribution / PyInstaller
+dist/
+build/
+*.spec
+
+# IDEs
+.vscode/
+.idea/
+
+# Database / Models
+*.db
+*.pt
+*.onnx
+
+# Project specific
+training/dataset/
+training/raw_frames/
+training/runs/
+captures/
+stitch_screenshots/
+Facturas/
+
+# OS
+.DS_Store
+Thumbs.db

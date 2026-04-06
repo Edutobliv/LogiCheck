@@ -25,6 +25,8 @@ import winsound
 from core.audit_store import (save_audit, get_audits, get_dashboard_stats, 
                              init_audits_table, get_monthly_trends)
 from ui.trend_chart import ModernTrendChart
+from ui.widgets.dashboard_widgets import (MiniSparkline, ChangeBadge,
+    SystemHealthWidget, ActivityTimelineWidget, get_greeting)
 from core.report_exporter import export_excel, export_pdf
 from core.notifier import notifier
 from ui.dahua_history_dialog import DahuaHistoryDialog
@@ -172,15 +174,85 @@ class AnimatedToggle(QWidget):
 
 
 class GlowCard(QFrame):
-    """Card con efecto de sombra suave (glow)."""
+    """Card con efecto glassmorphism gestionado en QPainter."""
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("glowCard")
+        self.setAttribute(Qt.WA_Hover)
+        
+        # Hover animation
+        self._hover_progress = 0.0
+        self._hover_anim = QVariantAnimation(self)
+        self._hover_anim.setDuration(300)
+        self._hover_anim.setEasingCurve(QEasingCurve.OutCubic)
+        self._hover_anim.valueChanged.connect(self._update_hover)
+        
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(25)
         shadow.setOffset(0, 4)
-        shadow.setColor(QColor(0, 0, 0, 60))
+        shadow.setColor(QColor(0, 0, 0, 50))
         self.setGraphicsEffect(shadow)
+
+    def enterEvent(self, event):
+        self._hover_anim.stop()
+        self._hover_anim.setStartValue(self._hover_progress)
+        self._hover_anim.setEndValue(1.0)
+        self._hover_anim.start()
+        super().enterEvent(event)
+        
+    def leaveEvent(self, event):
+        self._hover_anim.stop()
+        self._hover_anim.setStartValue(self._hover_progress)
+        self._hover_anim.setEndValue(0.0)
+        self._hover_anim.start()
+        super().leaveEvent(event)
+        
+    def _update_hover(self, val):
+        self._hover_progress = val
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        if not painter.isActive():
+            return
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        rect = self.rect()
+        is_dark = True
+        if hasattr(self.window(), '_is_dark'):
+            is_dark = self.window()._is_dark
+
+        if is_dark:
+            # Dark glassmorphism
+            base_color = QColor(24, 24, 37, 180) # Semi-transparent #181825
+            grad = QLinearGradient(0, 0, 0, rect.height())
+            grad.setColorAt(0.0, QColor(255, 255, 255, 12))  # lighter top
+            grad.setColorAt(1.0, QColor(255, 255, 255, 0))   # darker bottom
+            hover_color = QColor(255, 255, 255, int(15 * self._hover_progress))
+            border_color = QColor(255, 255, 255, int(25 + 25 * self._hover_progress))
+        else:
+            # Light glassmorphism
+            base_color = QColor(255, 255, 255, 220)
+            grad = QLinearGradient(0, 0, 0, rect.height())
+            grad.setColorAt(0.0, QColor(255, 255, 255, 100))
+            grad.setColorAt(1.0, QColor(0, 0, 0, 5))
+            hover_color = QColor(255, 255, 255, int(80 * self._hover_progress))
+            border_color = QColor(0, 0, 0, int(15 + 25 * self._hover_progress)) 
+
+        path = QPainterPath()
+        path.addRoundedRect(rect.adjusted(1,1,-1,-1), 14, 14)
+        
+        painter.fillPath(path, base_color)
+        painter.fillPath(path, grad)
+        if self._hover_progress > 0:
+            painter.fillPath(path, hover_color)
+            
+        # Luminous border
+        painter.setPen(QPen(border_color, 1))
+        painter.drawPath(path)
+        painter.end()
+        
+        # Do not call super to prevent QSS background from hiding the glassmorphism
 
 
 class StatCard(GlowCard):
@@ -196,11 +268,18 @@ class StatCard(GlowCard):
         # Top row: icon + value
         top_row = QHBoxLayout()
         
-        icon_label = QLabel(icon_text)
-        icon_label.setObjectName("statIcon")
-        icon_label.setStyleSheet(f"font-size: 22px; color: {accent_color}; background: transparent;")
-        top_row.addWidget(icon_label)
+        self.icon_label = QLabel(icon_text)
+        self.icon_label.setObjectName("statIcon")
+        self.icon_label.setStyleSheet(f"font-size: 22px; color: {accent_color}; background: transparent;")
         
+        # Icon background glow (colored blur)
+        self.icon_glow = QGraphicsDropShadowEffect(self)
+        self.icon_glow.setBlurRadius(20)
+        self.icon_glow.setOffset(0, 0)
+        self.icon_glow.setColor(QColor(accent_color))
+        self.icon_label.setGraphicsEffect(self.icon_glow)
+        
+        top_row.addWidget(self.icon_label)
         top_row.addStretch()
         
         self.value_label = QLabel(str(value))
@@ -214,13 +293,16 @@ class StatCard(GlowCard):
         desc_label.setObjectName("statDesc")
         desc_label.setWordWrap(True)
         layout.addWidget(desc_label)
-    
+        
+        # Pulse animation for significant updates
+        self._pulse_anim = QPropertyAnimation(self.icon_glow, b"blurRadius")
+        self._pulse_anim.setDuration(600)
+        self._pulse_anim.setEasingCurve(QEasingCurve.OutCubic)
     
     def set_value(self, val):
         self.value_label.setText(str(val))
         
     def animate_to(self, end_val, duration=1000):
-        # Manejo de porcentajes (si es string con %) o números
         is_pct = False
         if isinstance(end_val, str) and "%" in end_val:
             is_pct = True
@@ -233,6 +315,13 @@ class StatCard(GlowCard):
         except:
             start_val = 0
             
+        if start_val != float(end_val):
+            # Trigger pulse effect
+            self._pulse_anim.stop()
+            self._pulse_anim.setStartValue(45)
+            self._pulse_anim.setEndValue(20)
+            self._pulse_anim.start()
+            
         self.anim = QVariantAnimation(self)
         self.anim.setDuration(duration)
         self.anim.setStartValue(start_val)
@@ -243,7 +332,7 @@ class StatCard(GlowCard):
             else: self.value_label.setText(str(int(v)))
             
         self.anim.valueChanged.connect(update_val)
-        self.anim.setEasingCurve(QEasingCurve.OutQuart)
+        self.anim.setEasingCurve(QEasingCurve.OutBack) # Count-up animation with easing
         self.anim.start()
 
 
@@ -603,7 +692,7 @@ class MainWindow(QMainWindow):
     # PAGE BUILDERS
     # ----------------------------------------------------------------
     def _create_dashboard_page(self):
-        """Página principal con resumen de estadísticas."""
+        """Página principal con resumen de estadísticas — Diseño Premium v2."""
         page = QWidget()
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -612,23 +701,52 @@ class MainWindow(QMainWindow):
         
         layout = QVBoxLayout(page)
         layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(20)
+        layout.setSpacing(18)
         
-        # Welcome banner
+        # ══════════════════════════════════════════════════════════
+        # WELCOME BANNER — con saludo dinámico y barra de acento
+        # ══════════════════════════════════════════════════════════
         welcome = GlowCard()
         welcome.setObjectName("welcomeBanner")
-        welcome_layout = QHBoxLayout(welcome)
-        welcome_layout.setContentsMargins(30, 25, 30, 25)
+        welcome_outer = QVBoxLayout(welcome)
+        welcome_outer.setContentsMargins(0, 0, 0, 0)
+        welcome_outer.setSpacing(0)
+        
+        # Barra de acento gradient (top accent strip)
+        accent_bar = QFrame()
+        accent_bar.setFixedHeight(4)
+        accent_bar.setObjectName("accentBar")
+        accent_bar.setStyleSheet(
+            "background: qlineargradient(x1:0,y1:0,x2:1,y2:0,"
+            "stop:0 #89b4fa, stop:0.3 #cba6f7, stop:0.7 #f38ba8, stop:1 #fab387);"
+            "border-radius: 2px; margin: 0 20px;"
+        )
+        welcome_outer.addWidget(accent_bar)
+        
+        welcome_content = QHBoxLayout()
+        welcome_content.setContentsMargins(30, 20, 30, 22)
         welcome_text_layout = QVBoxLayout()
-        welcome_title = QLabel("Bienvenido a LogiCheck")
+        welcome_text_layout.setSpacing(6)
+        
+        # Saludo dinámico
+        user_name = self._user.get("full_name", "Operador")
+        greeting = get_greeting(user_name)
+        welcome_title = QLabel(greeting)
         welcome_title.setObjectName("welcomeTitle")
         welcome_text_layout.addWidget(welcome_title)
-        welcome_sub = QLabel("Sistema de auditoría logística con visión artificial para la Ferretería Durán, Apulo.\nOptimiza tus despachos, reduce errores y mejora la trazabilidad de los materiales.")
+        
+        welcome_sub = QLabel(
+            "Sistema de auditoría logística con visión artificial • Ferretería Durán, Apulo\n"
+            "Optimiza despachos, reduce errores y mejora la trazabilidad de materiales."
+        )
         welcome_sub.setObjectName("welcomeSub")
         welcome_sub.setWordWrap(True)
         welcome_text_layout.addWidget(welcome_sub)
         
+        welcome_text_layout.addSpacing(8)
+        
         quick_actions = QHBoxLayout()
+        quick_actions.setSpacing(10)
         btn_quick_video = QPushButton("📹  Analizar Video")
         btn_quick_video.setObjectName("primaryBtn")
         btn_quick_video.setCursor(Qt.PointingHandCursor)
@@ -639,24 +757,67 @@ class MainWindow(QMainWindow):
         btn_quick_invoice.setCursor(Qt.PointingHandCursor)
         btn_quick_invoice.clicked.connect(lambda: self._on_nav_click("Factura PDF"))
         quick_actions.addWidget(btn_quick_invoice)
+        btn_quick_camera = QPushButton("📷  Cámara en Vivo")
+        btn_quick_camera.setObjectName("secondaryBtn")
+        btn_quick_camera.setCursor(Qt.PointingHandCursor)
+        btn_quick_camera.clicked.connect(lambda: self._on_nav_click("Cámara en Vivo"))
+        quick_actions.addWidget(btn_quick_camera)
         quick_actions.addStretch()
         welcome_text_layout.addLayout(quick_actions)
-        welcome_layout.addLayout(welcome_text_layout)
+        welcome_content.addLayout(welcome_text_layout, 1)
         
-        welcome_emoji = QLabel("🔍")
-        welcome_emoji.setStyleSheet("font-size: 72px; background: transparent;")
-        welcome_layout.addWidget(welcome_emoji, alignment=Qt.AlignRight | Qt.AlignVCenter)
+        # Decorative emoji group
+        emoji_stack = QVBoxLayout()
+        emoji_stack.setAlignment(Qt.AlignCenter)
+        emoji_main = QLabel("🔍")
+        emoji_main.setStyleSheet("font-size: 56px; background: transparent;")
+        emoji_stack.addWidget(emoji_main, alignment=Qt.AlignCenter)
+        date_label = QLabel(datetime.datetime.now().strftime("%A, %d de %B"))
+        date_label.setObjectName("subtleText")
+        date_label.setAlignment(Qt.AlignCenter)
+        date_label.setStyleSheet("font-size: 11px; font-weight: 600;")
+        emoji_stack.addWidget(date_label, alignment=Qt.AlignCenter)
+        welcome_content.addLayout(emoji_stack)
         
+        welcome_outer.addLayout(welcome_content)
         layout.addWidget(welcome)
         
-        # Stat cards row
+        # ══════════════════════════════════════════════════════════
+        # STAT CARDS ROW — con sparklines y badges de cambio
+        # ══════════════════════════════════════════════════════════
         stats_row = QHBoxLayout()
-        stats_row.setSpacing(15)
+        stats_row.setSpacing(14)
         
         self.stat_despachos = StatCard("📦", "0", "Despachos Auditados", "#89b4fa")
         self.stat_discrepancias = StatCard("⚠️", "0", "Discrepancias Detectadas", "#f38ba8")
         self.stat_accuracy = StatCard("✅", "—", "Precisión del Conteo", "#a6e3a1")
         self.stat_vehiculos = StatCard("🚛", "0", "Vehículos Asignados", "#fab387")
+        
+        # Add sparklines to stat cards
+        self._sparkline_despachos = MiniSparkline("#89b4fa")
+        self._sparkline_disc = MiniSparkline("#f38ba8")
+        self._sparkline_accuracy = MiniSparkline("#a6e3a1")
+        self._sparkline_vehiculos = MiniSparkline("#fab387")
+
+        self._badge_despachos = ChangeBadge()
+        self._badge_disc = ChangeBadge()
+        self._badge_accuracy = ChangeBadge()
+        self._badge_vehiculos = ChangeBadge()
+
+        # Embed sparklines and badges into each stat card
+        for card, sparkline, badge in [
+            (self.stat_despachos, self._sparkline_despachos, self._badge_despachos),
+            (self.stat_discrepancias, self._sparkline_disc, self._badge_disc),
+            (self.stat_accuracy, self._sparkline_accuracy, self._badge_accuracy),
+            (self.stat_vehiculos, self._sparkline_vehiculos, self._badge_vehiculos),
+        ]:
+            card_layout = card.layout()
+            # Add a spacer then the sparkline and badge
+            bottom_row_inner = QHBoxLayout()
+            bottom_row_inner.setContentsMargins(0, 4, 0, 0)
+            bottom_row_inner.addWidget(sparkline, 1)
+            bottom_row_inner.addWidget(badge, 0)
+            card_layout.addLayout(bottom_row_inner)
         
         stats_row.addWidget(self.stat_despachos)
         stats_row.addWidget(self.stat_discrepancias)
@@ -665,18 +826,64 @@ class MainWindow(QMainWindow):
         
         layout.addLayout(stats_row)
         
-        # Bottom section: Recent activity + Model status
-        bottom_row = QHBoxLayout()
-        bottom_row.setSpacing(15)
+        # ══════════════════════════════════════════════════════════
+        # MAIN CONTENT AREA — Trend Chart + Auditorías Recientes
+        # ══════════════════════════════════════════════════════════
+        main_row = QHBoxLayout()
+        main_row.setSpacing(14)
 
-        # Recent activity card (datos reales de SQLite)
+        # ── Trend Chart Card (wider) ──
+        trend_card = GlowCard()
+        trend_card.setObjectName("glowCard")
+        trend_layout = QVBoxLayout(trend_card)
+        trend_layout.setContentsMargins(20, 18, 20, 18)
+        
+        trend_header = QHBoxLayout()
+        trend_title = QLabel("📈 Tendencia — Últimos 30 días")
+        trend_title.setObjectName("cardTitle")
+        trend_header.addWidget(trend_title)
+        trend_header.addStretch()
+        
+        # Legend pills
+        legend_container = QHBoxLayout()
+        legend_container.setSpacing(8)
+        legend_ia = QLabel("● Total")
+        legend_ia.setStyleSheet(
+            "color: #89b4fa; font-size: 10px; font-weight: 800; "
+            "background: rgba(137,180,250,0.1); padding: 3px 8px; border-radius: 8px;"
+        )
+        legend_disc = QLabel("● Discrepancias")
+        legend_disc.setStyleSheet(
+            "color: #f38ba8; font-size: 10px; font-weight: 800; "
+            "background: rgba(243,139,168,0.1); padding: 3px 8px; border-radius: 8px;"
+        )
+        legend_container.addWidget(legend_ia)
+        legend_container.addWidget(legend_disc)
+        trend_header.addLayout(legend_container)
+        trend_layout.addLayout(trend_header)
+
+        self.chart_trends = ModernTrendChart()
+        self.chart_trends.setMinimumHeight(260)
+        trend_layout.addWidget(self.chart_trends)
+        
+        main_row.addWidget(trend_card, 5)
+
+        # ── Recent Activity Card ──
         activity_card = GlowCard()
         activity_card.setObjectName("glowCard")
         activity_layout = QVBoxLayout(activity_card)
         activity_layout.setContentsMargins(20, 18, 20, 18)
+        
+        activity_header_row = QHBoxLayout()
         activity_header = QLabel("📋  Auditorías Recientes")
         activity_header.setObjectName("cardTitle")
-        activity_layout.addWidget(activity_header)
+        activity_header_row.addWidget(activity_header)
+        activity_header_row.addStretch()
+        self._lbl_audit_count = QLabel("0 hoy")
+        self._lbl_audit_count.setObjectName("subtleText")
+        self._lbl_audit_count.setStyleSheet("font-size: 11px; font-weight: 700;")
+        activity_header_row.addWidget(self._lbl_audit_count)
+        activity_layout.addLayout(activity_header_row)
 
         self.table_recent = QTableWidget(0, 4)
         self.table_recent.setHorizontalHeaderLabels(["Fecha", "Factura", "Resultado", "Vehículo"])
@@ -684,64 +891,98 @@ class MainWindow(QMainWindow):
         self.table_recent.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table_recent.setAlternatingRowColors(True)
         self.table_recent.verticalHeader().setVisible(False)
-        self.table_recent.setMinimumHeight(180)
+        self.table_recent.setMinimumHeight(200)
+        self.table_recent.setShowGrid(False)
         activity_layout.addWidget(self.table_recent)
 
-        bottom_row.addWidget(activity_card, 3)
-
-        # Trend Chart Card
-        trend_card = GlowCard()
-        trend_card.setObjectName("glowCard")
-        trend_layout = QVBoxLayout(trend_card)
-        trend_layout.setContentsMargins(20, 18, 20, 18)
-        trend_header = QHBoxLayout()
-        trend_title = QLabel("📈 Tendencia (Últimos 30 días)")
-        trend_title.setObjectName("cardTitle")
-        trend_header.addWidget(trend_title)
-        trend_header.addStretch()
-        legend_ia = QLabel("● Total")
-        legend_ia.setStyleSheet("color: #89b4fa; font-size: 10px; font-weight: bold;")
-        legend_disc = QLabel("● Discrepancias")
-        legend_disc.setStyleSheet("color: #f38ba8; font-size: 10px; font-weight: bold;")
-        trend_header.addWidget(legend_ia)
-        trend_header.addWidget(legend_disc)
-        trend_layout.addLayout(trend_header)
-
-        self.chart_trends = ModernTrendChart()
-        trend_layout.addWidget(self.chart_trends)
+        main_row.addWidget(activity_card, 4)
+        layout.addLayout(main_row)
         
-        bottom_row.addWidget(trend_card, 4)
+        # ══════════════════════════════════════════════════════════
+        # BOTTOM ROW — Model Status + System Health + Timeline
+        # ══════════════════════════════════════════════════════════
+        bottom_row = QHBoxLayout()
+        bottom_row.setSpacing(14)
 
-        # Model info card
+        # ── Model Info Card ──
         model_card = GlowCard()
         model_card.setObjectName("glowCard")
         model_layout = QVBoxLayout(model_card)
         model_layout.setContentsMargins(20, 18, 20, 18)
-        model_header = QLabel("🤖  Estado del Modelo IA")
+        model_header = QLabel("🤖  Motor de IA")
         model_header.setObjectName("cardTitle")
         model_layout.addWidget(model_header)
 
         _cuda_state = ("✅ Precargado" if self._preloaded_model else "⏳ Carga en frío")
         _device_name = (self._preloaded_device or "CPU").upper()
+        _status_color = "#a6e3a1" if self._preloaded_model else "#f9e2af"
+        
         model_items = [
-            ("Motor",    "YOLO11 (Ultralytics)"),
-            ("Estado",   f"{_cuda_state} en {_device_name}"),
-            ("Clase",    "Bulto de cemento (0)"),
-            ("Modelo",   "bultos_cemento2/best.pt"),
+            ("Motor",    "YOLO11 (Ultralytics)", "#89b4fa"),
+            ("Estado",   f"{_cuda_state} en {_device_name}", _status_color),
+            ("Clases",   "Cemento, Tubería", "#cba6f7"),
+            ("Weights",  "bultos_cemento2/best.pt", "#6c7086"),
         ]
-        for key, val in model_items:
+        for key, val, color in model_items:
             row = QHBoxLayout()
+            row.setSpacing(8)
             k_label = QLabel(key)
             k_label.setObjectName("modelKey")
             row.addWidget(k_label)
             row.addStretch()
             v_label = QLabel(val)
             v_label.setObjectName("modelValue")
+            v_label.setStyleSheet(f"color: {color}; font-weight: 700; background: transparent;")
             row.addWidget(v_label)
             model_layout.addLayout(row)
 
         model_layout.addStretch()
-        bottom_row.addWidget(model_card, 2)
+        bottom_row.addWidget(model_card, 3)
+
+        # ── System Health Card ──
+        health_card = GlowCard()
+        health_card.setObjectName("glowCard")
+        health_layout = QVBoxLayout(health_card)
+        health_layout.setContentsMargins(20, 18, 20, 18)
+        health_header = QLabel("💻  Estado del Sistema")
+        health_header.setObjectName("cardTitle")
+        health_layout.addWidget(health_header)
+        
+        self._health_widget = SystemHealthWidget()
+        # Initial values
+        gpu_pct = 0
+        try:
+            import torch
+            if torch.cuda.is_available():
+                free, total = torch.cuda.mem_get_info(0)
+                gpu_pct = int(((total - free) / total) * 100)
+        except Exception:
+            pass
+        
+        self._health_widget.set_items([
+            ("Modelo IA", 100 if self._preloaded_model else 0,
+             "#a6e3a1" if self._preloaded_model else "#f9e2af"),
+            ("GPU VRAM", gpu_pct, "#89b4fa"),
+            ("Base Datos", 100, "#cba6f7"),
+        ])
+        health_layout.addWidget(self._health_widget)
+        health_layout.addStretch()
+        bottom_row.addWidget(health_card, 3)
+
+        # ── Activity Timeline Card ──
+        timeline_card = GlowCard()
+        timeline_card.setObjectName("glowCard")
+        timeline_layout = QVBoxLayout(timeline_card)
+        timeline_layout.setContentsMargins(20, 18, 20, 18)
+        timeline_header = QLabel("⏱️  Actividad Reciente")
+        timeline_header.setObjectName("cardTitle")
+        timeline_layout.addWidget(timeline_header)
+        
+        self._timeline_widget = ActivityTimelineWidget()
+        timeline_layout.addWidget(self._timeline_widget)
+        timeline_layout.addStretch()
+        bottom_row.addWidget(timeline_card, 4)
+
         layout.addLayout(bottom_row)
         layout.addStretch()
         
@@ -2333,29 +2574,45 @@ class MainWindow(QMainWindow):
         super().keyPressEvent(event)
     
     def _animate_dashboard_stats(self):
-        """Lee datos REALES de SQLite para animar las tarjetas del Dashboard."""
+        """Lee datos REALES de SQLite para animar las tarjetas del Dashboard (v2)."""
         try:
             stats = get_dashboard_stats()
-            self.stat_despachos.animate_to(stats["despachos_hoy"])
-            self.stat_discrepancias.animate_to(stats["discrepancias_hoy"])
-            self.stat_vehiculos.animate_to(stats["vehiculos_hoy"])
+            despachos = stats["despachos_hoy"]
+            discrepancias = stats["discrepancias_hoy"]
+            vehiculos = stats["vehiculos_hoy"]
             acc = stats["accuracy_pct"]
+
+            self.stat_despachos.animate_to(despachos)
+            self.stat_discrepancias.animate_to(discrepancias)
+            self.stat_vehiculos.animate_to(vehiculos)
             self.stat_accuracy.set_value(f"{acc:.1f}%")
 
-            # Tabla de auditorías recientes
+            # Update audit count label
+            if hasattr(self, '_lbl_audit_count'):
+                self._lbl_audit_count.setText(f"{despachos} hoy")
+
+            # Tabla de auditorías recientes con badges de estado
             recent = stats.get("recent_audits", [])
             self.table_recent.setRowCount(0)
             if recent:
                 for row_data in recent:
                     r = self.table_recent.rowCount()
                     self.table_recent.insertRow(r)
+                    self.table_recent.setRowHeight(r, 36)
                     # Fecha abreviada
                     fecha = str(row_data.get("fecha", ""))[:16]
                     self.table_recent.setItem(r, 0, QTableWidgetItem(fecha))
                     self.table_recent.setItem(r, 1, QTableWidgetItem(str(row_data.get("factura_no", "—"))))
-                    result_item = QTableWidgetItem(str(row_data.get("resultado", "—")))
-                    result_color = QColor("#a6e3a1") if row_data.get("resultado") == "CONFORME" else QColor("#f38ba8")
-                    result_item.setForeground(result_color)
+                    
+                    # Result badge con fondo coloreado
+                    resultado = str(row_data.get("resultado", "—"))
+                    result_item = QTableWidgetItem(resultado)
+                    if resultado == "CONFORME":
+                        result_item.setForeground(QColor("#a6e3a1"))
+                        result_item.setText("✅ " + resultado)
+                    elif resultado == "DISCREPANCIA":
+                        result_item.setForeground(QColor("#f38ba8"))
+                        result_item.setText("⚠️ " + resultado)
                     self.table_recent.setItem(r, 2, result_item)
                     self.table_recent.setItem(r, 3, QTableWidgetItem(str(row_data.get("vehiculo", "—"))))
             else:
@@ -2370,15 +2627,127 @@ class MainWindow(QMainWindow):
             self.stat_discrepancias.animate_to(0)
             self.stat_vehiculos.animate_to(0)
 
-        # Cargar Gráfica de Tendencia
+        # ── Cargar Gráfica de Tendencia ──
         try:
             trends = get_monthly_trends()
-            # Si no hay datos, crear unos pocos dummy para visualización inicial (opcional)
             if not trends:
-                trends = [{"total": 0, "discrepancies": 0} for _ in range(7)]
+                # Dummy data para visualización inicial
+                import datetime as dt
+                trends = []
+                for i in range(7):
+                    d = dt.datetime.now() - dt.timedelta(days=6 - i)
+                    trends.append({
+                        "total": 0, "discrepancies": 0,
+                        "label": d.strftime("%d/%m")
+                    })
+            else:
+                # Add day labels if not present
+                import datetime as dt
+                for i, t in enumerate(trends):
+                    if "label" not in t:
+                        d = dt.datetime.now() - dt.timedelta(days=len(trends) - 1 - i)
+                        t["label"] = d.strftime("%d/%m")
             self.chart_trends.set_data(trends)
+            
+            # ── Sparklines: extract per-card data from trends ──
+            if hasattr(self, '_sparkline_despachos') and trends:
+                self._sparkline_despachos.set_data([t.get("total", 0) for t in trends])
+                self._sparkline_disc.set_data([t.get("discrepancies", 0) for t in trends])
+                # Accuracy: calculate running accuracy per day
+                acc_data = []
+                for t in trends:
+                    total = t.get("total", 0)
+                    disc = t.get("discrepancies", 0)
+                    if total > 0:
+                        acc_data.append(max(0, (total - disc) / total * 100))
+                    else:
+                        acc_data.append(100)
+                self._sparkline_accuracy.set_data(acc_data)
+                self._sparkline_vehiculos.set_data([t.get("total", 0) for t in trends])
+
+            # ── Change Badges ──
+            if hasattr(self, '_badge_despachos') and len(trends) >= 2:
+                prev_total = max(trends[-2].get("total", 0), 1)
+                curr_total = trends[-1].get("total", 0)
+                self._badge_despachos.set_change(
+                    ((curr_total - prev_total) / prev_total) * 100 if prev_total else 0
+                )
+                prev_disc = max(trends[-2].get("discrepancies", 0), 1)
+                curr_disc = trends[-1].get("discrepancies", 0)
+                self._badge_disc.set_change(
+                    ((curr_disc - prev_disc) / prev_disc) * 100 if prev_disc else 0
+                )
         except Exception as e:
             print(f"[DASHBOARD] Error cargando tendencias: {e}")
+
+        # ── Activity Timeline ──
+        try:
+            if hasattr(self, '_timeline_widget'):
+                from core import logger as _logger
+                # Get recent activity logs
+                import sqlite3
+                db_path = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    "logicheck_users.db"
+                )
+                events = []
+                if os.path.exists(db_path):
+                    conn = sqlite3.connect(db_path)
+                    conn.row_factory = sqlite3.Row
+                    cursor = conn.cursor()
+                    try:
+                        cursor.execute(
+                            "SELECT timestamp, action, detail FROM activity_logs "
+                            "ORDER BY timestamp DESC LIMIT 6"
+                        )
+                        rows = cursor.fetchall()
+                        color_map = {
+                            "LOGIN": "#a6e3a1",
+                            "LOGOUT": "#f9e2af",
+                            "FACTURA_CARGADA": "#89b4fa",
+                            "VIDEO_ANALIZADO": "#cba6f7",
+                            "VIDEO_DETENIDO": "#fab387",
+                            "REPORTE_EXPORTADO": "#89b4fa",
+                            "TEMA_CAMBIADO": "#6c7086",
+                            "ASIGNACION_CREADA": "#a6e3a1",
+                        }
+                        for row in rows:
+                            ts = str(row["timestamp"])
+                            time_str = ts[11:16] if len(ts) > 16 else ts[:5]
+                            action = str(row["action"])
+                            detail = str(row["detail"])[:40]
+                            color = color_map.get(action, "#6c7086")
+                            display = f"{action.replace('_', ' ').title()}"
+                            if detail:
+                                display = detail
+                            events.append((time_str, display, color))
+                    except Exception:
+                        pass
+                    finally:
+                        conn.close()
+                self._timeline_widget.set_events(events)
+        except Exception as e:
+            print(f"[DASHBOARD] Error cargando timeline: {e}")
+
+        # ── Update System Health ──
+        try:
+            if hasattr(self, '_health_widget'):
+                gpu_pct = 0
+                try:
+                    import torch as _torch
+                    if _torch.cuda.is_available():
+                        free, total = _torch.cuda.mem_get_info(0)
+                        gpu_pct = int(((total - free) / total) * 100)
+                except Exception:
+                    pass
+                self._health_widget.set_items([
+                    ("Modelo IA", 100 if self._preloaded_model else 0,
+                     "#a6e3a1" if self._preloaded_model else "#f9e2af"),
+                    ("GPU VRAM", gpu_pct, "#89b4fa"),
+                    ("Base Datos", 100, "#cba6f7"),
+                ])
+        except Exception:
+            pass
     
     # ----------------------------------------------------------------
     # THEME TOGGLE

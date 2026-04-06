@@ -157,7 +157,7 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 #glowCard, #statCard {
     background-color: #181825;
     border: 1px solid #313244;
-    border-radius: 12px;
+    border-radius: 14px;
 }
 #glowCard:hover, #statCard:hover {
     border-color: #45475a;
@@ -166,38 +166,51 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
 /* Welcome Banner */
 #welcomeBanner {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #1e1e2e, stop:0.5 #1a1a2e, stop:1 #181825);
+        stop:0 #1e1e2e, stop:0.3 #1c1c30, stop:0.7 #1a1a2e, stop:1 #181825);
     border: 1px solid #313244;
     border-radius: 16px;
 }
 #welcomeTitle {
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 900;
     color: #cdd6f4;
+    letter-spacing: -0.5px;
 }
 #welcomeSub {
     font-size: 13px;
     color: #a6adc8;
-    line-height: 1.5;
+    line-height: 1.6;
+}
+
+/* Accent bar in welcome banner */
+#accentBar {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #89b4fa, stop:0.3 #cba6f7, stop:0.7 #f38ba8, stop:1 #fab387);
+    border-radius: 2px;
+    margin: 0 20px;
 }
 
 /* Stat Cards */
 #statDesc {
-    font-size: 12px;
+    font-size: 11px;
     color: #6c7086;
+    font-weight: 600;
+    letter-spacing: 0.3px;
 }
 
 /* Card titles */
 #cardTitle {
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 800;
     color: #cdd6f4;
-    padding-bottom: 8px;
+    padding-bottom: 10px;
+    letter-spacing: -0.2px;
 }
 
 #subtleText {
     font-size: 12px;
     color: #6c7086;
+
 }
 
 #modelKey {
