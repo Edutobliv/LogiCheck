@@ -504,18 +504,28 @@ class RtspCameraWorker(QThread):
         FRAME_SKIP         = 2
         reconnect_count    = 0
 
+        # Forzar TCP construyendo una URL con parámetros FFMPEG embebidos.
+        # Esta técnica es la más confiable cuando se trabaja con túneles (Bore, Ngrok, etc.)
+        # OpenCV soporta pasar opciones de ffmpeg como: {"rtsp_transport": "tcp"}
+        import os as _os
+        _os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+        
         while self._is_running:
-            cap = cv2.VideoCapture(self.camera_url)
+            # Re-verificar si el thread sigue activo antes de intentar abrir
+            if not self._is_running: break
+
+            cap = cv2.VideoCapture(self.camera_url, cv2.CAP_FFMPEG)
             cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
             if not cap.isOpened():
                 reconnect_count += 1
-                print(f"[RTSP] Fallo de conexión (intento {reconnect_count}/{MAX_RECONNECT})")
+                print(f"[RTSP] Fallo de conexión (intento {reconnect_count}/{MAX_RECONNECT}) -> {self.camera_url}")
                 self.connection_status.emit("lost")
                 if reconnect_count >= MAX_RECONNECT:
                     self.error_occurred.emit(
                         f"No se pudo conectar a la cámara después de {MAX_RECONNECT} intentos.\n"
-                        f"URL: {self.camera_url}"
+                        f"Verifique que el Host sea correcto y que el puerto 554 esté abierto.\n"
+                        f"URL actual: {self.camera_url}"
                     )
                     break
                 self.msleep(RECONNECT_DELAY_MS)

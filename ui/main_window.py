@@ -1330,6 +1330,17 @@ class MainWindow(QMainWindow):
         self.cam_url_input.setFixedHeight(34)
         top_row.addWidget(self.cam_url_input)
 
+        lbl_port = QLabel("Puerto:")
+        lbl_port.setObjectName("subtleText")
+        lbl_port.setStyleSheet("margin-left: 10px;")
+        top_row.addWidget(lbl_port)
+        self.cam_port_input = QLineEdit()
+        self.cam_port_input.setPlaceholderText("554")
+        self.cam_port_input.setText("554")
+        self.cam_port_input.setFixedWidth(60)
+        self.cam_port_input.setFixedHeight(34)
+        top_row.addWidget(self.cam_port_input)
+
         self.check_dual_mode = QCheckBox("Modo Triangulación (9+10)")
         self.check_dual_mode.setObjectName("subtleText")
         self.check_dual_mode.setStyleSheet("font-weight: 700; color: #fab387; padding: 0 10px;")
@@ -1650,9 +1661,13 @@ class MainWindow(QMainWindow):
             # Desconectar señales una por una con seguridad
             for signal_name in ["frame_ready", "counts_updated", "detection_event", "connection_status", "error_occurred", "finished"]:
                 try:
-                    sig = getattr(w, signal_name)
-                    sig.disconnect()
-                except Exception:
+                    sig = getattr(w, signal_name, None)
+                    if sig:
+                        try:
+                            sig.disconnect()
+                        except:
+                            pass
+                except:
                     pass
 
             try:
@@ -1677,9 +1692,15 @@ class MainWindow(QMainWindow):
     def _on_camera_connect(self):
         """Inicia el RtspCameraWorker con la URL configurada y el canal seleccionado."""
         host = self.cam_url_input.text().strip()
+        port = getattr(self, "cam_port_input", None)
+        port_val = port.text().strip() if port else "554"
+        
         if not host:
             self.show_toast("Ingrese el Host de la cámara.", "warning")
             return
+            
+        if not port_val:
+            port_val = "554"
 
         # Asegurarse de que no queda ningún worker vivo
         self._kill_cam_worker()
@@ -1708,7 +1729,7 @@ class MainWindow(QMainWindow):
             channel_primary = self.cam_selector.currentIndex() + 1
             zone_id_primary = channel_primary if channel_primary in self._cam_zones else 9
             
-        url_primary = f"rtsp://Samuel:Samuel123.@{host}:554/cam/realmonitor?channel={channel_primary}&subtype=1"
+        url_primary = f"rtsp://Samuel:Samuel123.@{host}:{port_val}/cam/realmonitor?channel={channel_primary}&subtype=1"
         
         # Actualizar labels de UI
         if is_dual:
@@ -1742,7 +1763,7 @@ class MainWindow(QMainWindow):
         # --- CANAL SECUNDARIO ---
         if is_dual:
             # Revertido: Cam 10 apunta al RTSP 10.
-            url_alt = f"rtsp://Samuel:Samuel123.@{host}:554/cam/realmonitor?channel=10&subtype=1"
+            url_alt = f"rtsp://Samuel:Samuel123.@{host}:{port_val}/cam/realmonitor?channel=10&subtype=1"
             self._cam_worker_alt = RtspCameraWorker(
                 camera_url=url_alt,
                 model_path=model_path,
@@ -1761,6 +1782,9 @@ class MainWindow(QMainWindow):
         self.btn_cam_connect.setEnabled(False)
         self.btn_cam_disconnect.setEnabled(True)
         self.cam_url_input.setEnabled(False)
+        if hasattr(self, "cam_port_input"):
+            self.cam_port_input.setEnabled(False)
+        self.cam_selector.setEnabled(False)
         self._cam_session_start = datetime.datetime.now()
         self.lbl_cam_session.setText(f"Sesión: {self._cam_session_start.strftime('%H:%M:%S')}")
         self.show_toast("Modo Triangulación activado" if is_dual else "Conectando a cámara...", "info")
@@ -1979,6 +2003,8 @@ class MainWindow(QMainWindow):
         self.btn_cam_reset.setEnabled(False)
         self.btn_cam_snapshot.setEnabled(False)
         self.cam_url_input.setEnabled(True)
+        self.cam_frame.setPixmap(QPixmap())
+        self.cam_frame_alt.setPixmap(QPixmap())
         self.cam_frame.setText("📷\n\nIntroduzca la URL de la cámara IP\ny pulse Conectar")
         self.cam_frame_alt.setText("📷\n\nEsperando Señal...")
         self.cam_frame.setAlignment(Qt.AlignCenter)
@@ -1987,6 +2013,11 @@ class MainWindow(QMainWindow):
         if not self.check_dual_mode.isChecked():
             self.cam_alt_container.setVisible(False)
             self.lbl_title_cam_primary.setVisible(False)
+            self.cam_selector.setEnabled(True)
+        
+        if hasattr(self, "cam_port_input"):
+            self.cam_port_input.setEnabled(True)
+            
         self._set_cam_status("idle")
         self.lbl_cam_fps.setText("")
         self._last_dual_counts = [{}, {}]
@@ -2737,7 +2768,7 @@ class MainWindow(QMainWindow):
         self._overlay_anim.setDuration(120)
         
         try:
-            # Silence the warning by checking if there's anything to disconnect
+            # Safer disconnection to avoid RuntimeWarnings
             self._overlay_anim.finished.disconnect()
         except (RuntimeError, TypeError):
             pass
@@ -2756,7 +2787,7 @@ class MainWindow(QMainWindow):
         # Fade overlay OUT to reveal new page
         try:
             self._overlay_anim.finished.disconnect()
-        except RuntimeError:
+        except (RuntimeError, TypeError):
             pass
         
         self._overlay_anim.setStartValue(1.0)
@@ -2773,7 +2804,7 @@ class MainWindow(QMainWindow):
         """Called when overlay has fully faded out. Hide it."""
         try:
             self._overlay_anim.finished.disconnect()
-        except RuntimeError:
+        except (RuntimeError, TypeError):
             pass
         self._fade_overlay.hide()
     
