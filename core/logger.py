@@ -1,7 +1,7 @@
 # core/logger.py
 # ============================================================
 #  LogiCheck — Sistema de Logs de Actividad (SQLite)
-#  Tabla: activity_logs
+#  Tabla: activity_logs (con FK a usuarios)
 #  - Admin: ve todos los registros
 #  - Otros roles: solo ven sus propios registros
 # ============================================================
@@ -10,7 +10,6 @@ import sqlite3
 import os
 import datetime
 
-# Misma BD que usuarios para mantener todo centralizado
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "logicheck_users.db")
 
 # ── Constantes de Acciones ───────────────────────────────────
@@ -38,24 +37,19 @@ CONTRASENA_CAMBIADA = "Contraseña Cambiada"
 def _get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(os.path.abspath(DB_PATH))
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
 def init_logs_table():
-    """Crea la tabla de logs si no existe."""
-    with _get_conn() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS activity_logs (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id     INTEGER,
-                username    TEXT NOT NULL,
-                role        TEXT NOT NULL,
-                action      TEXT NOT NULL,
-                description TEXT DEFAULT '',
-                timestamp   TEXT DEFAULT (datetime('now', 'localtime'))
-            )
-        """)
-        conn.commit()
+    """
+    Inicializa la tabla de logs.
+    NOTA: A partir de v2 el esquema lo gestiona db_migrations.run_migrations().
+    Este método se mantiene por compatibilidad con la llamada en auth.init_db().
+    """
+    # La migración ya crea la tabla; no hace nada si ya existe.
+    from core.db_migrations import run_migrations
+    run_migrations()
 
 
 def log_action(user_data: dict, action: str, description: str = ""):
@@ -87,8 +81,8 @@ def log_action(user_data: dict, action: str, description: str = ""):
 def get_logs(role: str, username: str) -> list:
     """
     Retorna logs filtrados según el rol:
-      - 'admin'  → todos los registros (máx. 1000)
-      - otros    → solo los registros de ese username (máx. 500)
+      - 'admin'  -> todos los registros (máx. 1000)
+      - otros    -> solo los registros de ese username (máx. 500)
     """
     with _get_conn() as conn:
         if role == "admin":
@@ -110,8 +104,8 @@ def get_logs_filtered(role: str, username: str,
                       filter_action: str = "") -> list:
     """
     Retorna logs con filtros adicionales (para la UI).
-      filter_user   → "" = todos, otro = filtrar por username específico
-      filter_action → "" = todas, otro = filtrar por tipo de acción
+      filter_user   -> "" = todos, otro = filtrar por username específico
+      filter_action -> "" = todas, otro = filtrar por tipo de acción
     """
     conditions = []
     params = []
@@ -186,33 +180,29 @@ def get_dashboard_metrics() -> dict:
     """Retorna métricas operativas del día de hoy para el Dashboard."""
     today = datetime.date.today().isoformat()
     metrics = {
-        "despachos": 0,
+        "despachos":    0,
         "discrepancias": 0,
-        "vehiculos": 0,
-        "accuracy": 100.0
+        "vehiculos":    0,
+        "accuracy":     100.0
     }
-    
+
     try:
         with _get_conn() as conn:
-            # 1. Despachos (Facturas procesadas hoy)
             metrics["despachos"] = conn.execute(
                 "SELECT COUNT(*) FROM activity_logs WHERE action = ? AND timestamp LIKE ?",
                 (FACTURA_PROCESADA, f"{today}%")
             ).fetchone()[0]
 
-            # 2. Discrepancias detectadas hoy
             metrics["discrepancias"] = conn.execute(
                 "SELECT COUNT(*) FROM activity_logs WHERE action = ? AND timestamp LIKE ?",
                 (DISCREPANCIA, f"{today}%")
             ).fetchone()[0]
 
-            # 3. Vehículos procesados (Asignaciones creadas hoy)
             metrics["vehiculos"] = conn.execute(
                 "SELECT COUNT(*) FROM activity_logs WHERE action = ? AND timestamp LIKE ?",
                 (ASIGNACION_CREADA, f"{today}%")
             ).fetchone()[0]
 
-            # 4. Cálculo de Accuracy (100 - (discrepancias / despachos * 100))
             if metrics["despachos"] > 0:
                 error_rate = (metrics["discrepancias"] / metrics["despachos"]) * 100
                 metrics["accuracy"] = max(0.0, 100.0 - error_rate)

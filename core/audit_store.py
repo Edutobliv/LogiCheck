@@ -1,7 +1,7 @@
 # core/audit_store.py
 # ============================================================
 #  LogiCheck — Persistencia de Auditorías (SQLite)
-#  Tabla: auditorias
+#  Tabla: auditorias (con FK a usuarios)
 # ============================================================
 
 import sqlite3
@@ -15,43 +15,25 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "..", "logicheck_users.db")
 def _get_conn() -> sqlite3.Connection:
     conn = sqlite3.connect(os.path.abspath(DB_PATH))
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
 def init_audits_table():
-    """Crea la tabla de auditorías si no existe."""
-    with _get_conn() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS auditorias (
-                id               INTEGER PRIMARY KEY AUTOINCREMENT,
-                username         TEXT NOT NULL,
-                role             TEXT NOT NULL,
-                fecha            TEXT DEFAULT (datetime('now', 'localtime')),
-                factura_no       TEXT DEFAULT '',
-                cliente          TEXT DEFAULT '',
-                video_nombre     TEXT DEFAULT '',
-                conteo_ia        TEXT DEFAULT '{}',
-                conteo_factura   TEXT DEFAULT '{}',
-                discrepancias    TEXT DEFAULT '{}',
-                vehiculo         TEXT DEFAULT '',
-                resultado        TEXT DEFAULT 'SIN_ANALISIS',
-                notas            TEXT DEFAULT '',
-                capturas         TEXT DEFAULT '[]'
-            )
-        """)
-        
-        try:
-            conn.execute("ALTER TABLE auditorias ADD COLUMN capturas TEXT DEFAULT '[]'")
-        except sqlite3.OperationalError:
-            pass # Ya existe
-            
-        conn.commit()
+    """
+    Crea la tabla de auditorías si no existe.
+    NOTA: A partir de v3 el esquema lo gestiona db_migrations.run_migrations().
+    Este método se mantiene por compatibilidad.
+    """
+    from core.db_migrations import run_migrations
+    run_migrations()
 
 
 def save_audit(user_data: dict, audit_data: dict) -> int:
     """
     Guarda una auditoría completa. Retorna el ID insertado.
 
+    user_data: dict con {id, username, role, ...}
     audit_data esperado:
     {
         'factura_no':     str,
@@ -60,12 +42,11 @@ def save_audit(user_data: dict, audit_data: dict) -> int:
         'conteo_ia':      {'Cemento': 5, ...},
         'conteo_factura': {'Cemento': 6, ...},
         'vehiculo':       str,
-        'notas':          str   (opcional)
+        'notas':          str   (opcional),
+        'capturas':       list  (opcional)
     }
     """
     try:
-        init_audits_table()
-
         conteo_ia      = audit_data.get("conteo_ia", {})
         conteo_factura = audit_data.get("conteo_factura", {})
 
@@ -83,18 +64,20 @@ def save_audit(user_data: dict, audit_data: dict) -> int:
         with _get_conn() as conn:
             cursor = conn.execute("""
                 INSERT INTO auditorias
-                    (username, role, factura_no, cliente, video_nombre,
-                     conteo_ia, conteo_factura, discrepancias, vehiculo, resultado, notas, capturas)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (user_id, username, role, factura_no, cliente, video_nombre,
+                     conteo_ia, conteo_factura, discrepancias, vehiculo,
+                     resultado, notas, capturas)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
+                user_data.get("id"),
                 user_data.get("username", ""),
                 user_data.get("role", ""),
                 audit_data.get("factura_no", ""),
                 audit_data.get("cliente", ""),
                 audit_data.get("video_nombre", ""),
-                json.dumps(conteo_ia, ensure_ascii=False),
+                json.dumps(conteo_ia,      ensure_ascii=False),
                 json.dumps(conteo_factura, ensure_ascii=False),
-                json.dumps(discrepancias, ensure_ascii=False),
+                json.dumps(discrepancias,  ensure_ascii=False),
                 audit_data.get("vehiculo", ""),
                 resultado,
                 audit_data.get("notas", ""),
@@ -108,9 +91,8 @@ def save_audit(user_data: dict, audit_data: dict) -> int:
 
 
 def get_audits(limit: int = 100) -> list:
-    """Retorna las últimas N auditorías."""
+    """Retorna las últimas N auditorías con datos deserializados."""
     try:
-        init_audits_table()
         with _get_conn() as conn:
             cursor = conn.execute(
                 "SELECT * FROM auditorias ORDER BY id DESC LIMIT ?", (limit,)
@@ -118,7 +100,6 @@ def get_audits(limit: int = 100) -> list:
             rows = []
             for row in cursor.fetchall():
                 d = dict(row)
-                # Deserializar JSON
                 for key in ("conteo_ia", "conteo_factura", "discrepancias"):
                     try:
                         d[key] = json.loads(d[key])
@@ -136,46 +117,39 @@ def get_audits(limit: int = 100) -> list:
 
 
 def get_dashboard_stats() -> dict:
-    """
-    Retorna estadísticas reales del día de hoy para el Dashboard.
-    """
+    """Retorna estadísticas reales del día de hoy para el Dashboard."""
     today = datetime.date.today().isoformat()
     stats = {
-        "despachos_hoy":    0,
+        "despachos_hoy":     0,
         "discrepancias_hoy": 0,
         "vehiculos_hoy":     0,
         "accuracy_pct":      100.0,
         "recent_audits":     [],
     }
     try:
-        init_audits_table()
         with _get_conn() as conn:
-            # Despachos del día
             stats["despachos_hoy"] = conn.execute(
                 "SELECT COUNT(*) FROM auditorias WHERE fecha LIKE ?", (f"{today}%",)
             ).fetchone()[0]
 
-            # Discrepancias del día
             stats["discrepancias_hoy"] = conn.execute(
                 "SELECT COUNT(*) FROM auditorias WHERE fecha LIKE ? AND resultado = 'DISCREPANCIA'",
                 (f"{today}%",)
             ).fetchone()[0]
 
-            # Vehículos asignados del día (auditorías con vehículo no vacío)
             stats["vehiculos_hoy"] = conn.execute(
                 "SELECT COUNT(*) FROM auditorias WHERE fecha LIKE ? AND vehiculo != ''",
                 (f"{today}%",)
             ).fetchone()[0]
 
-            # Accuracy: (conformes / total) * 100
             total = stats["despachos_hoy"]
             if total > 0:
                 conformes = total - stats["discrepancias_hoy"]
                 stats["accuracy_pct"] = round((conformes / total) * 100, 1)
 
-            # Últimas 5 auditorías para tabla Dashboard
             cursor = conn.execute(
-                "SELECT fecha, factura_no, resultado, vehiculo, username FROM auditorias ORDER BY id DESC LIMIT 5"
+                "SELECT fecha, factura_no, resultado, vehiculo, username "
+                "FROM auditorias ORDER BY id DESC LIMIT 5"
             )
             stats["recent_audits"] = [dict(r) for r in cursor.fetchall()]
 
@@ -188,16 +162,13 @@ def get_dashboard_stats() -> dict:
 def get_monthly_trends() -> list:
     """
     Retorna datos de tendencia diaria de los últimos 30 días:
-    [(fecha, despachos, discrepancias), ...]
+    [{'date': ..., 'total': ..., 'discrepancies': ...}, ...]
     """
-    trends = []
     try:
-        init_audits_table()
-        # Generamos una lista de los últimos 30 días (inclusive hoy)
         with _get_conn() as conn:
             cursor = conn.execute("""
-                SELECT 
-                    date(fecha) as d, 
+                SELECT
+                    date(fecha) as d,
                     count(*) as total,
                     sum(CASE WHEN resultado = 'DISCREPANCIA' THEN 1 ELSE 0 END) as disc
                 FROM auditorias
@@ -205,9 +176,8 @@ def get_monthly_trends() -> list:
                 GROUP BY d
                 ORDER BY d ASC
             """)
-            trends = cursor.fetchall()
-            # Convertir rows de sqlite a lista de dicts simple
-            return [{"date": r[0], "total": r[1], "discrepancies": r[2]} for r in trends]
+            return [{"date": r[0], "total": r[1], "discrepancies": r[2]}
+                    for r in cursor.fetchall()]
     except Exception as e:
         print(f"[AUDIT_STORE] Error en get_monthly_trends: {e}")
     return []

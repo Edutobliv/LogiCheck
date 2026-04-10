@@ -31,6 +31,7 @@ from ui.widgets.dashboard_widgets import (MiniSparkline, ChangeBadge,
     SystemHealthWidget, ActivityTimelineWidget, get_greeting)
 from core.report_exporter import export_excel, export_pdf
 from core.notifier import notifier
+from core.catalog_store import get_all_vehiculos, get_material_by_codigo, get_material_by_nombre
 from ui.dahua_history_dialog import DahuaHistoryDialog
 
 
@@ -3229,6 +3230,82 @@ class MainWindow(QMainWindow):
 
         # Update dashboard counter with yolo items found
         self.stat_despachos.set_value(invoice.total_yolo_items)
+        
+        # Calcular vehículo recomendado
+        self._update_vehicle_recommendation(invoice)
+
+    def _update_vehicle_recommendation(self, invoice):
+        peso_total = 0.0
+        vol_total = 0.0
+        
+        # 1. Calcular peso y volumen total de los items YOLO
+        for item in getattr(invoice, "yolo_items", []):
+            try:
+                qty = float(item.cantidad)
+            except ValueError:
+                qty = 0.0
+                
+            mat = get_material_by_codigo(item.codigo)
+            if not mat:
+                mat = get_material_by_nombre(item.descripcion)
+                
+            if mat:
+                peso_total += (mat["peso_unitario_kg"] * qty)
+                vol_total += (mat["volumen_unitario_m3"] * qty)
+                
+        # 2. Actualizar las tarjetas de resumen
+        if hasattr(self, "card_peso"):
+            self.card_peso.set_value(f"{peso_total:,.1f} Kg")
+        if hasattr(self, "card_volumen"):
+            self.card_volumen.set_value(f"{vol_total:,.2f} m³")
+            
+        # 3. Determinar el mejor vehículo
+        vehiculos = get_all_vehiculos(solo_activos=True)
+        mejor_vehiculo = None
+        
+        # Ordenar por capacidad de peso (de menor a mayor) para asignar el más pequeño que sirva
+        vehiculos = sorted(vehiculos, key=lambda v: v["capacidad_max_peso_kg"])
+        
+        # Rellenó la tabla
+        if hasattr(self, "table_vehicles"):
+            self.table_vehicles.setRowCount(0)
+            for i, v in enumerate(vehiculos):
+                self.table_vehicles.insertRow(i)
+                self.table_vehicles.setItem(i, 0, QTableWidgetItem(v["tipo"]))
+                self.table_vehicles.setItem(i, 1, QTableWidgetItem(v["placa"]))
+                self.table_vehicles.setItem(i, 2, QTableWidgetItem(f"{v['capacidad_max_peso_kg']:,.1f}"))
+                self.table_vehicles.setItem(i, 3, QTableWidgetItem(f"{v['capacidad_max_vol_m3']:,.2f}"))
+                
+                # Checar si este vehículo sirve
+                sirve = (v["capacidad_max_peso_kg"] >= peso_total and 
+                         v["capacidad_max_vol_m3"] >= vol_total)
+                
+                estado_txt = "✅ APTO" if sirve else "❌ NO APTO"
+                color = "#a6e3a1" if sirve else "#f38ba8"
+                
+                if sirve and not mejor_vehiculo:
+                    mejor_vehiculo = v
+                    
+                item_estado = QTableWidgetItem(estado_txt)
+                item_estado.setForeground(QColor(color))
+                self.table_vehicles.setItem(i, 4, item_estado)
+
+        # 4. Actualizar las tarjetas de vehículo y capacidad
+        if mejor_vehiculo:
+            if hasattr(self, "card_vehiculo"):
+                lbl = f"{mejor_vehiculo['tipo']} ({mejor_vehiculo['placa']})"
+                self.card_vehiculo.set_value(lbl)
+            if hasattr(self, "card_capacidad"):
+                uso_peso = (peso_total / mejor_vehiculo["capacidad_max_peso_kg"]) * 100 if mejor_vehiculo["capacidad_max_peso_kg"] > 0 else 0
+                uso_vol = (vol_total / mejor_vehiculo["capacidad_max_vol_m3"]) * 100 if mejor_vehiculo["capacidad_max_vol_m3"] > 0 else 0
+                uso_max = max(uso_peso, uso_vol)
+                self.card_capacidad.set_value(f"{uso_max:.1f}%")
+        else:
+            if hasattr(self, "card_vehiculo"):
+                self.card_vehiculo.set_value("Ninguno Apto")
+            if hasattr(self, "card_capacidad"):
+                self.card_capacidad.set_value("Sobrecarga")
+
 
     # ----------------------------------------------------------------
     # VIDEO ANALYSIS LOGGING
@@ -4128,9 +4205,9 @@ class MainWindow(QMainWindow):
         volumen  = getattr(self.card_volumen,  "value_label", None)
         vehiculo = getattr(self.card_vehiculo, "value_label", None)
 
-        peso_txt     = self.card_peso._val_lbl.text()     if hasattr(self.card_peso,     "_val_lbl") else "—"
-        volumen_txt  = self.card_volumen._val_lbl.text()  if hasattr(self.card_volumen,  "_val_lbl") else "—"
-        vehiculo_txt = self.card_vehiculo._val_lbl.text() if hasattr(self.card_vehiculo, "_val_lbl") else "—"
+        peso_txt     = self.card_peso.value_label.text()     if hasattr(self.card_peso,     "value_label") else "—"
+        volumen_txt  = self.card_volumen.value_label.text()  if hasattr(self.card_volumen,  "value_label") else "—"
+        vehiculo_txt = self.card_vehiculo.value_label.text() if hasattr(self.card_vehiculo, "value_label") else "—"
 
         factura_info = "Sin factura"
         invoice = getattr(self, "_current_invoice", None)
