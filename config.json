@@ -1,0 +1,25 @@
+{
+    "notifications": {
+        "whatsapp": {
+            "phone": "573152587012",
+            "apikey": "7002133",
+            "url": "https://api.callmebot.com/whatsapp.php"
+        },
+        "telegram": {
+            "token": "8684027766:AAEMGl4j3WFUlYoMoIStgVUn35D8rVheRgk",
+            "chat_id": "8517822043"
+        }
+    },
+    "cameras": {
+        "default_user": "Samuel",
+        "default_pass": "Samuel123.",
+        "default_port": 443,
+        "mode": "local",
+        "host": "ferreteria.viewdns.net",
+        "serial_number": "7C0B63APAZ259F7"
+    },
+    "system": {
+        "theme": "dark",
+        "language": "es"
+    }
+}

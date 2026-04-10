@@ -34,6 +34,7 @@ SYSTEM_FUNCTIONS = {
         "page.view.Reportes":           "📊 Consultar Histórico / Reportes",
         "page.view.Actividad":          "📜 Ver Bitácora de Actividad",
         "page.view.Gestión de Usuarios": "👥 Administrar Cuentas y Roles",
+        "page.view.Configuración":      "⚙️ Configurar Parámetros del Sistema",
     },
     "Acciones Específicas": {
         "factura.cargar":       "📤 Cargar y Procesar PDFs de Facturas",
@@ -104,6 +105,7 @@ def _base_page_access(role: str, page: str) -> bool:
         "Reportes":             ["admin", "op_factura", "op_video", "gerente", "dueno"],
         "Actividad":            ["admin", "op_factura", "op_video", "gerente", "dueno"],
         "Gestión de Usuarios":  ["admin"],
+        "Configuración":       ["admin", "dueno"],
     }
     return role in data.get(page, [])
 
@@ -117,7 +119,7 @@ def _base_action_access(role: str, action: str) -> bool:
         "vehiculo.gestionar": ["admin", "op_video", "gerente"],
         "reportes.exportar":  ["admin", "op_factura", "op_video", "gerente", "dueno"],
         "admin.usuarios":     ["admin"],
-        "admin.config":       ["admin"],
+        "admin.config":       ["admin", "dueno"],
     }
     return role in data.get(action, [])
 
@@ -126,7 +128,7 @@ def get_role_permissions(role: str) -> dict:
     perms = {"páginas": [], "acciones": []}
     
     # 1. Páginas
-    all_pages = ["Dashboard", "Factura PDF", "Análisis de Video", "Cámara en Vivo", "Asignación Vehicular", "Reportes", "Actividad", "Gestión de Usuarios"]
+    all_pages = ["Dashboard", "Factura PDF", "Análisis de Video", "Cámara en Vivo", "Asignación Vehicular", "Reportes", "Actividad", "Gestión de Usuarios", "Configuración"]
     for pg in all_pages:
         if _base_page_access(role, pg):
             perms["páginas"].append(pg)

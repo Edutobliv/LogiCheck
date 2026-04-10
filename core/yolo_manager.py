@@ -3,6 +3,11 @@ import time
 import numpy as np
 from PySide6.QtCore import QThread, Signal
 from PySide6.QtGui import QImage
+import os
+import sys
+
+# Nota: La integración P2P directa fue removida ya que OpenCV requiere RTSP.
+# El SDK de Dahua no entrega RTSP nativamente sobre P2P sin transcodificación.
 
 
 class YoloAnalyzerWorker(QThread):
@@ -432,7 +437,8 @@ class RtspCameraWorker(QThread):
     def __init__(self, camera_url: str, model_path: str,
                  zone_x1: float = 0.20, zone_y1: float = 0.40,
                  zone_x2: float = 0.80, zone_y2: float = 0.70,
-                 preloaded_model=None, preloaded_device=None):
+                 preloaded_model=None, preloaded_device=None,
+                 p2p_sn: str = None):
         super().__init__()
         self.camera_url  = camera_url
         self.model_path  = model_path
@@ -448,6 +454,7 @@ class RtspCameraWorker(QThread):
         self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
         self.counted_ids = set()   # IDs que están actualmente "afuera"
         self.prev_positions = {}
+        self.track_persistence = {} # {track_id: num_frames_visto}
 
         # Cargar/reutilizar modelo
         if preloaded_model is not None:
@@ -483,6 +490,7 @@ class RtspCameraWorker(QThread):
         self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
         self.counted_ids.clear()
         self.prev_positions.clear()
+        self.track_persistence.clear()
 
     def _boxes_overlap(self, bx1, by1, bx2, by2, zx1, zy1, zx2, zy2) -> bool:
         """Retorna True si el bounding box del objeto se solapa con la zona de conteo."""
@@ -509,6 +517,9 @@ class RtspCameraWorker(QThread):
         # OpenCV soporta pasar opciones de ffmpeg como: {"rtsp_transport": "tcp"}
         import os as _os
         _os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+        
+        # Conexión RTSP estándar
+        self.connection_status.emit("connecting")
         
         while self._is_running:
             # Re-verificar si el thread sigue activo antes de intentar abrir
@@ -622,17 +633,22 @@ class RtspCameraWorker(QThread):
                                 is_entering = (prev_y > line_y >= cy)
 
                                 if is_exiting and track_id not in self.counted_ids:
-                                    self.cumulative_counts[ui_cat] += 1
-                                    self.counted_ids.add(track_id)
-                                    ts = time.strftime("%H:%M:%S")
-                                    self.detection_event.emit(ts, f"{ui_cat} despachado (ID:{track_id})")
+                                    # --- Filtro de Persistencia: Mínimo 5 frames vistiéndolo ---
+                                    if self.track_persistence.get(track_id, 0) >= 5:
+                                        self.cumulative_counts[ui_cat] += 1
+                                        self.counted_ids.add(track_id)
+                                        ts = time.strftime("%H:%M:%S")
+                                        self.detection_event.emit(ts, f"{ui_cat} despachado (ID:{track_id})")
                                 elif is_entering and track_id in self.counted_ids:
-                                    self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
-                                    self.counted_ids.remove(track_id)
-                                    ts = time.strftime("%H:%M:%S")
-                                    self.detection_event.emit(ts, f"{ui_cat} retornado (ID:{track_id})")
+                                    # --- También para el retorno ---
+                                    if self.track_persistence.get(track_id, 0) >= 5:
+                                        self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
+                                        self.counted_ids.remove(track_id)
+                                        ts = time.strftime("%H:%M:%S")
+                                        self.detection_event.emit(ts, f"{ui_cat} retornado (ID:{track_id})")
 
                             new_prev_positions[track_id] = cy
+                            self.track_persistence[track_id] = self.track_persistence.get(track_id, 0) + 1
 
                     self.prev_positions = new_prev_positions
 

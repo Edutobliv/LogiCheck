@@ -1,18 +1,37 @@
 import requests
 import threading
 from core import logger as app_logger
+from core.config_manager import config
 
 class LogiNotifier:
     def __init__(self):
-        # Configuraciones WhatsApp (CallMeBot)
-        self.wa_phone = "573152587012"
-        self.wa_apikey = "7002133"
-        self.wa_url = "https://api.callmebot.com/whatsapp.php"
+        # Configuraciones se cargan dinámicamente desde el ConfigManager
+        pass
 
-        # Configuraciones Telegram (TOKEN y CHAT_ID)
-        self.tg_token = "8684027766:AAEMGl4j3WFUlYoMoIStgVUn35D8rVheRgk"
-        self.tg_chat_id = "8517822043"
-        self.tg_base_url = f"https://api.telegram.org/bot{self.tg_token}"
+    @property
+    def wa_phone(self):
+        return config.get("notifications.whatsapp.phone", "573152587012")
+
+    @property
+    def wa_apikey(self):
+        return config.get("notifications.whatsapp.apikey", "7002133")
+
+    @property
+    def wa_url(self):
+        return config.get("notifications.whatsapp.url", "https://api.callmebot.com/whatsapp.php")
+
+    @property
+    def tg_token(self):
+        return config.get("notifications.telegram.token", "")
+
+    @property
+    def tg_chat_id(self):
+        return config.get("notifications.telegram.chat_id", "")
+
+    @property
+    def tg_base_url(self):
+        token = self.tg_token
+        return f"https://api.telegram.org/bot{token}" if token else ""
 
     def _send_wa_sync(self, text: str):
         try:

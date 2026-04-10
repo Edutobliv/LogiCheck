@@ -17,8 +17,10 @@ if _base_path not in sys.path:
     sys.path.insert(0, _base_path)
 from core.permissions import can_access_page, can_do_action, get_role_display, ROLE_ICONS
 from core import logger as app_logger
+from core.config_manager import config
 from ui.users_page import UsersPage
 from ui.logs_page import LogsPage
+from ui.settings_page import SettingsPage
 from core.yolo_manager import YoloAnalyzerWorker, VideoPlayerWorker, RtspCameraWorker
 import torch
 import winsound
@@ -503,6 +505,7 @@ class MainWindow(QMainWindow):
             ("📋", "Reportes"),
             ("📜", "Actividad"),
             ("👥", "Gestión de Usuarios"),
+            ("⚙️", "Configuración"),
         ]
         
         for icon, text in nav_items:
@@ -639,6 +642,9 @@ class MainWindow(QMainWindow):
         # Page 7: Gestión de Usuarios (solo Admin)
         self._users_page = UsersPage(admin_user_data=self._user)
         self.stacked.addWidget(self._users_page)
+        # Page 8: Configuración (solo Admin)
+        self._settings_page = SettingsPage(user_data=self._user)
+        self.stacked.addWidget(self._settings_page)
         
         root_layout.addWidget(self.content_area)
         
@@ -1335,8 +1341,8 @@ class MainWindow(QMainWindow):
         lbl_port.setStyleSheet("margin-left: 10px;")
         top_row.addWidget(lbl_port)
         self.cam_port_input = QLineEdit()
-        self.cam_port_input.setPlaceholderText("554")
-        self.cam_port_input.setText("554")
+        self.cam_port_input.setPlaceholderText("443")
+        self.cam_port_input.setText("443")
         self.cam_port_input.setFixedWidth(60)
         self.cam_port_input.setFixedHeight(34)
         top_row.addWidget(self.cam_port_input)
@@ -1382,7 +1388,7 @@ class MainWindow(QMainWindow):
 
         # Los sliders ahora solo controlan la Cam 9 según petición del usuario.
         # La Cam 10 tendrá una zona fija optimizada.
-        lbl_adj.setText("⚙️ Ajuste de Zona (Cam 9):")
+        lbl_adj.setText("⚙️ Ajuste de Zona:")
         
         cfg_row = QHBoxLayout()
         # Se eliminan los radio buttons para evitar errores de selección.
@@ -1600,14 +1606,14 @@ class MainWindow(QMainWindow):
         self.btn_cam_whatsapp = QPushButton("📲 WhatsApp")
         self.btn_cam_whatsapp.setObjectName("primaryBtn")
         self.btn_cam_whatsapp.setCursor(Qt.PointingHandCursor)
-        self.btn_cam_whatsapp.setFixedHeight(30)
+        self.btn_cam_whatsapp.setFixedHeight(34)
         self.btn_cam_whatsapp.clicked.connect(self._on_cam_whatsapp_report)
         reports_row.addWidget(self.btn_cam_whatsapp)
 
         self.btn_cam_telegram = QPushButton("✈️ Telegram")
         self.btn_cam_telegram.setObjectName("primaryBtn")
         self.btn_cam_telegram.setCursor(Qt.PointingHandCursor)
-        self.btn_cam_telegram.setFixedHeight(30)
+        self.btn_cam_telegram.setFixedHeight(34)
         self.btn_cam_telegram.clicked.connect(self._on_cam_telegram_report)
         reports_row.addWidget(self.btn_cam_telegram)
         
@@ -1690,17 +1696,13 @@ class MainWindow(QMainWindow):
         self._last_dual_counts = [{}, {}]
 
     def _on_camera_connect(self):
-        """Inicia el RtspCameraWorker con la URL configurada y el canal seleccionado."""
-        host = self.cam_url_input.text().strip()
-        port = getattr(self, "cam_port_input", None)
-        port_val = port.text().strip() if port else "554"
+        """Inicia el RtspCameraWorker leyendo la UI y la configuración."""
+        host = self.cam_url_input.text().strip() or config.get("cameras.host", "")
+        port_val = self.cam_port_input.text().strip() if hasattr(self, "cam_port_input") else "443"
         
         if not host:
             self.show_toast("Ingrese el Host de la cámara.", "warning")
             return
-            
-        if not port_val:
-            port_val = "554"
 
         # Asegurarse de que no queda ningún worker vivo
         self._kill_cam_worker()
@@ -1729,7 +1731,9 @@ class MainWindow(QMainWindow):
             channel_primary = self.cam_selector.currentIndex() + 1
             zone_id_primary = channel_primary if channel_primary in self._cam_zones else 9
             
-        url_primary = f"rtsp://Samuel:Samuel123.@{host}:{port_val}/cam/realmonitor?channel={channel_primary}&subtype=1"
+        cam_user = config.get("cameras.default_user", "Samuel")
+        cam_pass = config.get("cameras.default_pass", "Samuel123.")
+        url_primary = f"rtsp://{cam_user}:{cam_pass}@{host}:{port_val}/cam/realmonitor?channel={channel_primary}&subtype=1"
         
         # Actualizar labels de UI
         if is_dual:
@@ -1762,8 +1766,10 @@ class MainWindow(QMainWindow):
 
         # --- CANAL SECUNDARIO ---
         if is_dual:
+            cam_user = config.get("cameras.default_user", "Samuel")
+            cam_pass = config.get("cameras.default_pass", "Samuel123.")
             # Revertido: Cam 10 apunta al RTSP 10.
-            url_alt = f"rtsp://Samuel:Samuel123.@{host}:{port_val}/cam/realmonitor?channel=10&subtype=1"
+            url_alt = f"rtsp://{cam_user}:{cam_pass}@{host}:{port_val}/cam/realmonitor?channel=10&subtype=1"
             self._cam_worker_alt = RtspCameraWorker(
                 camera_url=url_alt,
                 model_path=model_path,
@@ -1933,11 +1939,15 @@ class MainWindow(QMainWindow):
         # Reutilizamos las mismas credenciales
         current_channel = self.cam_selector.currentIndex() + 1
 
+        cam_user = config.get("cameras.default_user", "Samuel")
+        cam_pass = config.get("cameras.default_pass", "Samuel123.")
+        cam_port = config.get("cameras.default_port", 554)
+
         dlg = DahuaHistoryDialog(
             host=host,
-            user="Samuel",
-            password="Samuel123.",
-            port=554,
+            user=cam_user,
+            password=cam_pass,
+            port=cam_port,
             current_channel=current_channel,
             parent=self
         )
@@ -2677,6 +2687,7 @@ class MainWindow(QMainWindow):
             "Reportes",
             "Actividad",
             "Gestión de Usuarios",
+            "Configuración",
         ]
 
         for i, (btn, page) in enumerate(zip(self.nav_buttons, page_names)):
@@ -2732,9 +2743,10 @@ class MainWindow(QMainWindow):
             "Reportes": 5,
             "Actividad": 6,
             "Gestión de Usuarios": 7,
+            "Configuración": 8,
         }
 
-        icons = ["📊", "📄", "📹", "📷", "🚛", "📋", "📜", "👥"]
+        icons = ["📊", "📄", "📹", "📷", "🚛", "📋", "📜", "👥", "⚙️"]
 
         # Refrescar páginas al navegar a ellas
         if page_name == "Gestión de Usuarios" and hasattr(self, "_users_page"):
