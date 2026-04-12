@@ -7,9 +7,18 @@ y extraer ÚNICAMENTE los productos que serán detectados por YOLO:
   - Cemento (ej: "Bulto de cemento Gris", "Cemento Argos")
   - Tubería de Presión (ej: "Tubo Presión", "Tubería PVC Presión")
   - Tubería Sanitaria (ej: "Tubo Sanitario", "Tubería PVC Sanitaria")
+
+Mejora v2: Clasificador híbrido con Fuzzy Matching.
+Si la búsqueda exacta de substring no encuentra coincidencia, se aplica
+similitud difusa (difflib.SequenceMatcher) para tolerar:
+  - Errores de OCR ("cernento" vs "cemento")
+  - Ausencia de tildes ("tuberia presion" vs "tubería presión")
+  - Abreviaturas del proveedor ("TB PVC PRES" vs "tubo pvc presion")
 """
 
 import re
+import unicodedata
+from difflib import SequenceMatcher
 from typing import Optional
 
 try:
@@ -40,15 +49,79 @@ YOLO_CATEGORIES = {
 }
 
 
+# ─────────────────────────────────────────────────────────────
+# Utilidades de normalización para fuzzy matching
+# ─────────────────────────────────────────────────────────────
+def _normalize(text: str) -> str:
+    """
+    Normaliza texto para comparación fuzzy:
+    - Convierte a minúsculas
+    - Elimina diacríticos (tildes, ñ → n, etc.)
+    - Colapsa espacios múltiples
+    """
+    nfkd = unicodedata.normalize('NFKD', text.lower())
+    without_diacritics = ''.join(c for c in nfkd if not unicodedata.combining(c))
+    return re.sub(r'\s+', ' ', without_diacritics).strip()
+
+
+# Keywords normalizadas para fuzzy matching (pre-computadas al importar)
+_NORMALIZED_KEYWORDS: dict[str, list[str]] = {
+    cat: [_normalize(kw) for kw in kws]
+    for cat, kws in YOLO_CATEGORIES.items()
+}
+
+# Umbral de similitud fuzzy — calibrado para facturas Siigo Nube
+# 0.72 = tolera ~3 caracteres erróneos en palabras de 10 letras
+FUZZY_THRESHOLD = 0.72
+
+
 def _get_yolo_category(descripcion: str) -> Optional[str]:
     """
     Retorna la categoría YOLO del ítem si coincide, o None si no aplica.
+
+    Estrategia híbrida:
+      1. Coincidencia exacta de substring (rápido, sin falsos positivos).
+      2. Fuzzy matching por ventana deslizante sobre la descripción
+         normalizada (tolerante a OCR y variaciones tipográficas).
+
+    Args:
+        descripcion: Texto de la descripción del producto en la factura.
+
+    Returns:
+        Nombre de la categoría YOLO, o None si no aplica.
     """
     desc_lower = descripcion.lower()
+    desc_norm  = _normalize(descripcion)
+
+    # ── Fase 1: Coincidencia exacta de substring ─────────────
     for category, keywords in YOLO_CATEGORIES.items():
         for kw in keywords:
             if kw in desc_lower:
                 return category
+
+    # ── Fase 2: Fuzzy matching con keywords normalizadas ─────
+    # Para cada keyword, extraemos una ventana del mismo tamaño sobre
+    # la descripción normalizada y calculamos similitud.
+    words = desc_norm.split()
+    for category, norm_keywords in _NORMALIZED_KEYWORDS.items():
+        for kw_norm in norm_keywords:
+            kw_words = kw_norm.split()
+            kw_len   = len(kw_words)
+
+            # Ventana deslizante sobre las palabras de la descripción
+            for i in range(len(words) - kw_len + 1):
+                window = ' '.join(words[i:i + kw_len])
+                ratio  = SequenceMatcher(None, window, kw_norm).ratio()
+                if ratio >= FUZZY_THRESHOLD:
+                    return category
+
+            # También comparar la descripción completa vs keyword
+            # (útil cuando la keyword es más corta que la descripción)
+            if len(kw_norm) >= 4:  # Solo para keywords significativas
+                ratio = SequenceMatcher(None, desc_norm, kw_norm).ratio()
+                if ratio >= FUZZY_THRESHOLD + 0.05:  # umbral más alto para desc completa
+                    return category
+
     return None
 
 

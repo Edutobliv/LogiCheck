@@ -388,11 +388,20 @@ class VideoPlayerWorker(QThread):
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
             if lookup in self.tracking_data:
+                _cat_colors = {
+                    "Cemento":           ( 50, 200,  80),
+                    "Tubería Presión":   (255, 160,   0),
+                    "Tubería Sanitaria": ( 30, 144, 255),
+                }
                 for x1, y1, x2, y2, track_id, ui_cat in self.tracking_data[lookup]:
-                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    color = _cat_colors.get(ui_cat, (0, 255, 0))
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
                     tid_str = f"ID:{track_id}" if track_id is not None else "ID:--"
-                    cv2.putText(frame, f"{tid_str} {ui_cat}", (x1, max(y1 - 5, 10)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                    label   = f"{tid_str} {ui_cat}"
+                    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
+                    cv2.rectangle(frame, (x1, max(y1-18, 0)), (x1+tw+4, max(y1, 18)), color, -1)
+                    cv2.putText(frame, label, (x1+2, max(y1-4, 14)),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 255, 255), 1)
 
             # --- Emit frame ---
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
