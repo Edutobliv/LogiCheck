@@ -8,6 +8,11 @@ def prepare_and_train():
     raw_dir = os.path.join(base_dir, "raw_frames")
     dataset_dir = os.path.join(base_dir, "dataset")
     
+    # Limpiar dataset anterior para ahorrar espacio y evitar duplicados
+    if os.path.exists(dataset_dir):
+        print(f"Limpiando dataset antiguo en {dataset_dir}...")
+        shutil.rmtree(dataset_dir)
+    
     # Paths for images and labels
     img_train = os.path.join(dataset_dir, "images", "train")
     img_val = os.path.join(dataset_dir, "images", "val")
@@ -65,16 +70,31 @@ def prepare_and_train():
     device = "0" if torch.cuda.is_available() else "cpu"
     print(f"Entrenando en: {'GPU' if device == '0' else 'CPU'}")
     
-    model = YOLO("yolo26n.pt")  # Modelo solicitado por el usuario
-    model.train(
+    model = YOLO("yolo26n.pt")  
+    results = model.train(
         data=yaml_path,
-        epochs=100,             # Aumentamos épocas para mayor precisión
+        epochs=100,
         imgsz=640,
-        batch=16,
+        batch=18,
         device=device,
         project=os.path.join(base_dir, "runs"),
         name="estacion_yolo26"
     )
+
+    # Hacer efectivo el modelo en el programa principal
+    best_model_path = os.path.join(base_dir, "runs", "estacion_yolo26", "weights", "best.pt")
+    final_destination = os.path.join(os.path.dirname(base_dir), "models", "estacion_bultos_v1.pt")
+    
+    if os.path.exists(best_model_path):
+        print("\n" + "="*58)
+        print("✅ ENTRENAMIENTO COMPLETADO")
+        print("Haciendo efectivo el modelo en el programa...")
+        os.makedirs(os.path.dirname(final_destination), exist_ok=True)
+        shutil.copy(best_model_path, final_destination)
+        print(f"Modelo actualizado en: {final_destination}")
+        print("="*58)
+    else:
+        print("\n❌ Error: No se encontró best.pt en la carpeta de resultados.")
 
 if __name__ == "__main__":
     prepare_and_train()

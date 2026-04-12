@@ -642,15 +642,15 @@ class RtspCameraWorker(QThread):
                                 is_entering = (prev_y > line_y >= cy)
 
                                 if is_exiting and track_id not in self.counted_ids:
-                                    # --- Filtro de Persistencia: Mínimo 5 frames vistiéndolo ---
-                                    if self.track_persistence.get(track_id, 0) >= 5:
+                                    # --- Filtro de Persistencia: Deshabilitado (0 frames) ---
+                                    if self.track_persistence.get(track_id, 0) >= 0:
                                         self.cumulative_counts[ui_cat] += 1
                                         self.counted_ids.add(track_id)
                                         ts = time.strftime("%H:%M:%S")
                                         self.detection_event.emit(ts, f"{ui_cat} despachado (ID:{track_id})")
                                 elif is_entering and track_id in self.counted_ids:
-                                    # --- También para el retorno ---
-                                    if self.track_persistence.get(track_id, 0) >= 5:
+                                    # --- También para el retorno (deshabilitado) ---
+                                    if self.track_persistence.get(track_id, 0) >= 0:
                                         self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
                                         self.counted_ids.remove(track_id)
                                         ts = time.strftime("%H:%M:%S")

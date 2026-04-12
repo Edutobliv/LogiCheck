@@ -509,8 +509,20 @@ class MainWindow(QMainWindow):
             ("⚙️", "Configuración"),
         ]
         
-        for icon, text in nav_items:
+        nav_tooltips = [
+            "Vista general del sistema: despachos, discrepancias, vehículos y tendencias del día",
+            "Carga y analiza facturas electrónicas en PDF para extraer los productos a verificar",
+            "Analiza videos de descarga con Inteligencia Artificial YOLO para contar bultos",
+            "Monitoreo en tiempo real de cámaras IP con detección automática",
+            "Calcula el vehículo óptimo basándose en el peso y volumen del despacho actual",
+            "Historial de auditorías, exportar reportes en PDF y Excel",
+            "Registro de actividad del sistema y acciones de los usuarios",
+            "Administración de cuentas de usuario, roles y permisos (solo Admin)",
+            "Configuración de cámaras, credenciales, integraciones y umbrales (solo Admin)",
+        ]
+        for (icon, text), tip in zip(nav_items, nav_tooltips):
             btn = NavButton(icon, text)
+            btn.setToolTip(tip)
             btn.clicked.connect(lambda checked, t=text: self._on_nav_click(t))
             sidebar_layout.addWidget(btn)
             self.nav_buttons.append(btn)
@@ -534,6 +546,7 @@ class MainWindow(QMainWindow):
         theme_row.addWidget(theme_label)
         theme_row.addStretch()
         self.toggle = AnimatedToggle()
+        self.toggle.setToolTip("Cambiar entre tema oscuro y tema claro")
         theme_row.addWidget(self.toggle)
         sidebar_layout.addLayout(theme_row)
         
@@ -565,6 +578,7 @@ class MainWindow(QMainWindow):
         self.btn_logout.setObjectName("logoutBtn")
         self.btn_logout.setFixedHeight(38)
         self.btn_logout.setCursor(Qt.PointingHandCursor)
+        self.btn_logout.setToolTip("Cerrar sesión actual y volver al login")
         self.btn_logout.clicked.connect(self._do_logout)
         sidebar_layout.addSpacing(6)
         sidebar_layout.addWidget(self.btn_logout)
@@ -1146,18 +1160,21 @@ class MainWindow(QMainWindow):
         self.btn_play_pause.setObjectName("playerBtn")
         self.btn_play_pause.setFixedSize(36, 36)
         self.btn_play_pause.setEnabled(False)
+        self.btn_play_pause.setToolTip("Reproducir / Pausar (Espacio)")
         self.btn_play_pause.clicked.connect(self._on_video_play_pause)
         player_bar.addWidget(self.btn_play_pause)
         
         self.btn_prev_frame = QPushButton("Step -")
         self.btn_prev_frame.setObjectName("playerBtn_small")
         self.btn_prev_frame.setEnabled(False)
+        self.btn_prev_frame.setToolTip("Retroceder un fotograma (frame anterior)")
         self.btn_prev_frame.clicked.connect(self._on_video_prev_frame)
         player_bar.addWidget(self.btn_prev_frame)
         
         self.btn_next_frame = QPushButton("Step +")
         self.btn_next_frame.setObjectName("playerBtn_small")
         self.btn_next_frame.setEnabled(False)
+        self.btn_next_frame.setToolTip("Avanzar un fotograma")
         self.btn_next_frame.clicked.connect(self._on_video_next_frame)
         player_bar.addWidget(self.btn_next_frame)
         
@@ -1166,12 +1183,14 @@ class MainWindow(QMainWindow):
         self.btn_rewind = QPushButton("⏪ 10s")
         self.btn_rewind.setObjectName("playerBtn_small")
         self.btn_rewind.setEnabled(False)
+        self.btn_rewind.setToolTip("Retroceder 10 segundos (←)")
         self.btn_rewind.clicked.connect(self._on_video_rewind)
         player_bar.addWidget(self.btn_rewind)
         
         self.btn_forward = QPushButton("⏩ 10s")
         self.btn_forward.setObjectName("playerBtn_small")
         self.btn_forward.setEnabled(False)
+        self.btn_forward.setToolTip("Adelantar 10 segundos (→)")
         self.btn_forward.clicked.connect(self._on_video_forward)
         player_bar.addWidget(self.btn_forward)
         
@@ -1184,6 +1203,7 @@ class MainWindow(QMainWindow):
         self.btn_speed = QToolButton()
         self.btn_speed.setObjectName("speedBtn")
         self.btn_speed.setCursor(Qt.PointingHandCursor)
+        self.btn_speed.setToolTip("Cambiar velocidad de reproducción")
         self._refresh_speed_button_text()
         self.btn_speed.clicked.connect(self._open_speed_panel)
         player_bar.addWidget(self.btn_speed)
@@ -1192,6 +1212,7 @@ class MainWindow(QMainWindow):
         self.btn_snapshot = QPushButton("📸 Captura")
         self.btn_snapshot.setObjectName("playerBtn_accent")
         self.btn_snapshot.setEnabled(False)
+        self.btn_snapshot.setToolTip("Guardar fotograma actual como evidencia")
         self.btn_snapshot.clicked.connect(self._take_snapshot)
         player_bar.addWidget(self.btn_snapshot)
         
@@ -1845,68 +1866,34 @@ class MainWindow(QMainWindow):
         self._on_cam_zone_changed()
 
     def _on_cam_zone_changed(self):
-        """Aplica cambios únicamente a Cam 9. Cam 10 permanece fija."""
-        if getattr(self, '_zone_updating', False):
-            return
-        self._zone_updating = True
-        
-        try:
-            cam_id = 9 # Forzado a Cam 9
-            
-            top = self.slider_cam_zone_top.value()
-            bot = self.slider_cam_zone_bot.value()
-            left = self.slider_cam_zone_left.value()
-            right = self.slider_cam_zone_right.value()
-            
-            print(f"[DEBUG] Slider movido -> ID Cámara: {cam_id} | T:{top} B:{bot} L:{left} R:{right}")
-            
-            # Coherencia básica
-            if top >= bot:
-                bot = min(top + 5, 100)
-                self.slider_cam_zone_bot.setValue(bot)
-            if left >= right:
-                right = min(left + 5, 100)
-                self.slider_cam_zone_right.setValue(right)
+        """Actualiza etiquetas y envía coordenadas de zona al worker en vivo (Cam 9)."""
+        top_val   = self.slider_cam_zone_top.value()
+        bot_val   = self.slider_cam_zone_bot.value()
+        left_val  = self.slider_cam_zone_left.value()
+        right_val = self.slider_cam_zone_right.value()
 
-            # Guardar en diccionario persistente para la cámara seleccionada
-            self._cam_zones[cam_id] = {"top": top, "bot": bot, "left": left, "right": right}
-            
-            self.lbl_cam_zone_top.setText(f"{top}%")
-            self.lbl_cam_zone_bot.setText(f"{bot}%")
-            self.lbl_cam_zone_left.setText(f"{left}%")
-            self.lbl_cam_zone_right.setText(f"{right}%")
+        if top_val >= bot_val:
+            bot_val = min(top_val + 5, 95)
+            self.slider_cam_zone_bot.blockSignals(True)
+            self.slider_cam_zone_bot.setValue(bot_val)
+            self.slider_cam_zone_bot.blockSignals(False)
+        if left_val >= right_val:
+            right_val = min(left_val + 10, 100)
+            self.slider_cam_zone_right.blockSignals(True)
+            self.slider_cam_zone_right.setValue(right_val)
+            self.slider_cam_zone_right.blockSignals(False)
 
-            # Aplicar al worker correspondiente de manera estricta
-            worker = None
-            worker_name = "Ninguno"
-            
-            # Recuperar workers actuales
-            main_w = getattr(self, '_cam_worker', None)
-            alt_w = getattr(self, '_cam_worker_alt', None)
+        self._cam_zones[9] = {"top": top_val, "bot": bot_val, "left": left_val, "right": right_val}
+        self.lbl_cam_zone_top.setText(f"{top_val}%")
+        self.lbl_cam_zone_bot.setText(f"{bot_val}%")
+        self.lbl_cam_zone_left.setText(f"{left_val}%")
+        self.lbl_cam_zone_right.setText(f"{right_val}%")
 
-            if self.check_dual_mode.isChecked():
-                if cam_id == 9:
-                    worker = main_w
-                    worker_name = "Principal (Cam 9)"
-                elif cam_id == 10:
-                    worker = alt_w
-                    worker_name = "Alternativo (Cam 10)"
-            else:
-                worker = main_w
-                worker_name = "Principal (Modo Simple)"
-            
-            if worker and worker.isRunning():
-                print(f"[DEBUG] Aplicando zona a worker: {worker_name} (ID: {id(worker)})")
-                worker.zone_x1 = left / 100.0
-                worker.zone_y1 = top / 100.0
-                worker.zone_x2 = right / 100.0
-                worker.zone_y2 = bot / 100.0
-            else:
-                print(f"[DEBUG] ERROR: No se encontró worker activo para {worker_name}")
-                print(f"        Estado main_w: {main_w.isRunning() if main_w else 'None'}")
-                print(f"        Estado alt_w: {alt_w.isRunning() if alt_w else 'None'}")
-        finally:
-            self._zone_updating = False
+        if hasattr(self, "_cam_worker") and self._cam_worker and self._cam_worker.isRunning():
+            self._cam_worker.zone_x1 = left_val  / 100.0
+            self._cam_worker.zone_y1 = top_val   / 100.0
+            self._cam_worker.zone_x2 = right_val / 100.0
+            self._cam_worker.zone_y2 = bot_val   / 100.0
 
     def _on_camera_disconnect(self):
         """Detiene el worker de cámara limpiamente sin bloquear la interfaz."""
@@ -2001,11 +1988,7 @@ class MainWindow(QMainWindow):
         )
     # ── FIN HISTORIAL ─────────────────────────────────────────────────────
 
-    def _on_cam_frame_ready(self, qimg: QImage):
-        pixmap = QPixmap.fromImage(qimg)
-        self.cam_frame.setPixmap(
-            pixmap.scaled(self.cam_frame.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        )
+    # _on_cam_frame_ready defined once below (after _on_cam_connection_status)
 
     def _reset_cam_ui(self):
         self.btn_cam_connect.setEnabled(True)
@@ -2106,15 +2089,16 @@ class MainWindow(QMainWindow):
                         # Capturar evidencia visual
                         foto_evidencia = self._take_cam_snapshot(auto=True)
                         
+                        canal_txt = self.cam_selector.currentText() if hasattr(self, 'cam_selector') else 'N/A'
                         alert_msg = (
                             "🚨 <b>¡ALERTA DE SEGURIDAD!</b> 🚨\n\n"
                             f"⚠️ Se está moviendo <b>{material}</b> sin autorización (sin factura registrada).\n"
-                            f"📍 Canal: {self.cam_source_selector.currentText()}\n"
+                            f"📍 Canal: {canal_txt}\n"
                             f"📦 Cantidad captada: {val} bultos.\n"
                             "<b>REVISA TUS CÁMARAS DE INMEDIATO.</b>"
                         )
                         notifier.send_telegram(alert_msg, photo_path=foto_evidencia)
-                        self.show_toast(f"¡ALERTA DE SEGURIDAD! ({material.upper()})", "danger")
+                        self.show_toast(f"¡ALERTA DE SEGURIDAD! ({material.upper()})", "error")
                 
                 # Logic for AUTOMATIC TELEGRAM ALERT (Metas)
                 meta_str = self.table_cam_conteo.item(i, 2).text()
@@ -2122,7 +2106,8 @@ class MainWindow(QMainWindow):
                     meta = int(meta_str)
                     if val >= meta and material not in self._metas_notificadas:
                         self._metas_notificadas.add(material)
-                        msg = f"🔔 <b>META ALCANZADA: {material}</b>\n\nSe han detectado <b>{val}</b> bultos (Meta: {meta}).\n📍 Canal: {self.cam_source_selector.currentText()}"
+                        canal_txt2 = self.cam_selector.currentText() if hasattr(self, 'cam_selector') else 'N/A'
+                        msg = f"🔔 <b>META ALCANZADA: {material}</b>\n\nSe han detectado <b>{val}</b> bultos (Meta: {meta}).\n📍 Canal: {canal_txt2}"
                         notifier.send_telegram(msg)
                         self.show_toast(f"¡Meta de {material} cumplida!", "success")
 
@@ -2250,37 +2235,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def _on_cam_zone_changed(self):
-        """Actualiza las etiquetas y envía las 4 coordenadas de zona al worker en vivo."""
-        top_val   = self.slider_cam_zone_top.value()
-        bot_val   = self.slider_cam_zone_bot.value()
-        left_val  = self.slider_cam_zone_left.value()
-        right_val = self.slider_cam_zone_right.value()
-
-        # Coherencia vertical: top no puede igualar o superar a bottom
-        if top_val >= bot_val:
-            bot_val = min(top_val + 5, 95)
-            self.slider_cam_zone_bot.blockSignals(True)
-            self.slider_cam_zone_bot.setValue(bot_val)
-            self.slider_cam_zone_bot.blockSignals(False)
-
-        # Coherencia horizontal: left no puede igualar o superar a right
-        if left_val >= right_val:
-            right_val = min(left_val + 10, 100)
-            self.slider_cam_zone_right.blockSignals(True)
-            self.slider_cam_zone_right.setValue(right_val)
-            self.slider_cam_zone_right.blockSignals(False)
-
-        self.lbl_cam_zone_top.setText(f"{top_val}%")
-        self.lbl_cam_zone_bot.setText(f"{bot_val}%")
-        self.lbl_cam_zone_left.setText(f"{left_val}%")
-        self.lbl_cam_zone_right.setText(f"{right_val}%")
-
-        if hasattr(self, "_cam_worker") and self._cam_worker and self._cam_worker.isRunning():
-            self._cam_worker.zone_x1 = left_val  / 100.0
-            self._cam_worker.zone_y1 = top_val   / 100.0
-            self._cam_worker.zone_x2 = right_val / 100.0
-            self._cam_worker.zone_y2 = bot_val   / 100.0
+    # _on_cam_zone_changed is defined earlier (single authoritative implementation)
 
 
 
@@ -4031,6 +3986,9 @@ class MainWindow(QMainWindow):
         self.show_toast(f"Captura guardada: {os.path.basename(filename)}", "success")
 
     def show_toast(self, message, toast_type="success"):
+        # Normalize unknown types so the QSS property always resolves
+        if toast_type not in ("success", "error", "warning", "info"):
+            toast_type = "info"
         toast = ToastNotification(message, toast_type, self)
         toast.show_toast()
 

@@ -28,6 +28,9 @@ training/runs/
 captures/
 stitch_screenshots/
 Facturas/
+TESIS/
+resources/Entrenamiento/
+resources/Videos/
 
 # OS
 .DS_Store

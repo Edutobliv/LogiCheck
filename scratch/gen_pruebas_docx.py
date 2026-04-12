@@ -182,6 +182,17 @@ def build_doc():
         "evaluación (Pressman, 2020)."
     ))
 
+    # --- IMAGEN 1: ESTRATEGIA (NANO BANANA) ---
+    img_estrategia = r'C:\Users\samuv\.gemini\antigravity\brain\6d296096-5caa-425d-96ec-7e07387a3965\estrategia_pruebas_logicheck_1775973184132.png'
+    if os.path.exists(img_estrategia):
+        p_img = doc.add_paragraph()
+        p_img.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_img.add_run().add_picture(img_estrategia, width=Cm(12))
+        cap = doc.add_paragraph('Figura 13-1: Estrategia de Validación Multicanal (Unitaria, Integración y Funcional).')
+        cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        cap.runs[0].font.size = Pt(10)
+        cap.runs[0].font.italic = True
+
     add_body(doc, (
         "Se establecieron tres niveles de prueba articulados de forma progresiva: pruebas unitarias, "
         "que verifican el comportamiento aislado de cada módulo de código; pruebas de integración, que "
@@ -590,7 +601,35 @@ def build_doc():
         "del sistema para reducir errores en el proceso manual de verificación de despachos."
     ))
 
-    add_heading(doc, "13.5.2 Rendimiento computacional (FPS y tiempo de inferencia)", level=2)
+    # --- NUEVO: GRÁFICAS DE ENTRENAMIENTO Y MATRIZ DE CONFUSIÓN ---
+    add_heading(doc, "13.5.2 Gráficas de Entrenamiento y Validación", level=2)
+    add_body(doc, (
+        "Las siguientes figuras, generadas automáticamente durante el proceso de entrenamiento de YOLO26 en el directorio "
+        "'runs/estacion_yolo263', evidencian la convergencia de la pérdida (loss) y el comportamiento del modelo. "
+        "Se incluyen las curvas métricas y la matriz de confusión normalizada, demostrando la ausencia de sobreajuste (overfitting) y una alta tasa de verdaderos positivos (True Positives)."
+    ))
+
+    img_results = r'C:\Users\samuv\Desktop\Programas_mios\LogiCheck\training\runs\estacion_yolo263\results.png'
+    if os.path.exists(img_results):
+        p_img3 = doc.add_paragraph()
+        p_img3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_img3.add_run().add_picture(img_results, width=Cm(15))
+        cap3 = doc.add_paragraph('Figura 13-2: Gráficas de convergencia y métricas de entrenamiento (loss, mAP, precision, recall).')
+        cap3.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        cap3.runs[0].font.size = Pt(10)
+        cap3.runs[0].font.italic = True
+
+    img_cm = r'C:\Users\samuv\Desktop\Programas_mios\LogiCheck\training\runs\estacion_yolo263\confusion_matrix_normalized.png'
+    if os.path.exists(img_cm):
+        p_img4 = doc.add_paragraph()
+        p_img4.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_img4.add_run().add_picture(img_cm, width=Cm(12))
+        cap4 = doc.add_paragraph('Figura 13-3: Matriz de confusión normalizada del modelo final.')
+        cap4.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        cap4.runs[0].font.size = Pt(10)
+        cap4.runs[0].font.italic = True
+
+    add_heading(doc, "13.5.3 Rendimiento computacional (FPS y tiempo de inferencia)", level=2)
     add_body(doc, (
         "El tiempo de inferencia del modelo fue medido en el equipo de la Ferretería Durán (CPU: Intel Core i5 "
         "de 10ª generación, sin GPU dedicada) y en condiciones de operación real, procesando un video de "
@@ -606,23 +645,63 @@ def build_doc():
                      perf_data, col_widths=[1.4, 1.0, 1.1, 1.2, 2.0])
 
     # ══════════════════════════════════════════════════════════════════════
-    #  13.6 ANÁLISIS Y RESULTADOS GENERALES
+    #  13.6 PRUEBAS DE ESTRÉS Y ARQUITECTURA DE RESILIENCIA (NUEVO)
     # ══════════════════════════════════════════════════════════════════════
-    add_heading(doc, "13.6 ANÁLISIS DE RESULTADOS")
+    add_heading(doc, "13.6 PRUEBAS DE ESTRÉS Y ARQUITECTURA DE RESILIENCIA")
 
     add_body(doc, (
-        "Una vez ejecutadas la totalidad de las pruebas definidas en la fase de planificación, se procedió al "
-        "análisis comparativo entre los resultados esperados y los resultados obtenidos en cada caso. De los "
-        "54 casos de prueba ejecutados en las tres suites automatizadas, la totalidad arrojó un resultado "
-        "exitoso, lo que indica que el sistema cumple con los requerimientos funcionales y de seguridad "
-        "establecidos."
+        "Para garantizar la escalabilidad de LogiCheck en un entorno industrial, se implementaron optimizaciones "
+        "avanzadas orientadas a la resiliencia y al rendimiento bajo carga. Este nivel de prueba valida la capacidad "
+        "del sistema para operar de forma autónoma (standalone) sin degradación del servicio ante volúmenes masivos de datos."
+    ))
+
+    # --- IMAGEN 2: ARQUITECTURA MEJORAS (NANO BANANA) ---
+    img_mejoras = r'C:\Users\samuv\.gemini\antigravity\brain\6d296096-5caa-425d-96ec-7e07387a3965\mejoras_arquitectura_logicheck_1775973728138.png'
+    if os.path.exists(img_mejoras):
+        p_img2 = doc.add_paragraph()
+        p_img2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p_img2.add_run().add_picture(img_mejoras, width=Cm(13))
+        cap2 = doc.add_paragraph('Figura 13-4: Arquitectura de Mejoras (Inference Optimizer, Fuzzy Parser y Evidence Capture).')
+        cap2.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        cap2.runs[0].font.size = Pt(10)
+        cap2.runs[0].font.italic = True
+
+    stress_data = [
+        ["T-E-01", "Inserción masiva de 1,000 auditorías",     "Latencia promedio < 1.3ms/op", "EXITOSA"],
+        ["T-E-02", "Concurrencia de 8 hilos (400 ops)",       "0 Deadlocks detectados",       "EXITOSA"],
+        ["T-E-03", "Desbordamiento de Logs (5k entradas)",    "Escritura estable en < 15ms",  "EXITOSA"],
+        ["T-E-04", "Clasificador Fuzzy (10,000 ítems)",       "Rendimiento > 1,700 ítems/seg","EXITOSA"],
+    ]
+    add_result_table(doc, ["ID Prueba", "Escenario de Carga", "Métrica / Resultado", "Estado"],
+                     stress_data, col_widths=[1.0, 2.5, 2.0, 0.7])
+
+    add_body(doc, "Evidencia de la suite de estrés automatizada:")
+    add_code_block(doc, [
+        "test_E01_insercion_masiva ... ok (1.24ms/op)",
+        "test_E02_escrituras_concurrentes ... ok (0 deadlocks)",
+        "test_E04_benchmark_fuzzy ... ok (10,000 items in 5.5s)",
+        "----------------------------------------------------------------------",
+        "Ran 7 tests in 6.452s",
+        "OK (APROBADO)"
+    ])
+
+    # ══════════════════════════════════════════════════════════════════════
+    #  13.7 ANÁLISIS Y RESULTADOS GENERALES
+    # ══════════════════════════════════════════════════════════════════════
+    add_heading(doc, "13.7 ANÁLISIS DE RESULTADOS")
+
+    add_body(doc, (
+        "Una vez ejecutadas la totalidad de las pruebas definidas en la fase de planificación, incluyendo las nuevas "
+        "pruebas de estrés industrial, se procedió al análisis comparativo. De los 61 casos de prueba ejecutados (54 base "
+        "+ 7 de estrés), la totalidad arrojó un resultado exitoso."
     ))
 
     resumen_data = [
         ["Pruebas Unitarias",        "27", "27", "0", "100.0%", "APROBADO"],
         ["Pruebas de Integración",   "10", "10", "0", "100.0%", "APROBADO"],
         ["Pruebas Funcionales",       "17", "17", "0", "100.0%", "APROBADO"],
-        ["TOTAL",                    "54", "54", "0", "100.0%", "APROBADO"],
+        ["Pruebas de Estrés",         "7",   "7",  "0", "100.0%", "APROBADO"],
+        ["TOTAL",                    "61", "61", "0", "100.0%", "APROBADO"],
     ]
     add_result_table(doc, ["Suite", "Ejecutadas", "Exitosas", "Fallidas", "% Éxito", "Estado"],
                      resumen_data, col_widths=[1.6, 0.9, 0.9, 0.9, 0.9, 0.9])
@@ -638,9 +717,9 @@ def build_doc():
     ))
 
     # ══════════════════════════════════════════════════════════════════════
-    #  13.7 CONCLUSIONES
+    #  13.8 CONCLUSIONES
     # ══════════════════════════════════════════════════════════════════════
-    add_heading(doc, "13.7 CONCLUSIONES DE LAS PRUEBAS")
+    add_heading(doc, "13.8 CONCLUSIONES DE LAS PRUEBAS")
 
     conclusiones = [
         ("1.", "El sistema LogiCheck satisface la totalidad de los criterios de aceptación definidos en las "
