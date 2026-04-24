@@ -22,7 +22,7 @@ def _get_conn() -> sqlite3.Connection:
 
 
 # ── Versión actual del esquema ───────────────────────────────
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 7
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
@@ -268,6 +268,55 @@ def _migration_6_advanced_features(conn: sqlite3.Connection):
         ORDER BY mes DESC;
     """)
 
+def _migration_7_expand_catalogs(conn: sqlite3.Connection):
+    """v7: Expande catálogos con todas las medidas de tubería y vehículos del mercado colombiano."""
+
+    # ── MATERIALES: Todas las medidas de tubería ─────────────
+    import math
+    def _vol(diam_mm, length_m):
+        r = (diam_mm / 2.0) / 1000.0
+        return round(math.pi * r ** 2 * length_m, 6)
+
+    materiales_nuevos = [
+        # Tubería Sanitaria PVC — tramo 6m
+        ('SAN-112', 'Tubo Sanitario PVC 1 1/2" x 6m', 'Tuberia_Sanitaria', 1.80, _vol(48.0, 6)),
+        ('SAN-2',   'Tubo Sanitario PVC 2" x 6m',     'Tuberia_Sanitaria', 2.80, _vol(60.0, 6)),
+        ('SAN-3',   'Tubo Sanitario PVC 3" x 6m',     'Tuberia_Sanitaria', 5.20, _vol(88.0, 6)),
+        ('SAN-4',   'Tubo Sanitario PVC 4" x 6m',     'Tuberia_Sanitaria', 11.7, _vol(114.0, 6)),
+        # Tubería Presión PVC — tramo 6m
+        ('PRE-12',  'Tubo Presión PVC 1/2" x 6m',     'Tuberia_Presion',   0.95, _vol(21.0, 6)),
+        ('PRE-34',  'Tubo Presión PVC 3/4" x 6m',     'Tuberia_Presion',   1.35, _vol(26.7, 6)),
+        ('PRE-1',   'Tubo Presión PVC 1" x 6m',       'Tuberia_Presion',   2.10, _vol(33.4, 6)),
+        ('PRE-114', 'Tubo Presión PVC 1 1/4" x 6m',   'Tuberia_Presion',   3.00, _vol(42.2, 6)),
+        ('PRE-112', 'Tubo Presión PVC 1 1/2" x 6m',   'Tuberia_Presion',   3.80, _vol(48.3, 6)),
+    ]
+    for codigo, nombre, cat, peso, vol in materiales_nuevos:
+        try:
+            conn.execute("""
+                INSERT OR IGNORE INTO materiales (codigo, nombre, categoria, peso_unitario_kg, volumen_unitario_m3)
+                VALUES (?, ?, ?, ?, ?)
+            """, (codigo, nombre, cat, peso, vol))
+        except Exception:
+            pass
+
+    # ── VEHÍCULOS: Flota ampliada del mercado ferretero ──────
+    vehiculos_nuevos = [
+        ('V03', 'Camioneta / NHR',      'XXX-000', 2500.0, 10.0),
+        ('V04', 'Camión Sencillo (C2)',  'XXX-001', 8500.0, 35.0),
+        ('V05', 'Dobletroque (C3)',      'XXX-002', 17000.0, 48.0),
+    ]
+    for codigo, tipo, placa, peso, vol in vehiculos_nuevos:
+        try:
+            conn.execute("""
+                INSERT OR IGNORE INTO vehiculos (codigo, tipo, placa, capacidad_max_peso_kg, capacidad_max_vol_m3)
+                VALUES (?, ?, ?, ?, ?)
+            """, (codigo, tipo, placa, peso, vol))
+        except Exception:
+            pass
+
+    print("[MIGRATION] Catálogos expandidos con medidas de tubería y vehículos adicionales.")
+
+
 # ── Registro de todas las migraciones ────────────────────────
 MIGRATIONS = [
     (1, _migration_1_create_schema_version),
@@ -276,6 +325,7 @@ MIGRATIONS = [
     (4, _migration_4_add_salt_column),
     (5, _migration_5_add_user_id_to_auditorias),
     (6, _migration_6_advanced_features),
+    (7, _migration_7_expand_catalogs),
 ]
 
 

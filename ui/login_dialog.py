@@ -196,11 +196,11 @@ class LoginDialog(QDialog):
         card_layout.addStretch()
 
         # ── Footer ──
-        footer = QLabel("Ferretería Durán, Apulo © 2025")
+        footer = QLabel("Ferretería Durán, Apulo © 2026")
         footer.setObjectName("loginFooter")
+        footer.setFixedHeight(72)
         footer.setAlignment(Qt.AlignCenter)
         card_layout.addWidget(footer)
-
         outer.addWidget(self.card)
         self._shake = ShakeAnimation(self.card)
 
@@ -264,116 +264,126 @@ class LoginDialog(QDialog):
             /* Diálogo transparente */
             LoginDialog { background: transparent; }
 
-            /* Card principal */
+            /* Card principal con glassmorphism */
             #loginCard {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #1e1e2e, stop:1 #181825);
-                border: 1px solid #313244;
+                background-color: rgba(15, 23, 42, 247); /* Slate 900 con 97% opacidad */
+                border: 1px solid rgba(255, 255, 255, 30);
                 border-radius: 20px;
             }
 
             /* Brand */
             #loginBrand {
-                font-size: 24px;
+                font-family: 'Segoe UI', Inter, sans-serif;
+                font-size: 26px;
                 font-weight: 900;
-                color: #89b4fa;
-                letter-spacing: 1px;
+                color: #FFFFFF;
+                letter-spacing: 1.5px;
                 background: transparent;
             }
             #loginSubtitle {
-                font-size: 12px;
-                color: #6c7086;
+                font-family: 'Segoe UI', Inter, sans-serif;
+                font-size: 13px;
+                font-weight: 500;
+                color: #94A3B8; /* Slate 400 */
                 background: transparent;
             }
 
             /* Títulos */
             #loginTitle {
-                font-size: 20px;
+                font-family: 'Segoe UI', Inter, sans-serif;
+                font-size: 22px;
                 font-weight: 800;
-                color: #cdd6f4;
+                color: #F8FAFC; /* Slate 50 */
                 background: transparent;
             }
             #loginHint {
-                font-size: 12px;
-                color: #6c7086;
+                font-size: 13px;
+                color: #94A3B8;
                 background: transparent;
+                margin-top: -2px;
             }
 
             /* Labels de campos */
             #loginFieldLabel {
                 font-size: 12px;
                 font-weight: 700;
-                color: #a6adc8;
+                color: #CBD5E1; /* Slate 300 */
                 letter-spacing: 0.5px;
+                text-transform: uppercase;
                 background: transparent;
             }
 
-            /* Inputs */
+            /* Inputs - Efecto Inset Glass */
             #loginInput {
-                background-color: #11111b;
-                border: 1.5px solid #313244;
-                border-radius: 8px;
-                padding: 0 14px;
-                font-size: 13px;
-                color: #cdd6f4;
+                background-color: rgba(0, 0, 0, 80);
+                border: 1px solid rgba(255, 255, 255, 25);
+                border-radius: 10px;
+                padding: 0 16px;
+                font-size: 14px;
+                color: #F8FAFC;
+                font-weight: 500;
             }
             #loginInput:focus {
-                border-color: #89b4fa;
-                background-color: #181825;
+                border-color: #3B82F6; /* Blue 500 neon */
+                background-color: rgba(15, 23, 42, 100);
             }
             #loginInput::placeholder {
-                color: #45475a;
+                color: #64748B; /* Slate 500 */
             }
 
             /* Botón mostrar contraseña */
             #showPassBtn {
-                background-color: #11111b;
-                border: 1.5px solid #313244;
+                background-color: rgba(0, 0, 0, 80);
+                border: 1px solid rgba(255, 255, 255, 25);
                 border-left: none;
-                border-top-right-radius: 8px;
-                border-bottom-right-radius: 8px;
+                border-top-right-radius: 10px;
+                border-bottom-right-radius: 10px;
                 font-size: 16px;
-                color: #6c7086;
+                color: #94A3B8;
             }
-            #showPassBtn:hover { background-color: #1e1e2e; color: #cdd6f4; }
-            #showPassBtn:checked { color: #89b4fa; }
+            #showPassBtn:hover { background-color: rgba(255, 255, 255, 10); color: #F8FAFC; }
+            #showPassBtn:checked { color: #3B82F6; }
 
-            /* Error */
+            /* Error flotante tipo neón */
             #loginError {
-                color: #f38ba8;
-                font-size: 12px;
-                background: rgba(243, 139, 168, 0.10);
-                border: 1px solid rgba(243, 139, 168, 0.25);
-                border-radius: 6px;
-                padding: 6px 10px;
+                color: #FDA4AF; /* Rose 300 */
+                font-size: 13px;
+                font-weight: 600;
+                background: rgba(225, 29, 72, 0.15); /* Rose 600 opaco */
+                border: 1px solid rgba(225, 29, 72, 0.4);
+                border-radius: 8px;
+                padding: 8px 12px;
             }
 
-            /* Botón principal */
+            /* Botón principal (Gradient Glow) */
             #loginBtn {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #89b4fa, stop:1 #74c7ec);
-                color: #11111b;
+                    stop:0 #3B82F6, stop:1 #8B5CF6);
+                color: #FFFFFF;
                 border: none;
                 border-radius: 10px;
-                font-size: 14px;
+                font-size: 15px;
                 font-weight: 800;
-                letter-spacing: 0.5px;
+                letter-spacing: 0.8px;
             }
             #loginBtn:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
-                    stop:0 #b4befe, stop:1 #89dceb);
+                    stop:0 #60A5FA, stop:1 #A78BFA);
             }
-            #loginBtn:pressed { background: #74c7ec; }
+            #loginBtn:pressed { background: #2563EB; }
             #loginBtn:disabled {
-                background: #313244;
-                color: #6c7086;
+                background: rgba(255, 255, 255, 10);
+                color: #64748B;
+                border: 1px solid rgba(255, 255, 255, 20);
             }
 
             /* Footer */
             #loginFooter {
+                font-family: 'Segoe UI', Inter, sans-serif;
                 font-size: 11px;
-                color: #45475a;
+                color: #64748B;
                 background: transparent;
+                letter-spacing: 0.5px;
             }
 
             /* Botón cerrar X */
@@ -381,17 +391,17 @@ class LoginDialog(QDialog):
                 background: transparent;
                 border: none;
                 border-radius: 6px;
-                color: #45475a;
-                font-size: 14px;
-                font-weight: 700;
+                color: #64748B;
+                font-size: 18px;
+                font-weight: bold;
                 padding: 0;
             }
             #loginCloseBtn:hover {
-                background: rgba(243, 139, 168, 0.18);
-                color: #f38ba8;
+                background: rgba(225, 29, 72, 0.2);
+                color: #F43F5E;
             }
             #loginCloseBtn:pressed {
-                background: rgba(243, 139, 168, 0.30);
-                color: #f38ba8;
+                background: rgba(225, 29, 72, 0.4);
+                color: #E11D48;
             }
         """)

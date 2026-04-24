@@ -562,22 +562,22 @@ class DahuaHistoryDialog(QDialog):
         self.setStyleSheet("""
             /* ── Diálogo base ── */
             QDialog {
-                background-color: #181825;
+                background-color: #0B0F19;
             }
 
             /* ── Fondo del contenedor izquierdo ── */
             #leftContainer {
-                background-color: #181825;
+                background-color: #0B0F19;
             }
 
             /* ── Grupos / Cards ── */
             QGroupBox {
-                background-color: #1e1e2e;
-                border: 1px solid #313244;
+                background-color: #0F172A;
+                border: 1px solid #1E293B;
                 border-radius: 10px;
                 margin-top: 16px;
                 padding: 12px 10px 10px 10px;
-                color: #89b4fa;
+                color: #3B82F6;
                 font-weight: 700;
                 font-size: 13px;
             }
@@ -586,64 +586,64 @@ class DahuaHistoryDialog(QDialog):
                 subcontrol-position: top left;
                 left: 12px;
                 padding: 2px 6px;
-                background-color: #1e1e2e;
+                background-color: #0F172A;
                 border-radius: 4px;
             }
 
             /* ── Labels ── */
             QLabel {
-                color: #cdd6f4;
+                color: #F8FAFC;
                 background: transparent;
             }
             #subtleLabel {
-                color: #a6adc8;
+                color: #CBD5E1;
                 font-size: 11px;
             }
 
             /* ── SpinBox ── */
             QSpinBox {
-                background-color: #11111b;
-                border: 1px solid #313244;
+                background-color: #020617;
+                border: 1px solid #1E293B;
                 border-radius: 6px;
                 padding: 4px 6px;
-                color: #cdd6f4;
+                color: #F8FAFC;
                 font-weight: 700;
                 font-size: 13px;
                 min-width: 50px;
             }
-            QSpinBox:hover { border-color: #89b4fa; }
+            QSpinBox:hover { border-color: #3B82F6; }
             QSpinBox::up-button, QSpinBox::down-button {
                 width: 18px;
-                background: #313244;
+                background: #1E293B;
                 border-radius: 3px;
             }
             QSpinBox::up-button:hover, QSpinBox::down-button:hover {
-                background: #45475a;
+                background: #334155;
             }
 
             /* ── ComboBox ── */
             QComboBox {
-                background-color: #11111b;
-                border: 1px solid #313244;
+                background-color: #020617;
+                border: 1px solid #1E293B;
                 border-radius: 6px;
                 padding: 6px 12px;
-                color: #cdd6f4;
+                color: #F8FAFC;
                 font-weight: 600;
                 min-height: 30px;
             }
-            QComboBox:hover { border-color: #89b4fa; }
+            QComboBox:hover { border-color: #3B82F6; }
             QComboBox::drop-down { border: none; width: 28px; }
             QComboBox::down-arrow {
                 border-left: 5px solid transparent;
                 border-right: 5px solid transparent;
-                border-top: 5px solid #a6adc8;
+                border-top: 5px solid #CBD5E1;
                 margin-right: 8px;
             }
             QComboBox QAbstractItemView {
-                background-color: #11111b;
-                border: 1px solid #313244;
+                background-color: #020617;
+                border: 1px solid #1E293B;
                 border-radius: 6px;
-                color: #cdd6f4;
+                color: #F8FAFC;
                 outline: none;
                 padding: 4px;
             }
@@ -652,73 +652,73 @@ class DahuaHistoryDialog(QDialog):
                 padding-left: 8px;
             }
             QComboBox QAbstractItemView::item:selected {
-                background-color: #313244;
-                color: #89b4fa;
+                background-color: #1E293B;
+                color: #3B82F6;
             }
 
             /* ── Calendario ── */
             QCalendarWidget {
-                background-color: #1e1e2e;
+                background-color: #0F172A;
             }
             QCalendarWidget QAbstractItemView:enabled {
-                background-color: #1e1e2e;
-                selection-background-color: #89b4fa;
-                selection-color: #11111b;
-                color: #cdd6f4;
-                alternate-background-color: #181825;
+                background-color: #0F172A;
+                selection-background-color: #3B82F6;
+                selection-color: #020617;
+                color: #F8FAFC;
+                alternate-background-color: #0B0F19;
             }
             QCalendarWidget QWidget#qt_calendar_navigationbar {
-                background-color: #11111b;
+                background-color: #020617;
                 padding: 4px;
             }
             QCalendarWidget QToolButton {
-                color: #89b4fa;
+                color: #3B82F6;
                 font-weight: 700;
                 background: transparent;
                 border-radius: 4px;
                 padding: 4px 8px;
                 font-size: 13px;
             }
-            QCalendarWidget QToolButton:hover { background-color: #313244; }
+            QCalendarWidget QToolButton:hover { background-color: #1E293B; }
             QCalendarWidget QSpinBox {
-                background-color: #11111b;
-                border: 1px solid #313244;
-                color: #cdd6f4;
+                background-color: #020617;
+                border: 1px solid #1E293B;
+                color: #F8FAFC;
                 padding: 2px 6px;
             }
             QCalendarWidget QHeaderView::section {
-                background-color: #11111b;
-                color: #6c7086;
+                background-color: #020617;
+                color: #64748B;
                 font-size: 11px;
                 font-weight: 700;
                 border: none;
                 padding: 4px;
             }
             QCalendarWidget QTableView {
-                gridline-color: #313244;
+                gridline-color: #1E293B;
             }
 
             /* ── Barra de Progreso ── */
             QProgressBar {
-                background-color: #313244;
+                background-color: #1E293B;
                 border-radius: 4px;
                 height: 8px;
                 text-align: center;
-                color: #cdd6f4;
+                color: #F8FAFC;
                 font-size: 11px;
                 border: none;
             }
             QProgressBar::chunk {
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                    stop:0 #89b4fa, stop:0.5 #cba6f7, stop:1 #a6e3a1);
+                    stop:0 #3B82F6, stop:0.5 #8B5CF6, stop:1 #10B981);
                 border-radius: 4px;
             }
 
             /* ── Botones principales ── */
             QPushButton#primaryBtn {
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                    stop:0 #89b4fa, stop:1 #74c7ec);
-                color: #11111b;
+                    stop:0 #3B82F6, stop:1 #0EA5E9);
+                color: #020617;
                 border: none;
                 border-radius: 8px;
                 padding: 10px 20px;
@@ -728,17 +728,17 @@ class DahuaHistoryDialog(QDialog):
             }
             QPushButton#primaryBtn:hover {
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                    stop:0 #b4befe, stop:1 #89dceb);
+                    stop:0 #818CF8, stop:1 #89dceb);
             }
             QPushButton#primaryBtn:disabled {
-                background: #313244;
-                color: #6c7086;
+                background: #1E293B;
+                color: #64748B;
             }
 
             QPushButton#warningBtn {
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                    stop:0 #fab387, stop:1 #f9e2af);
-                color: #11111b;
+                    stop:0 #F59E0B, stop:1 #f9e2af);
+                color: #020617;
                 border: none;
                 border-radius: 8px;
                 padding: 10px 20px;
@@ -751,14 +751,14 @@ class DahuaHistoryDialog(QDialog):
                     stop:0 #f9c890, stop:1 #fcd5a0);
             }
             QPushButton#warningBtn:disabled {
-                background: #313244;
-                color: #6c7086;
+                background: #1E293B;
+                color: #64748B;
             }
 
             QPushButton#successBtn {
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                    stop:0 #a6e3a1, stop:1 #94e2d5);
-                color: #11111b;
+                    stop:0 #10B981, stop:1 #14B8A6);
+                color: #020617;
                 border: none;
                 border-radius: 8px;
                 padding: 10px 20px;
@@ -772,8 +772,8 @@ class DahuaHistoryDialog(QDialog):
 
             QPushButton#dangerBtn {
                 background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-                    stop:0 #f38ba8, stop:1 #eba0ac);
-                color: #11111b;
+                    stop:0 #EF4444, stop:1 #eba0ac);
+                color: #020617;
                 border: none;
                 border-radius: 8px;
                 padding: 10px 20px;
@@ -787,33 +787,33 @@ class DahuaHistoryDialog(QDialog):
 
             /* ── Botón de Velocidad ── */
             QPushButton#speedBtn {
-                background-color: rgba(137, 180, 250, 0.12);
-                color: #cdd6f4;
-                border: 1px solid rgba(137, 180, 250, 0.28);
+                background-color: rgba(59, 130, 246, 0.12);
+                color: #F8FAFC;
+                border: 1px solid rgba(59, 130, 246, 0.28);
                 border-radius: 8px;
                 padding: 7px 10px;
                 font-weight: 800;
             }
             QPushButton#speedBtn:hover {
-                background-color: rgba(137, 180, 250, 0.22);
-                border-color: #89b4fa;
+                background-color: rgba(59, 130, 246, 0.22);
+                border-color: #3B82F6;
             }
 
             /* ── Label de Velocidad ── */
             #speedLabel {
                 font-size: 28px;
                 font-weight: 900;
-                color: #89b4fa;
-                background: #11111b;
+                color: #3B82F6;
+                background: #020617;
                 border-radius: 8px;
                 padding: 12px;
-                border: 1px solid #313244;
+                border: 1px solid #1E293B;
             }
 
             /* ── Área de Video ── */
             #videoPreviewFrame {
-                background-color: #11111b;
-                border: 2px solid #313244;
+                background-color: #020617;
+                border: 2px solid #1E293B;
                 border-radius: 10px;
                 color: #585b70;
                 font-size: 15px;
@@ -821,20 +821,20 @@ class DahuaHistoryDialog(QDialog):
 
             /* ── Card de Acciones ── */
             #actionsCard {
-                background-color: #1e1e2e;
-                border: 1px solid #313244;
+                background-color: #0F172A;
+                border: 1px solid #1E293B;
                 border-radius: 10px;
             }
 
             /* ── ScrollBar ── */
             QScrollBar:vertical {
-                background: #11111b;
+                background: #020617;
                 width: 6px;
                 border-radius: 3px;
                 margin: 0;
             }
             QScrollBar::handle:vertical {
-                background: #45475a;
+                background: #334155;
                 border-radius: 3px;
                 min-height: 20px;
             }
@@ -1070,7 +1070,7 @@ class DahuaHistoryDialog(QDialog):
             diff = end_mins - start_mins
             if diff <= 0:
                 self.lbl_duration.setText("⚠️  La hora de fin debe ser posterior al inicio")
-                self.lbl_duration.setStyleSheet("color: #f38ba8; font-size: 11px;")
+                self.lbl_duration.setStyleSheet("color: #EF4444; font-size: 11px;")
             else:
                 h, m = divmod(diff, 60)
                 if h > 0:
@@ -1078,7 +1078,7 @@ class DahuaHistoryDialog(QDialog):
                 else:
                     txt = f"Duración: {diff} minutos"
                 self.lbl_duration.setText(txt)
-                self.lbl_duration.setStyleSheet("color: #a6e3a1; font-size: 11px;")
+                self.lbl_duration.setStyleSheet("color: #10B981; font-size: 11px;")
         except Exception:
             pass
 

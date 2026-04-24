@@ -66,7 +66,7 @@ class YoloAnalyzerWorker(QThread):
         
         # Crossing detection state
         self.crossing_frames = []
-        self.prev_positions = {} # {track_id: y_center}
+        self.prev_positions = {} # {track_id: (y_center, frame_idx)}
         self.currently_outside_ids = set()
         self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
 
@@ -108,11 +108,12 @@ class YoloAnalyzerWorker(QThread):
                         line_y = int(height * self.line_pos)
                         center_y = (y1 + y2) / 2.0
                         
+                        self.prev_positions = {k: v for k, v in self.prev_positions.items() if (frame_idx - v[1]) < 15}
                         if track_id is not None:
                             if track_id in self.prev_positions:
-                                prev_y = self.prev_positions[track_id]
-                                is_exiting = (prev_y < line_y <= center_y)
-                                is_entering = (prev_y > line_y >= center_y)
+                                prev_y, _ = self.prev_positions[track_id]
+                                is_exiting = (prev_y < line_y and center_y >= line_y)
+                                is_entering = (prev_y >= line_y and center_y < line_y)
                                 if is_exiting and track_id not in self.currently_outside_ids:
                                     if ui_cat in self.cumulative_counts:
                                         self.cumulative_counts[ui_cat] += 1
@@ -123,7 +124,7 @@ class YoloAnalyzerWorker(QThread):
                                         self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
                                         self.crossing_frames.append(frame_idx)
                                     self.currently_outside_ids.remove(track_id)
-                            self.prev_positions[track_id] = center_y
+                            self.prev_positions[track_id] = (center_y, frame_idx)
                         else:
                             # Proximity fallback for crossing
                             best_match = None
@@ -147,10 +148,10 @@ class YoloAnalyzerWorker(QThread):
                                     self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
                                     self.crossing_frames.append(frame_idx)
                                     self.currently_outside_ids.remove(best_match)
-                                self.prev_positions[best_match] = center_y
+                                self.prev_positions[best_match] = (center_y, frame_idx)
                             else:
                                 proxy_id = f"proxy_{len(self.prev_positions)}_{int((x1+x2)/2)}"
-                                self.prev_positions[proxy_id] = center_y
+                                self.prev_positions[proxy_id] = (center_y, frame_idx)
 
             self.tracking_data[frame_idx] = frame_boxes
 
@@ -319,7 +320,7 @@ class VideoPlayerWorker(QThread):
 
             if lookup in self.tracking_data:
                 current_frame_boxes = self.tracking_data[lookup]
-                new_prev_positions = {}
+                self.prev_positions = {k: v for k, v in self.prev_positions.items() if lookup - v[1] < 15}
                 
                 for x1, y1, x2, y2, track_id, ui_cat in current_frame_boxes:
                     center_y = (y1 + y2) / 2.0
@@ -328,9 +329,9 @@ class VideoPlayerWorker(QThread):
                     # 1. Usar track_id real si existe
                     if track_id is not None:
                         if track_id in self.prev_positions:
-                            prev_y = self.prev_positions[track_id]
-                            is_exiting = (prev_y < line_y <= center_y)
-                            is_entering = (prev_y > line_y >= center_y)
+                            prev_y, _ = self.prev_positions[track_id]
+                            is_exiting = (prev_y < line_y and center_y >= line_y)
+                            is_entering = (prev_y >= line_y and center_y < line_y)
                             if is_exiting and track_id not in self.currently_outside_ids:
                                 if ui_cat in self.cumulative_counts:
                                     self.cumulative_counts[ui_cat] += 1
@@ -343,7 +344,7 @@ class VideoPlayerWorker(QThread):
                                     timestamp = time.strftime("%H:%M:%S")
                                     self.detection_event.emit(timestamp, f"{ui_cat} retornado (ID:{track_id})")
                                 self.currently_outside_ids.remove(track_id)
-                        new_prev_positions[track_id] = center_y
+                        self.prev_positions[track_id] = (center_y, lookup)
                     else:
                         # 2. Fallback: Proximidad simple para objetos sin ID
                         # (Buscamos el objeto más cercano en el frame anterior que no tenga ID real)
@@ -372,13 +373,13 @@ class VideoPlayerWorker(QThread):
                                     timestamp = time.strftime("%H:%M:%S")
                                     self.detection_event.emit(timestamp, f"{ui_cat} retornado (ID:Proxy)")
                                 self.currently_outside_ids.remove(best_match)
-                            new_prev_positions[best_match] = center_y
+                            self.prev_positions[best_match] = (center_y, lookup)
                         else:
                             # Nuevo objeto "proxy"
-                            proxy_id = f"proxy_{len(new_prev_positions)}_{int(center_x)}"
-                            new_prev_positions[proxy_id] = center_y
+                            proxy_id = f"proxy_{lookup}_{int(center_x)}"
+                            self.prev_positions[proxy_id] = (center_y, lookup)
                 
-                self.prev_positions = new_prev_positions
+
 
             self.counts_updated.emit(self.cumulative_counts)
 
@@ -607,7 +608,7 @@ class RtspCameraWorker(QThread):
                                   else [None] * len(boxes_xyxy))
                     names = self.model.names
 
-                    new_prev_positions = {}
+                    self.prev_positions = {k: v for k, v in self.prev_positions.items() if lookup - v[1] < 15}
                     line_y = (zy1 + zy2) / 2.0  # Mitad de la zona para el conteo bidireccional
 
                     for box, track_id, cls_id in zip(boxes_xyxy, track_ids, clss):
@@ -635,11 +636,12 @@ class RtspCameraWorker(QThread):
 
                         # ── Conteo Bidireccional Integrado ──────────────────
                         cy = (iy1 + iy2) / 2.0
+                        center_x = (x1 + x2) / 2.0
                         if track_id is not None:
                             if track_id in self.prev_positions:
-                                prev_y = self.prev_positions[track_id]
-                                is_exiting = (prev_y < line_y <= cy)
-                                is_entering = (prev_y > line_y >= cy)
+                                prev_y, _ = self.prev_positions[track_id]
+                                is_exiting = (prev_y < line_y and cy >= line_y)
+                                is_entering = (prev_y >= line_y and cy < line_y)
 
                                 if is_exiting and track_id not in self.counted_ids:
                                     # --- Filtro de Persistencia: Deshabilitado (0 frames) ---
@@ -656,10 +658,45 @@ class RtspCameraWorker(QThread):
                                         ts = time.strftime("%H:%M:%S")
                                         self.detection_event.emit(ts, f"{ui_cat} retornado (ID:{track_id})")
 
-                            new_prev_positions[track_id] = cy
+                            self.prev_positions[track_id] = (cy, frame_local)
                             self.track_persistence[track_id] = self.track_persistence.get(track_id, 0) + 1
+                        else:
+                            # 2. Fallback: Proximidad simple para objetos sin ID
+                            # (Buscamos el objeto más cercano en el frame anterior que no tenga ID real)
+                            best_match = None
+                            min_dist = 50 # pixeles de tolerancia
+                            for old_id, old_y in self.prev_positions.items():
+                                if isinstance(old_id, str) and old_id.startswith("proxy_"):
+                                    dist = abs(cy - old_y)
+                                    if dist < min_dist:
+                                        min_dist = dist
+                                        best_match = old_id
+                            
+                            if best_match:
+                                prev_y = self.prev_positions[best_match]
+                                is_exiting = (prev_y < line_y <= cy)
+                                is_entering = (prev_y > line_y >= cy)
+                                if is_exiting and best_match not in self.counted_ids:
+                                    if self.track_persistence.get(best_match, 0) >= 0:
+                                        self.cumulative_counts[ui_cat] += 1
+                                        ts = time.strftime("%H:%M:%S")
+                                        self.detection_event.emit(ts, f"{ui_cat} despachado (ID:Proxy)")
+                                    self.counted_ids.add(best_match)
+                                elif is_entering and best_match in self.counted_ids:
+                                    if self.track_persistence.get(best_match, 0) >= 0:
+                                        self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
+                                        ts = time.strftime("%H:%M:%S")
+                                        self.detection_event.emit(ts, f"{ui_cat} retornado (ID:Proxy)")
+                                    self.counted_ids.remove(best_match)
+                                self.prev_positions[best_match] = (cy, frame_local)
+                                self.track_persistence[best_match] = self.track_persistence.get(best_match, 0) + 1
+                            else:
+                                # Nuevo objeto "proxy"
+                                proxy_id = f"proxy_{lookup}_{int(center_x)}"
+                                self.prev_positions[proxy_id] = (cy, frame_local)
+                                self.track_persistence[proxy_id] = 1
 
-                    self.prev_positions = new_prev_positions
+    
 
                 # ── Dibujar zona y bounding boxes ─────────────────────
                 self._draw_zone(frame, zx1, zy1, zx2, zy2, active=zone_active)

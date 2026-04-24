@@ -105,9 +105,9 @@ class LogsPage(QWidget):
 
         # ── Stat cards ──
         stats_row = QHBoxLayout(); stats_row.setSpacing(15)
-        self._card_total   = self._make_stat_card("📋", "0", "Eventos Hoy",      "#89b4fa", card_id="total_events")
-        self._card_logins  = self._make_stat_card("🔑", "0", "Inicios Hoy",      "#a6e3a1", card_id="logins_today")
-        self._card_users   = self._make_stat_card("👤", "0", "Usuarios Activos",  "#cba6f7", card_id="users_active")
+        self._card_total   = self._make_stat_card("📋", "0", "Eventos Hoy",      "#3B82F6", card_id="total_events")
+        self._card_logins  = self._make_stat_card("🔑", "0", "Inicios Hoy",      "#10B981", card_id="logins_today")
+        self._card_users   = self._make_stat_card("👤", "0", "Usuarios Activos",  "#8B5CF6", card_id="users_active")
         stats_row.addWidget(self._card_total)
         stats_row.addWidget(self._card_logins)
         stats_row.addWidget(self._card_users)
@@ -308,7 +308,7 @@ class LogsPage(QWidget):
             action = log.get("action", "")
             action_item = QTableWidgetItem(f"  {action}")
             action_item.setTextAlignment(Qt.AlignVCenter | Qt.AlignLeft)
-            color = ACTION_COLORS.get(action, "#cdd6f4")
+            color = ACTION_COLORS.get(action, "#F8FAFC")
             action_item.setForeground(QColor(color))
             self.table.setItem(row_idx, 4, action_item)
 

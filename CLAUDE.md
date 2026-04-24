@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LogiCheck is an AI-powered logistics auditing system for hardware stores and warehouses. It uses YOLOv11 computer vision to count cement bags and PVC pipes in real-time from video streams or RTSP cameras, comparing counts against PDF invoices.
+LogiCheck is an AI-powered logistics auditing system for hardware stores and warehouses. It uses YOLO26 computer vision to count cement bags and PVC pipes in real-time from video streams or RTSP cameras, comparing counts against PDF invoices.
 
 ## Commands
 

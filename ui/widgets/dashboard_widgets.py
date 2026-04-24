@@ -7,7 +7,7 @@ import datetime
 
 class MiniSparkline(QWidget):
     """Pequeña gráfica de línea (sparkline) para mostrar tendencia en las stat cards."""
-    def __init__(self, color="#89b4fa", parent=None):
+    def __init__(self, color="#3B82F6", parent=None):
         super().__init__(parent)
         self.setFixedHeight(32)
         self.setMinimumWidth(60)
@@ -86,7 +86,7 @@ class ChangeBadge(QLabel):
         self.setAlignment(Qt.AlignCenter)
         self.setStyleSheet(
             "font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;"
-            "background: rgba(166,227,161,0.15); color: #a6e3a1;"
+            "background: rgba(166,227,161,0.15); color: #10B981;"
         )
         self.setText("— ")
 
@@ -96,19 +96,19 @@ class ChangeBadge(QLabel):
             self.setText(f"▲ {pct:+.0f}%")
             self.setStyleSheet(
                 "font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;"
-                "background: rgba(166,227,161,0.15); color: #a6e3a1;"
+                "background: rgba(166,227,161,0.15); color: #10B981;"
             )
         elif pct < 0:
             self.setText(f"▼ {pct:.0f}%")
             self.setStyleSheet(
                 "font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;"
-                "background: rgba(243,139,168,0.15); color: #f38ba8;"
+                "background: rgba(243,139,168,0.15); color: #EF4444;"
             )
         else:
             self.setText("— 0%")
             self.setStyleSheet(
                 "font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;"
-                "background: rgba(108,112,134,0.15); color: #6c7086;"
+                "background: rgba(108,112,134,0.15); color: #64748B;"
             )
 
 
@@ -147,7 +147,7 @@ class SystemHealthWidget(QWidget):
             y = i * row_h + 10
 
             # Label
-            painter.setPen(QColor('#a6adc8' if is_dark else '#4c4f69'))
+            painter.setPen(QColor('#CBD5E1' if is_dark else '#4c4f69'))
             font = QFont('Segoe UI', 10)
             font.setWeight(QFont.DemiBold)
             painter.setFont(font)
@@ -155,7 +155,7 @@ class SystemHealthWidget(QWidget):
 
             # Track
             track_y = y + 22
-            track_color = QColor('#313244' if is_dark else '#dce0e8')
+            track_color = QColor('#1E293B' if is_dark else '#dce0e8')
             painter.setPen(Qt.NoPen)
             painter.setBrush(track_color)
             painter.drawRoundedRect(QRectF(bar_x, track_y, bar_w, bar_h), 4, 4)
@@ -228,7 +228,7 @@ class ActivityTimelineWidget(QWidget):
 
             # Vertical connector line
             if i < len(self._events) - 1:
-                lc = QColor('#313244' if is_dark else '#dce0e8')
+                lc = QColor('#1E293B' if is_dark else '#dce0e8')
                 painter.setPen(QPen(lc, 1.5))
                 painter.drawLine(line_x, y + dot_r, line_x, y + row_h)
 
@@ -238,14 +238,14 @@ class ActivityTimelineWidget(QWidget):
             painter.drawEllipse(QPointF(line_x, y), dot_r, dot_r)
 
             # Time
-            painter.setPen(QColor('#6c7086' if is_dark else '#4c4f69'))
+            painter.setPen(QColor('#64748B' if is_dark else '#4c4f69'))
             font_time = QFont('Segoe UI', 9)
             font_time.setWeight(QFont.Bold)
             painter.setFont(font_time)
             painter.drawText(QRectF(text_x, y - 9, 60, 16), Qt.AlignLeft | Qt.AlignVCenter, time_str)
 
             # Description
-            painter.setPen(QColor('#cdd6f4' if is_dark else '#0c0c0d'))
+            painter.setPen(QColor('#F8FAFC' if is_dark else '#0c0c0d'))
             font_desc = QFont('Segoe UI', 10)
             painter.setFont(font_desc)
             painter.drawText(

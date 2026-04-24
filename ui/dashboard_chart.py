@@ -33,8 +33,8 @@ PALETTE = {
     "conformes":   "#3dd68c",       # Verde — despachos conformes
     "disc":        "#ff6b6b",       # Rojo — discrepancias
     "total":       "#4d9de0",       # Azul — total despachos
-    "text":        "#cdd6f4",       # Texto claro
-    "accent":      "#89b4fa",       # Azul acento
+    "text":        "#F8FAFC",       # Texto claro
+    "accent":      "#3B82F6",       # Azul acento
 }
 
 REFRESH_INTERVAL_MS = 60_000   # Actualizar cada 1 minuto

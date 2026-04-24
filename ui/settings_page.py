@@ -117,7 +117,7 @@ class TutorialDialog(QDialog):
         for i in range(len(self.steps)):
             dot = QFrame()
             dot.setFixedSize(8, 8)
-            dot.setStyleSheet("background: #45475a; border-radius: 4px;")
+            dot.setStyleSheet("background: #334155; border-radius: 4px;")
             self.dots.append(dot)
             self.progress_lay.addWidget(dot)
         layout.addLayout(self.progress_lay)
@@ -140,25 +140,25 @@ class TutorialDialog(QDialog):
     def _apply_styles(self):
         self.content.setStyleSheet("""
             #tutorialContainer { 
-                background: #1e1e2e; 
-                border: 1px solid #313244; 
+                background: #0F172A; 
+                border: 1px solid #1E293B; 
                 border-radius: 20px;
             }
-            #tutMainTitle { color: #89b4fa; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-            #tutCloseBtn { background: transparent; color: #a6adc8; font-weight: bold; border-radius: 15px; }
-            #tutCloseBtn:hover { background: rgba(255,255,255,0.05); color: #f38ba8; }
+            #tutMainTitle { color: #3B82F6; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+            #tutCloseBtn { background: transparent; color: #CBD5E1; font-weight: bold; border-radius: 15px; }
+            #tutCloseBtn:hover { background: rgba(255,255,255,0.05); color: #EF4444; }
             
-            #tutStepTitle { color: #cdd6f4; font-size: 18px; font-weight: 800; }
-            #tutStepDesc { color: #a6adc8; font-size: 14px; line-height: 1.4; }
+            #tutStepTitle { color: #F8FAFC; font-size: 18px; font-weight: 800; }
+            #tutStepDesc { color: #CBD5E1; font-size: 14px; line-height: 1.4; }
             
-            #tutNavBtn { background: transparent; border: 1px solid #45475a; color: #cdd6f4; border-radius: 8px; padding: 6px 15px; }
-            #tutNavBtn:hover { background: #313244; }
+            #tutNavBtn { background: transparent; border: 1px solid #334155; color: #F8FAFC; border-radius: 8px; padding: 6px 15px; }
+            #tutNavBtn:hover { background: #1E293B; }
             
             #tutPrimaryBtn { 
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #89b4fa, stop:1 #b4befe); 
-                color: #11111b; border: none; border-radius: 8px; padding: 6px 20px; font-weight: bold; 
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #3B82F6, stop:1 #818CF8); 
+                color: #020617; border: none; border-radius: 8px; padding: 6px 20px; font-weight: bold; 
             }
-            #tutPrimaryBtn:hover { background: #cba6f7; }
+            #tutPrimaryBtn:hover { background: #8B5CF6; }
         """)
 
     def _show_step(self, idx):
@@ -170,10 +170,10 @@ class TutorialDialog(QDialog):
         # Actualizar puntos
         for i, dot in enumerate(self.dots):
             if i == idx:
-                dot.setStyleSheet("background: #89b4fa; border-radius: 4px; border: 1px solid #b4befe;")
+                dot.setStyleSheet("background: #3B82F6; border-radius: 4px; border: 1px solid #818CF8;")
                 dot.setFixedWidth(20)
             else:
-                dot.setStyleSheet("background: #45475a; border-radius: 4px;")
+                dot.setStyleSheet("background: #334155; border-radius: 4px;")
                 dot.setFixedWidth(8)
                 
         # Animación de opacidad
@@ -259,12 +259,6 @@ class SettingsPage(QWidget):
         nav_bar = QFrame()
         nav_bar.setObjectName("wizardNav")
         nav_bar.setFixedHeight(72)
-        nav_bar.setStyleSheet("""
-            #wizardNav { 
-                background: #1e1e2e; 
-                border-top: 1px solid #313244;
-            }
-        """)
         nav_bar_lay = QHBoxLayout(nav_bar)
         nav_bar_lay.setContentsMargins(30, 0, 30, 0)
 
@@ -337,11 +331,11 @@ class SettingsPage(QWidget):
                 btn_toggle.setCursor(Qt.PointingHandCursor)
                 btn_toggle.setStyleSheet("""
                     QPushButton { 
-                        background: transparent; border: none; font-size: 11px; color: #a6adc8;
+                        background: transparent; border: none; font-size: 11px;
                         font-weight: bold;
                     }
-                    QPushButton:hover { color: #89b4fa; }
-                    QPushButton:pressed { color: #74c7ec; }
+                    QPushButton:hover { color: #3B82F6; }
+                    QPushButton:pressed { color: #0EA5E9; }
                 """)
                 btn_toggle.clicked.connect(lambda checked=False, i=inp, b=btn_toggle: self._toggle_visibility(i, b))
                 
@@ -367,21 +361,10 @@ class SettingsPage(QWidget):
         btn_test.clicked.connect(test_func)
         
         btn_help = QPushButton("?")
-        btn_help.setObjectName("helpBtn")
+        btn_help.setObjectName("secondaryBtn")
         btn_help.setFixedSize(35, 35)
         btn_help.setCursor(Qt.PointingHandCursor)
-        btn_help.setStyleSheet("""
-            QPushButton#helpBtn { 
-                background: #313244; 
-                border: 1px solid #45475a; 
-                border-radius: 17px; 
-                color: #cdd6f4; 
-                font-family: 'Segoe UI', Arial, sans-serif;
-                font-weight: bold; 
-                font-size: 18px;
-            }
-            QPushButton#helpBtn:hover { background: #45475a; border-color: #89b4fa; }
-        """)
+        btn_help.setStyleSheet("border-radius: 17px; font-weight: bold; font-size: 16px;")
         btn_help.setToolTip(f"¿Cómo obtener el token de {name}?")
         btn_help.clicked.connect(lambda checked=False, n=name: self._show_help(n))
         

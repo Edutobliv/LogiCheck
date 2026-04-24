@@ -1,6 +1,6 @@
 # 🚛 LogiCheck IA: Sistema de Auditoría y Seguridad Inteligente
 
-**LogiCheck** es una plataforma avanzada de visión artificial diseñada específicamente para la automatización de inventarios y seguridad perimetral en ferreterías y centros logísticos. Utilizando modelos de Deep Learning (YOLOv11), el sistema supervisa el flujo de mercancía en tiempo real a través de cámaras RTSP y permite auditorías históricas profundas.
+**LogiCheck** es una plataforma avanzada de visión artificial diseñada específicamente para la automatización de inventarios y seguridad perimetral en ferreterías y centros logísticos. Utilizando modelos de Deep Learning (YOLO26), el sistema supervisa el flujo de mercancía en tiempo real a través de cámaras RTSP y permite auditorías históricas profundas.
 
 ---
 
@@ -39,7 +39,7 @@
 ## 🛠️ Stack Tecnológico
 - **Lenguaje:** Python 3.12+
 - **Interfaz (GUI):** PySide6 (Qt) con diseño *Premium Glow* y modo oscuro/claro integrado.
-- **IA/Visión:** Ultralytics YOLOv11, OpenCV (Detección y Tracking).
+- **IA/Visión:** Ultralytics YOLO26, OpenCV (Detección y Tracking).
 - **Procesamiento de Video:** FFmpeg (Descarga paralela y concatenación de streams).
 - **Notificaciones:** Telegram Bot API (Requests) y CallMeBot API.
 - **Base de Datos:** SQLite3 para logs de actividad y gestión de usuarios.

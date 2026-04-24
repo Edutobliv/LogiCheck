@@ -127,10 +127,10 @@ class ModernTrendChart(QWidget):
         if hasattr(self.window(), '_is_dark'):
             is_dark = self.window()._is_dark
 
-        grid_color = QColor('#313244') if is_dark else QColor('#dce0e8')
-        label_color = QColor('#6c7086') if is_dark else QColor('#4c4f69')
-        total_color = QColor('#89b4fa') if is_dark else QColor('#1e66f5')
-        disc_color = QColor('#f38ba8') if is_dark else QColor('#d20f39')
+        grid_color = QColor('#1E293B') if is_dark else QColor('#dce0e8')
+        label_color = QColor('#64748B') if is_dark else QColor('#4c4f69')
+        total_color = QColor('#3B82F6') if is_dark else QColor('#1e66f5')
+        disc_color = QColor('#EF4444') if is_dark else QColor('#d20f39')
 
         small_font = QFont('Segoe UI', 9)
         small_font.setWeight(QFont.DemiBold)
@@ -304,9 +304,9 @@ class ModernTrendChart(QWidget):
             tt_y = max(padding_t, tt_y)
 
             tt_rect = QRectF(tt_x, tt_y, tt_w, tt_h)
-            bg_color = QColor('#1e1e2e' if is_dark else '#ffffff')
+            bg_color = QColor('#0F172A' if is_dark else '#ffffff')
             bg_color.setAlpha(235)
-            border_color = QColor('#45475a' if is_dark else '#dce0e8')
+            border_color = QColor('#334155' if is_dark else '#dce0e8')
 
             painter.setPen(QPen(border_color, 1))
             painter.setBrush(bg_color)
@@ -317,7 +317,7 @@ class ModernTrendChart(QWidget):
             tt_font.setWeight(QFont.Bold)
             painter.setFont(tt_font)
 
-            text_color = QColor('#cdd6f4' if is_dark else '#0c0c0d')
+            text_color = QColor('#F8FAFC' if is_dark else '#0c0c0d')
             painter.setPen(text_color)
             painter.drawText(
                 QRectF(tt_x + 10, tt_y + 6, tt_w - 20, 16),

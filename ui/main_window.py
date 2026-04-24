@@ -32,6 +32,11 @@ from ui.widgets.dashboard_widgets import (MiniSparkline, ChangeBadge,
 from core.report_exporter import export_excel, export_pdf
 from core.notifier import notifier
 from core.catalog_store import get_all_vehiculos, get_material_by_codigo, get_material_by_nombre
+from core.vehicle_assigner import (
+    VehicleAssigner, ResultadoAsignacion, DespachoItem,
+    get_medidas_disponibles, TUBERIA_SANITARIA, TUBERIA_PRESION,
+    PESO_BULTO_CEMENTO_KG,
+)
 from ui.dahua_history_dialog import DahuaHistoryDialog
 
 
@@ -100,7 +105,7 @@ class AuditScrubSlider(QSlider):
         # Dibujar marcas rojas
         painter.setPen(Qt.NoPen)
         # Usamos un rojo vibrante con cierta transparencia
-        color = QColor("#f38ba8")
+        color = QColor("#EF4444")
         color.setAlpha(200)
         painter.setBrush(color)
         
@@ -152,7 +157,7 @@ class AnimatedToggle(QWidget):
         
         # Track
         if self._is_on:
-            track_color = QColor("#89b4fa")
+            track_color = QColor("#3B82F6")
         else:
             track_color = QColor("#b0b0b0")
             
@@ -165,7 +170,7 @@ class AnimatedToggle(QWidget):
         painter.drawEllipse(self._circle_position, 4, 20, 20)
         
         # Icons (Sol/Luna)
-        painter.setPen(QPen(QColor("#1e1e2e" if self._is_on else "#555555"), 1.5))
+        painter.setPen(QPen(QColor("#0F172A" if self._is_on else "#555555"), 1.5))
         font = QFont("Segoe UI Emoji", 9)
         painter.setFont(font)
         if self._is_on:
@@ -227,12 +232,12 @@ class GlowCard(QFrame):
 
         if is_dark:
             # Dark glassmorphism
-            base_color = QColor(24, 24, 37, 180) # Semi-transparent #181825
+            base_color = QColor(15, 23, 42, 247) # Slate 900 con 97% opacidad
             grad = QLinearGradient(0, 0, 0, rect.height())
-            grad.setColorAt(0.0, QColor(255, 255, 255, 12))  # lighter top
+            grad.setColorAt(0.0, QColor(255, 255, 255, 18))  # lighter top
             grad.setColorAt(1.0, QColor(255, 255, 255, 0))   # darker bottom
             hover_color = QColor(255, 255, 255, int(15 * self._hover_progress))
-            border_color = QColor(255, 255, 255, int(25 + 25 * self._hover_progress))
+            border_color = QColor(255, 255, 255, int(30 + 30 * self._hover_progress))
         else:
             # Light glassmorphism
             base_color = QColor(255, 255, 255, 220)
@@ -260,7 +265,7 @@ class GlowCard(QFrame):
 
 class StatCard(GlowCard):
     """Tarjeta de estadística con icono, valor y descripción."""
-    def __init__(self, icon_text, value, description, accent_color="#89b4fa", parent=None):
+    def __init__(self, icon_text, value, description, accent_color="#3B82F6", parent=None):
         super().__init__(parent)
         self.setObjectName("statCard")
         self.accent_color = accent_color
@@ -672,7 +677,7 @@ class MainWindow(QMainWindow):
 
         # ── GPU Status widget en la statusbar (derecha) ───────
         self._lbl_gpu = QLabel("🔵 CPU")
-        self._lbl_gpu.setStyleSheet("font-size: 11px; color: #6c7086; padding: 0 10px;")
+        self._lbl_gpu.setStyleSheet("font-size: 11px; color: #64748B; padding: 0 10px;")
         self._status_bar.addPermanentWidget(self._lbl_gpu)
         self._gpu_timer = QTimer(self)
         self._gpu_timer.timeout.connect(self._update_gpu_status)
@@ -701,13 +706,13 @@ class MainWindow(QMainWindow):
                 name = torch.cuda.get_device_properties(0).name.replace("NVIDIA ", "")
                 
                 self._lbl_gpu.setText(f"🟢 {name}  {used_gb:.1f}/{total_gb:.1f} GB")
-                self._lbl_gpu.setStyleSheet("font-size: 11px; color: #a6e3a1; font-weight: bold; padding: 0 10px;")
+                self._lbl_gpu.setStyleSheet("font-size: 11px; color: #10B981; font-weight: bold; padding: 0 10px;")
             else:
                 self._lbl_gpu.setText("🔵 CPU (Modo Conservador)")
-                self._lbl_gpu.setStyleSheet("font-size: 11px; color: #6c7086; padding: 0 10px;")
+                self._lbl_gpu.setStyleSheet("font-size: 11px; color: #64748B; padding: 0 10px;")
         except Exception:
             self._lbl_gpu.setText("🔵 CPU")
-            self._lbl_gpu.setStyleSheet("font-size: 11px; color: #6c7086; padding: 0 10px;")
+            self._lbl_gpu.setStyleSheet("font-size: 11px; color: #64748B; padding: 0 10px;")
 
     # ----------------------------------------------------------------
     # PAGE BUILDERS
@@ -739,7 +744,7 @@ class MainWindow(QMainWindow):
         accent_bar.setObjectName("accentBar")
         accent_bar.setStyleSheet(
             "background: qlineargradient(x1:0,y1:0,x2:1,y2:0,"
-            "stop:0 #89b4fa, stop:0.3 #cba6f7, stop:0.7 #f38ba8, stop:1 #fab387);"
+            "stop:0 #3B82F6, stop:0.3 #8B5CF6, stop:0.7 #EF4444, stop:1 #F59E0B);"
             "border-radius: 2px; margin: 0 20px;"
         )
         welcome_outer.addWidget(accent_bar)
@@ -809,16 +814,16 @@ class MainWindow(QMainWindow):
         stats_row = QHBoxLayout()
         stats_row.setSpacing(14)
         
-        self.stat_despachos = StatCard("📦", "0", "Despachos Auditados", "#89b4fa")
-        self.stat_discrepancias = StatCard("⚠️", "0", "Discrepancias Detectadas", "#f38ba8")
-        self.stat_accuracy = StatCard("✅", "—", "Precisión del Conteo", "#a6e3a1")
-        self.stat_vehiculos = StatCard("🚛", "0", "Vehículos Asignados", "#fab387")
+        self.stat_despachos = StatCard("📦", "0", "Despachos Auditados", "#3B82F6")
+        self.stat_discrepancias = StatCard("⚠️", "0", "Discrepancias Detectadas", "#EF4444")
+        self.stat_accuracy = StatCard("✅", "—", "Precisión del Conteo", "#10B981")
+        self.stat_vehiculos = StatCard("🚛", "0", "Vehículos Asignados", "#F59E0B")
         
         # Add sparklines to stat cards
-        self._sparkline_despachos = MiniSparkline("#89b4fa")
-        self._sparkline_disc = MiniSparkline("#f38ba8")
-        self._sparkline_accuracy = MiniSparkline("#a6e3a1")
-        self._sparkline_vehiculos = MiniSparkline("#fab387")
+        self._sparkline_despachos = MiniSparkline("#3B82F6")
+        self._sparkline_disc = MiniSparkline("#EF4444")
+        self._sparkline_accuracy = MiniSparkline("#10B981")
+        self._sparkline_vehiculos = MiniSparkline("#F59E0B")
 
         self._badge_despachos = ChangeBadge()
         self._badge_disc = ChangeBadge()
@@ -870,12 +875,12 @@ class MainWindow(QMainWindow):
         legend_container.setSpacing(8)
         legend_ia = QLabel("● Total")
         legend_ia.setStyleSheet(
-            "color: #89b4fa; font-size: 10px; font-weight: 800; "
+            "color: #3B82F6; font-size: 10px; font-weight: 800; "
             "background: rgba(137,180,250,0.1); padding: 3px 8px; border-radius: 8px;"
         )
         legend_disc = QLabel("● Discrepancias")
         legend_disc.setStyleSheet(
-            "color: #f38ba8; font-size: 10px; font-weight: 800; "
+            "color: #EF4444; font-size: 10px; font-weight: 800; "
             "background: rgba(243,139,168,0.1); padding: 3px 8px; border-radius: 8px;"
         )
         legend_container.addWidget(legend_ia)
@@ -936,13 +941,13 @@ class MainWindow(QMainWindow):
 
         _cuda_state = ("✅ Precargado" if self._preloaded_model else "⏳ Carga en frío")
         _device_name = (self._preloaded_device or "CPU").upper()
-        _status_color = "#a6e3a1" if self._preloaded_model else "#f9e2af"
+        _status_color = "#10B981" if self._preloaded_model else "#f9e2af"
         
         model_items = [
-            ("Motor",    "YOLO11 (Ultralytics)", "#89b4fa"),
+            ("Motor",    "YOLO26 (Ultralytics)", "#3B82F6"),
             ("Estado",   f"{_cuda_state} en {_device_name}", _status_color),
-            ("Clases",   "Cemento, Tubería", "#cba6f7"),
-            ("Weights",  "bultos_cemento2/best.pt", "#6c7086"),
+            ("Clases",   "Cemento, Tubería", "#8B5CF6"),
+            ("Weights",  "bultos_cemento2/best.pt", "#64748B"),
         ]
         for key, val, color in model_items:
             row = QHBoxLayout()
@@ -982,9 +987,9 @@ class MainWindow(QMainWindow):
         
         self._health_widget.set_items([
             ("Modelo IA", 100 if self._preloaded_model else 0,
-             "#a6e3a1" if self._preloaded_model else "#f9e2af"),
-            ("GPU VRAM", gpu_pct, "#89b4fa"),
-            ("Base Datos", 100, "#cba6f7"),
+             "#10B981" if self._preloaded_model else "#f9e2af"),
+            ("GPU VRAM", gpu_pct, "#3B82F6"),
+            ("Base Datos", 100, "#8B5CF6"),
         ])
         health_layout.addWidget(self._health_widget)
         health_layout.addStretch()
@@ -1086,7 +1091,7 @@ class MainWindow(QMainWindow):
                 _dev = (self._preloaded_device or "cpu").upper()
                 self.lbl_model_status = QLabel(f"🧠 Motor IA listo ({_dev})")
                 self.lbl_model_status.setStyleSheet(
-                    "font-size: 10px; color: #a6e3a1; background: transparent;"
+                    "font-size: 10px; color: #10B981; background: transparent;"
                 )
             else:
                 self.lbl_model_status = QLabel("⚠️ Motor IA: carga en frío")
@@ -1330,7 +1335,7 @@ class MainWindow(QMainWindow):
 
         div1 = QFrame()
         div1.setFrameShape(QFrame.VLine)
-        div1.setStyleSheet("color: #313244;")
+        div1.setStyleSheet("color: #1E293B;")
         top_row.addWidget(div1)
 
         lbl_sel = QLabel("Cámara:")
@@ -1371,7 +1376,7 @@ class MainWindow(QMainWindow):
 
         self.check_dual_mode = QCheckBox("Modo Triangulación (9+10)")
         self.check_dual_mode.setObjectName("subtleText")
-        self.check_dual_mode.setStyleSheet("font-weight: 700; color: #fab387; padding: 0 10px;")
+        self.check_dual_mode.setStyleSheet("font-weight: 700; color: #F59E0B; padding: 0 10px;")
         self.check_dual_mode.stateChanged.connect(self._on_dual_mode_toggled)
         top_row.addWidget(self.check_dual_mode)
 
@@ -1397,7 +1402,7 @@ class MainWindow(QMainWindow):
         # Separador Horizontal
         h_line = QFrame()
         h_line.setFrameShape(QFrame.HLine)
-        h_line.setStyleSheet("color: #313244; margin: 2px 0;")
+        h_line.setStyleSheet("color: #1E293B; margin: 2px 0;")
         conn_layout_main.addWidget(h_line)
 
         # ── Fila 2: Ajustes de Zona ──
@@ -1418,7 +1423,7 @@ class MainWindow(QMainWindow):
 
         div2 = QFrame()
         div2.setFrameShape(QFrame.VLine)
-        div2.setStyleSheet("color: #313244;")
+        div2.setStyleSheet("color: #1E293B;")
         bot_row.addWidget(div2)
 
         self._cam_zones = {
@@ -1458,7 +1463,7 @@ class MainWindow(QMainWindow):
 
         div3 = QFrame()
         div3.setFrameShape(QFrame.VLine)
-        div3.setStyleSheet("color: #313244;")
+        div3.setStyleSheet("color: #1E293B;")
         bot_row.addWidget(div3)
 
         # Grupo Ancho
@@ -1502,7 +1507,7 @@ class MainWindow(QMainWindow):
         # Indicador de FPS en vivo (top-right)
         self.lbl_cam_fps = QLabel("")
         self.lbl_cam_fps.setObjectName("subtleText")
-        self.lbl_cam_fps.setStyleSheet("font-size: 10px; color: #a6e3a1;")
+        self.lbl_cam_fps.setStyleSheet("font-size: 10px; color: #10B981;")
         cam_status_row.addStretch()
         cam_status_row.addWidget(self.lbl_cam_fps)
         cam_video_layout.addLayout(cam_status_row)
@@ -1514,7 +1519,7 @@ class MainWindow(QMainWindow):
         # Panel Izquierdo (Primario) — siempre visible
         left_panel = QVBoxLayout()
         self.lbl_title_cam_primary = QLabel("📹 Cámara 9")
-        self.lbl_title_cam_primary.setStyleSheet("font-weight: bold; color: #a6e3a1; font-size: 14px;")
+        self.lbl_title_cam_primary.setStyleSheet("font-weight: bold; color: #10B981; font-size: 14px;")
         self.lbl_title_cam_primary.setAlignment(Qt.AlignCenter)
         self.lbl_title_cam_primary.setVisible(False)  # Oculto en modo simple
         self.cam_frame = QLabel("📷\n\nIntroduzca la URL de la cámara IP\ny pulse Conectar")
@@ -1531,7 +1536,7 @@ class MainWindow(QMainWindow):
         right_panel.setContentsMargins(0, 0, 0, 0)
         right_panel.setSpacing(4)
         self.lbl_title_cam_alt = QLabel("📹 Cámara 10")
-        self.lbl_title_cam_alt.setStyleSheet("font-weight: bold; color: #89b4fa; font-size: 14px;")
+        self.lbl_title_cam_alt.setStyleSheet("font-weight: bold; color: #3B82F6; font-size: 14px;")
         self.lbl_title_cam_alt.setAlignment(Qt.AlignCenter)
         self.cam_frame_alt = QLabel("📷\n\nEsperando Señal...")
         self.cam_frame_alt.setObjectName("videoFrame")
@@ -1739,6 +1744,8 @@ class MainWindow(QMainWindow):
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
         model_path = os.path.join(base_dir, "models", "estacion_bultos_v1.pt")
+        if not os.path.exists(model_path):
+            model_path = os.path.join(base_dir, "models", "yolo26n.pt")
         if not os.path.exists(model_path):
             model_path = os.path.join(base_dir, "models", "yolo26n.pt")
 
@@ -2328,7 +2335,7 @@ class MainWindow(QMainWindow):
         )
         upload_desc.setObjectName("subtleText")
         upload_desc.setAlignment(Qt.AlignCenter)
-        upload_desc.setStyleSheet("font-size: 14px; background: transparent; border: none; color: #a6adc8;")
+        upload_desc.setStyleSheet("font-size: 14px; background: transparent; border: none;")
         upload_desc.setWordWrap(True)
         upload_desc.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.MinimumExpanding)
         drop_zone_layout.addWidget(upload_desc)
@@ -2348,7 +2355,7 @@ class MainWindow(QMainWindow):
         self.lbl_invoice_status = QLabel("Sin factura cargada")
         self.lbl_invoice_status.setObjectName("subtleText")
         self.lbl_invoice_status.setAlignment(Qt.AlignCenter)
-        self.lbl_invoice_status.setStyleSheet("font-size: 13px; background: transparent; border: none; color: #6c7086;")
+        self.lbl_invoice_status.setStyleSheet("font-size: 13px; background: transparent; border: none; color: #64748B;")
         drop_zone_layout.addWidget(self.lbl_invoice_status)
         
         drop_zone_layout.addStretch()  # Center from bottom
@@ -2420,7 +2427,7 @@ class MainWindow(QMainWindow):
         data_sub = QLabel("Solo se muestran los productos detectables por visión artificial: Cemento, Tubería Presión y Tubería Sanitaria.")
         data_sub.setObjectName("subtleText")
         data_sub.setWordWrap(True)
-        data_sub.setStyleSheet("font-size: 12px; color: #0c0c0d; background: transparent; border: none;") # Changed color to black as per instruction
+        data_sub.setStyleSheet("font-size: 12px; background: transparent; border: none;")
         data_layout.addWidget(data_sub)
         
         self.table_invoice_data = QTableWidget(0, 4)
@@ -2443,62 +2450,238 @@ class MainWindow(QMainWindow):
         return scroll
     
     def _create_vehicle_page(self):
-        """Página de asignación vehicular."""
+        """Página de asignación vehicular — Diseño Premium con análisis inteligente."""
         page = QWidget()
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setWidget(page)
+
         layout = QVBoxLayout(page)
         layout.setContentsMargins(30, 25, 30, 25)
-        layout.setSpacing(20)
-        
-        # Summary cards
+        layout.setSpacing(18)
+
+        # ══════════════════════════════════════════
+        # STAT CARDS — Peso, Volumen, Vehículo, Uso
+        # ══════════════════════════════════════════
         summary_row = QHBoxLayout()
         summary_row.setSpacing(15)
-        
+
         self.card_peso = StatCard("⚖️", "0 Kg", "Peso Total del Despacho", "#f9e2af")
         self.card_volumen = StatCard("📐", "0 m³", "Volumen Total del Despacho", "#89dceb")
-        self.card_vehiculo = StatCard("🚛", "N/A", "Vehículo Recomendado", "#a6e3a1")
-        self.card_capacidad = StatCard("📊", "—", "Uso de Capacidad", "#cba6f7")
-        
+        self.card_vehiculo = StatCard("🚛", "—", "Vehículo Recomendado", "#10B981")
+        self.card_capacidad = StatCard("📊", "—", "Uso de Capacidad", "#8B5CF6")
+
         summary_row.addWidget(self.card_peso)
         summary_row.addWidget(self.card_volumen)
         summary_row.addWidget(self.card_vehiculo)
         summary_row.addWidget(self.card_capacidad)
-        
         layout.addLayout(summary_row)
-        
-        # Vehicle details
-        details_card = GlowCard()
-        details_layout = QVBoxLayout(details_card)
-        details_layout.setContentsMargins(20, 18, 20, 18)
-        
-        details_header = QLabel("🚛  Flota Disponible")
-        details_header.setObjectName("cardTitle")
-        details_layout.addWidget(details_header)
-        
-        self.table_vehicles = QTableWidget(0, 5)
-        self.table_vehicles.setHorizontalHeaderLabels(["Tipo", "Placa", "Cap. Peso (Kg)", "Cap. Volumen (m³)", "Estado"])
-        self.table_vehicles.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+
+        # ══════════════════════════════════════════
+        # ALERTAS (ítems ambiguos, sobrecarga, etc.)
+        # ══════════════════════════════════════════
+        self._veh_alert_frame = QFrame()
+        self._veh_alert_frame.setObjectName("vehicleAlertFrame")
+        self._veh_alert_frame.setStyleSheet(
+            "QFrame#vehicleAlertFrame { background: rgba(245,158,11,0.12); "
+            "border: 1px solid rgba(245,158,11,0.4); border-radius: 10px; padding: 8px 14px; }"
+        )
+        self._veh_alert_frame.setVisible(False)
+        alert_lay = QHBoxLayout(self._veh_alert_frame)
+        alert_lay.setContentsMargins(10, 6, 10, 6)
+        self._veh_alert_icon = QLabel("⚠️")
+        self._veh_alert_icon.setStyleSheet("font-size: 18px; background: transparent;")
+        alert_lay.addWidget(self._veh_alert_icon)
+        self._veh_alert_text = QLabel("")
+        self._veh_alert_text.setObjectName("subtleText")
+        self._veh_alert_text.setWordWrap(True)
+        self._veh_alert_text.setStyleSheet("font-size: 13px; color: #F59E0B; background: transparent;")
+        alert_lay.addWidget(self._veh_alert_text, 1)
+        layout.addWidget(self._veh_alert_frame)
+
+        # ══════════════════════════════════════════
+        # DESGLOSE DEL DESPACHO — materiales detectados
+        # ══════════════════════════════════════════
+        desglose_card = GlowCard()
+        desglose_layout = QVBoxLayout(desglose_card)
+        desglose_layout.setContentsMargins(20, 18, 20, 18)
+        desglose_layout.setSpacing(8)
+
+        desg_header = QLabel("📦  Desglose del Despacho")
+        desg_header.setObjectName("cardTitle")
+        desglose_layout.addWidget(desg_header)
+
+        desg_desc = QLabel(
+            "Detalle de materiales extraídos de la factura con peso y volumen calculados."
+            " Si un tubo no tiene medida clara, puede corregirlo aquí."
+        )
+        desg_desc.setObjectName("subtleText")
+        desg_desc.setWordWrap(True)
+        desg_desc.setStyleSheet("font-size: 12px; background: transparent; border: none;")
+        desglose_layout.addWidget(desg_desc)
+
+        # Tabla: Categoría | Descripción | Cant | Medida | Largo | Peso U | Vol U | Peso Total | Confianza
+        self.table_desglose = QTableWidget(0, 9)
+        self.table_desglose.setHorizontalHeaderLabels([
+            "Categoría", "Descripción Factura", "Cant.",
+            "Medida", "Largo (m)", "Peso/U (Kg)",
+            "Vol/U (m³)", "Peso Total (Kg)", "Estado"
+        ])
+        self.table_desglose.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.table_desglose.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.table_desglose.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.table_desglose.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.table_desglose.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.table_desglose.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        self.table_desglose.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        self.table_desglose.horizontalHeader().setSectionResizeMode(7, QHeaderView.ResizeToContents)
+        self.table_desglose.horizontalHeader().setSectionResizeMode(8, QHeaderView.ResizeToContents)
+        self.table_desglose.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.table_desglose.setAlternatingRowColors(True)
+        self.table_desglose.verticalHeader().setVisible(False)
+        self.table_desglose.setMinimumHeight(180)
+        desglose_layout.addWidget(self.table_desglose)
+
+        layout.addWidget(desglose_card)
+
+        # ══════════════════════════════════════════
+        # OPCIONES DE TRANSPORTE — ranking de opciones
+        # ══════════════════════════════════════════
+        main_row = QHBoxLayout()
+        main_row.setSpacing(15)
+
+        # ── Panel izquierdo: Opciones ──
+        opts_card = GlowCard()
+        opts_layout = QVBoxLayout(opts_card)
+        opts_layout.setContentsMargins(20, 18, 20, 18)
+        opts_layout.setSpacing(8)
+
+        opts_header = QLabel("🚛  Opciones de Transporte")
+        opts_header.setObjectName("cardTitle")
+        opts_layout.addWidget(opts_header)
+
+        opts_desc = QLabel(
+            "El sistema evalúa toda la flota y propone la opción más económica, "
+            "incluyendo viajes múltiples si resulta más eficiente."
+        )
+        opts_desc.setObjectName("subtleText")
+        opts_desc.setWordWrap(True)
+        opts_desc.setStyleSheet("font-size: 12px; background: transparent; border: none;")
+        opts_layout.addWidget(opts_desc)
+
+        # Tabla: Opción | Vehículo | Viajes | Uso Peso | Uso Vol | Costo Rel. | Estado
+        self.table_vehicles = QTableWidget(0, 7)
+        self.table_vehicles.setHorizontalHeaderLabels([
+            "★", "Vehículo", "Viajes", "Uso Peso %", "Uso Vol %", "Costo Rel.", "Estado"
+        ])
+        self.table_vehicles.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.table_vehicles.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.table_vehicles.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.table_vehicles.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.table_vehicles.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.table_vehicles.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        self.table_vehicles.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
         self.table_vehicles.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table_vehicles.setAlternatingRowColors(True)
         self.table_vehicles.verticalHeader().setVisible(False)
-        self.table_vehicles.setMinimumHeight(250)
-        details_layout.addWidget(self.table_vehicles)
-        
-        layout.addWidget(details_card)
+        self.table_vehicles.setMinimumHeight(220)
+        opts_layout.addWidget(self.table_vehicles)
+
+        main_row.addWidget(opts_card, 3)
+
+        # ── Panel derecho: Recomendación ──
+        rec_card = GlowCard()
+        rec_card.setFixedWidth(320)
+        rec_layout = QVBoxLayout(rec_card)
+        rec_layout.setContentsMargins(20, 18, 20, 18)
+        rec_layout.setSpacing(10)
+
+        rec_header = QLabel("✅  Recomendación")
+        rec_header.setObjectName("cardTitle")
+        rec_layout.addWidget(rec_header)
+
+        self._veh_rec_emoji = QLabel("🚛")
+        self._veh_rec_emoji.setStyleSheet("font-size: 48px; background: transparent;")
+        self._veh_rec_emoji.setAlignment(Qt.AlignCenter)
+        rec_layout.addWidget(self._veh_rec_emoji)
+
+        self._veh_rec_name = QLabel("Cargue una factura")
+        self._veh_rec_name.setObjectName("welcomeTitle")
+        self._veh_rec_name.setAlignment(Qt.AlignCenter)
+        self._veh_rec_name.setWordWrap(True)
+        self._veh_rec_name.setStyleSheet("font-size: 16px; font-weight: 800;")
+        rec_layout.addWidget(self._veh_rec_name)
+
+        self._veh_rec_detail = QLabel("para calcular la asignación óptima")
+        self._veh_rec_detail.setObjectName("subtleText")
+        self._veh_rec_detail.setAlignment(Qt.AlignCenter)
+        self._veh_rec_detail.setWordWrap(True)
+        self._veh_rec_detail.setStyleSheet("font-size: 12px;")
+        rec_layout.addWidget(self._veh_rec_detail)
+
+        rec_layout.addSpacing(8)
+
+        # Capacity bars
+        peso_bar_row = QVBoxLayout()
+        peso_bar_row.setSpacing(2)
+        lbl_peso_bar = QLabel("Peso")
+        lbl_peso_bar.setStyleSheet("font-size: 11px; color: #94A3B8; background: transparent;")
+        peso_bar_row.addWidget(lbl_peso_bar)
+        self._bar_peso = QProgressBar()
+        self._bar_peso.setFixedHeight(14)
+        self._bar_peso.setRange(0, 100)
+        self._bar_peso.setValue(0)
+        self._bar_peso.setTextVisible(True)
+        self._bar_peso.setFormat("%p%")
+        self._bar_peso.setStyleSheet(
+            "QProgressBar { background: rgba(255,255,255,0.06); border-radius: 7px; "
+            "border: 1px solid rgba(255,255,255,0.1); } "
+            "QProgressBar::chunk { background: qlineargradient(x1:0,y1:0,x2:1,y2:0, "
+            "stop:0 #f9e2af, stop:1 #F59E0B); border-radius: 6px; }"
+        )
+        peso_bar_row.addWidget(self._bar_peso)
+        rec_layout.addLayout(peso_bar_row)
+
+        vol_bar_row = QVBoxLayout()
+        vol_bar_row.setSpacing(2)
+        lbl_vol_bar = QLabel("Volumen")
+        lbl_vol_bar.setStyleSheet("font-size: 11px; color: #94A3B8; background: transparent;")
+        vol_bar_row.addWidget(lbl_vol_bar)
+        self._bar_vol = QProgressBar()
+        self._bar_vol.setFixedHeight(14)
+        self._bar_vol.setRange(0, 100)
+        self._bar_vol.setValue(0)
+        self._bar_vol.setTextVisible(True)
+        self._bar_vol.setFormat("%p%")
+        self._bar_vol.setStyleSheet(
+            "QProgressBar { background: rgba(255,255,255,0.06); border-radius: 7px; "
+            "border: 1px solid rgba(255,255,255,0.1); } "
+            "QProgressBar::chunk { background: qlineargradient(x1:0,y1:0,x2:1,y2:0, "
+            "stop:0 #89dceb, stop:1 #3B82F6); border-radius: 6px; }"
+        )
+        vol_bar_row.addWidget(self._bar_vol)
+        rec_layout.addLayout(vol_bar_row)
+
+        rec_layout.addStretch()
 
         # --- Botón de asignación ---
-        assign_row = QHBoxLayout()
-        self.btn_assign_vehicle = QPushButton("🚛  Confirmar Asignación Vehicular")
+        self.btn_assign_vehicle = QPushButton("🚛  Confirmar Asignación")
         self.btn_assign_vehicle.setObjectName("successBtn")
         self.btn_assign_vehicle.setFixedHeight(44)
         self.btn_assign_vehicle.setCursor(Qt.PointingHandCursor)
         self.btn_assign_vehicle.clicked.connect(self._on_vehicle_assigned)
-        assign_row.addStretch()
-        assign_row.addWidget(self.btn_assign_vehicle)
-        layout.addLayout(assign_row)
+        rec_layout.addWidget(self.btn_assign_vehicle)
+
+        main_row.addWidget(rec_card)
+        layout.addLayout(main_row)
 
         layout.addStretch()
-        
-        return page
+
+        # Internal state
+        self._vehicle_resultado = None  # ResultadoAsignacion
+
+        return scroll
     
     def _create_reports_page(self):
         """Página de reportes y exportación."""
@@ -2855,10 +3038,10 @@ class MainWindow(QMainWindow):
                     resultado = str(row_data.get("resultado", "—"))
                     result_item = QTableWidgetItem(resultado)
                     if resultado == "CONFORME":
-                        result_item.setForeground(QColor("#a6e3a1"))
+                        result_item.setForeground(QColor("#10B981"))
                         result_item.setText("✅ " + resultado)
                     elif resultado == "DISCREPANCIA":
-                        result_item.setForeground(QColor("#f38ba8"))
+                        result_item.setForeground(QColor("#EF4444"))
                         result_item.setText("⚠️ " + resultado)
                     self.table_recent.setItem(r, 2, result_item)
                     self.table_recent.setItem(r, 3, QTableWidgetItem(str(row_data.get("vehiculo", "—"))))
@@ -2949,21 +3132,21 @@ class MainWindow(QMainWindow):
                         )
                         rows = cursor.fetchall()
                         color_map = {
-                            "LOGIN": "#a6e3a1",
+                            "LOGIN": "#10B981",
                             "LOGOUT": "#f9e2af",
-                            "FACTURA_CARGADA": "#89b4fa",
-                            "VIDEO_ANALIZADO": "#cba6f7",
-                            "VIDEO_DETENIDO": "#fab387",
-                            "REPORTE_EXPORTADO": "#89b4fa",
-                            "TEMA_CAMBIADO": "#6c7086",
-                            "ASIGNACION_CREADA": "#a6e3a1",
+                            "FACTURA_CARGADA": "#3B82F6",
+                            "VIDEO_ANALIZADO": "#8B5CF6",
+                            "VIDEO_DETENIDO": "#F59E0B",
+                            "REPORTE_EXPORTADO": "#3B82F6",
+                            "TEMA_CAMBIADO": "#64748B",
+                            "ASIGNACION_CREADA": "#10B981",
                         }
                         for row in rows:
                             ts = str(row["timestamp"])
                             time_str = ts[11:16] if len(ts) > 16 else ts[:5]
                             action = str(row["action"])
                             detail = str(row["detail"])[:40]
-                            color = color_map.get(action, "#6c7086")
+                            color = color_map.get(action, "#64748B")
                             display = f"{action.replace('_', ' ').title()}"
                             if detail:
                                 display = detail
@@ -2989,9 +3172,9 @@ class MainWindow(QMainWindow):
                     pass
                 self._health_widget.set_items([
                     ("Modelo IA", 100 if self._preloaded_model else 0,
-                     "#a6e3a1" if self._preloaded_model else "#f9e2af"),
-                    ("GPU VRAM", gpu_pct, "#89b4fa"),
-                    ("Base Datos", 100, "#cba6f7"),
+                     "#10B981" if self._preloaded_model else "#f9e2af"),
+                    ("GPU VRAM", gpu_pct, "#3B82F6"),
+                    ("Base Datos", 100, "#8B5CF6"),
                 ])
         except Exception:
             pass
@@ -3126,7 +3309,7 @@ class MainWindow(QMainWindow):
                 f"{invoice.total_yolo_items} producto(s) YOLO de {invoice.total_items_factura} ítems totales"
             )
             self.lbl_invoice_status.setStyleSheet(
-                "font-size: 13px; background: transparent; border: none; color: #a6e3a1;"
+                "font-size: 13px; background: transparent; border: none; color: #10B981;"
             )
         else:
             self.lbl_invoice_status.setText(
@@ -3158,8 +3341,8 @@ class MainWindow(QMainWindow):
         # Color coding by category
         cat_colors = {
             "Cemento":           "#f9e2af",  # yellow
-            "Tubería Presión":  "#89b4fa",  # blue
-            "Tubería Sanitaria": "#a6e3a1", # green
+            "Tubería Presión":  "#3B82F6",  # blue
+            "Tubería Sanitaria": "#10B981", # green
         }
         
         for i, item in enumerate(invoice.yolo_items):
@@ -3170,7 +3353,7 @@ class MainWindow(QMainWindow):
                 # Color for categoria column
                 if col == 0:
                     cell.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
-                    color = cat_colors.get(item.categoria, "#cdd6f4")
+                    color = cat_colors.get(item.categoria, "#F8FAFC")
                     cell.setForeground(QColor(color))
                 elif col == 2:  # Cantidad
                     cell.setTextAlignment(Qt.AlignCenter | Qt.AlignVCenter)
@@ -3190,76 +3373,320 @@ class MainWindow(QMainWindow):
         self._update_vehicle_recommendation(invoice)
 
     def _update_vehicle_recommendation(self, invoice):
-        peso_total = 0.0
-        vol_total = 0.0
-        
-        # 1. Calcular peso y volumen total de los items YOLO
-        for item in getattr(invoice, "yolo_items", []):
-            try:
-                qty = float(item.cantidad)
-            except ValueError:
-                qty = 0.0
-                
-            mat = get_material_by_codigo(item.codigo)
-            if not mat:
-                mat = get_material_by_nombre(item.descripcion)
-                
-            if mat:
-                peso_total += (mat["peso_unitario_kg"] * qty)
-                vol_total += (mat["volumen_unitario_m3"] * qty)
-                
-        # 2. Actualizar las tarjetas de resumen
-        if hasattr(self, "card_peso"):
-            self.card_peso.set_value(f"{peso_total:,.1f} Kg")
-        if hasattr(self, "card_volumen"):
-            self.card_volumen.set_value(f"{vol_total:,.2f} m³")
-            
-        # 3. Determinar el mejor vehículo
-        vehiculos = get_all_vehiculos(solo_activos=True)
-        mejor_vehiculo = None
-        
-        # Ordenar por capacidad de peso (de menor a mayor) para asignar el más pequeño que sirva
-        vehiculos = sorted(vehiculos, key=lambda v: v["capacidad_max_peso_kg"])
-        
-        # Rellenó la tabla
-        if hasattr(self, "table_vehicles"):
-            self.table_vehicles.setRowCount(0)
-            for i, v in enumerate(vehiculos):
-                self.table_vehicles.insertRow(i)
-                self.table_vehicles.setItem(i, 0, QTableWidgetItem(v["tipo"]))
-                self.table_vehicles.setItem(i, 1, QTableWidgetItem(v["placa"]))
-                self.table_vehicles.setItem(i, 2, QTableWidgetItem(f"{v['capacidad_max_peso_kg']:,.1f}"))
-                self.table_vehicles.setItem(i, 3, QTableWidgetItem(f"{v['capacidad_max_vol_m3']:,.2f}"))
-                
-                # Checar si este vehículo sirve
-                sirve = (v["capacidad_max_peso_kg"] >= peso_total and 
-                         v["capacidad_max_vol_m3"] >= vol_total)
-                
-                estado_txt = "✅ APTO" if sirve else "❌ NO APTO"
-                color = "#a6e3a1" if sirve else "#f38ba8"
-                
-                if sirve and not mejor_vehiculo:
-                    mejor_vehiculo = v
-                    
-                item_estado = QTableWidgetItem(estado_txt)
-                item_estado.setForeground(QColor(color))
-                self.table_vehicles.setItem(i, 4, item_estado)
+        """Usa el motor VehicleAssigner para analizar el despacho."""
+        try:
+            # Obtener flota desde la BD
+            vehiculos_db = get_all_vehiculos(solo_activos=True)
+            # Asignar costo relativo según el tipo (heurístico)
+            cost_map = {
+                "motocarro": 1.0, "nhr": 2.5, "camioneta": 2.5, "turbo": 4.0,
+                "npr": 4.0, "sencillo": 7.0, "dobletroque": 12.0, "c2": 7.0, "c3": 12.0,
+            }
+            for v in vehiculos_db:
+                tipo_lower = v.get("tipo", "").lower()
+                v["costo_viaje"] = 1.0
+                for key, cost in cost_map.items():
+                    if key in tipo_lower:
+                        v["costo_viaje"] = cost
+                        break
 
-        # 4. Actualizar las tarjetas de vehículo y capacidad
-        if mejor_vehiculo:
-            if hasattr(self, "card_vehiculo"):
-                lbl = f"{mejor_vehiculo['tipo']} ({mejor_vehiculo['placa']})"
+            assigner = VehicleAssigner(vehiculos_db)
+            resultado = assigner.analizar_despacho(getattr(invoice, "yolo_items", []))
+            self._vehicle_resultado = resultado
+
+            # ── 1. Stat cards ──
+            self.card_peso.set_value(f"{resultado.peso_total_kg:,.1f} Kg")
+            self.card_volumen.set_value(f"{resultado.vol_total_m3:,.4f} m³")
+
+            if resultado.mejor_opcion:
+                op = resultado.mejor_opcion
+                lbl = op.descripcion
                 self.card_vehiculo.set_value(lbl)
-            if hasattr(self, "card_capacidad"):
-                uso_peso = (peso_total / mejor_vehiculo["capacidad_max_peso_kg"]) * 100 if mejor_vehiculo["capacidad_max_peso_kg"] > 0 else 0
-                uso_vol = (vol_total / mejor_vehiculo["capacidad_max_vol_m3"]) * 100 if mejor_vehiculo["capacidad_max_vol_m3"] > 0 else 0
-                uso_max = max(uso_peso, uso_vol)
-                self.card_capacidad.set_value(f"{uso_max:.1f}%")
-        else:
-            if hasattr(self, "card_vehiculo"):
+                self.card_capacidad.set_value(f"{op.uso_max_pct:.1f}%")
+            else:
                 self.card_vehiculo.set_value("Ninguno Apto")
-            if hasattr(self, "card_capacidad"):
                 self.card_capacidad.set_value("Sobrecarga")
+
+            # ── 2. Alertas ──
+            if resultado.alertas:
+                self._veh_alert_text.setText(" | ".join(resultado.alertas))
+                self._veh_alert_frame.setVisible(True)
+            else:
+                self._veh_alert_frame.setVisible(False)
+
+            # ── 3. Tabla de desglose ──
+            self._populate_desglose_table(resultado)
+
+            # ── 4. Tabla de opciones de transporte ──
+            self._populate_options_table(resultado)
+
+            # ── 5. Panel de recomendación ──
+            self._populate_recommendation_panel(resultado)
+
+        except Exception as e:
+            print(f"[VEHICLE] Error en análisis vehicular: {e}")
+            import traceback; traceback.print_exc()
+
+    def _populate_desglose_table(self, resultado: ResultadoAsignacion):
+        """Llena la tabla de desglose con materiales detectados."""
+        self.table_desglose.setRowCount(0)
+
+        cat_colors = {
+            "Cemento":            "#f9e2af",
+            "Tubería Presión":   "#3B82F6",
+            "Tubería Sanitaria":  "#10B981",
+        }
+        conf_styles = {
+            "alta":  ("✅ OK",      "#10B981"),
+            "media": ("🟡 Verificar", "#F59E0B"),
+            "baja":  ("🔴 Ambiguo",   "#EF4444"),
+        }
+
+        from PySide6.QtWidgets import QComboBox
+
+        for i, item in enumerate(resultado.items):
+            r = self.table_desglose.rowCount()
+            self.table_desglose.insertRow(r)
+            self.table_desglose.setRowHeight(r, 36)
+
+            # Categoría
+            cat_item = QTableWidgetItem(item.categoria)
+            cat_item.setForeground(QColor(cat_colors.get(item.categoria, "#F8FAFC")))
+            cat_item.setTextAlignment(Qt.AlignCenter)
+            self.table_desglose.setItem(r, 0, cat_item)
+
+            # Descripción
+            self.table_desglose.setItem(r, 1, QTableWidgetItem(item.descripcion))
+
+            # Cantidad
+            qty_item = QTableWidgetItem(str(item.cantidad))
+            qty_item.setTextAlignment(Qt.AlignCenter)
+            self.table_desglose.setItem(r, 2, qty_item)
+
+            # Medida — si es ambiguo, poner un ComboBox
+            if item.confianza == "baja" and item.categoria != "Cemento":
+                combo = QComboBox()
+                combo.setStyleSheet(
+                    "QComboBox { background: rgba(239,68,68,0.15); color: white; "
+                    "border: 1px solid #EF4444; border-radius: 4px; padding: 2px 6px; }"
+                )
+                medidas = get_medidas_disponibles(item.categoria)
+                combo.addItem("— Seleccione —")
+                for m in medidas:
+                    combo.addItem(f'{m}"')
+                # Pre-select suggestion if available
+                if item.medida_sugerida and item.medida_sugerida in medidas:
+                    idx = medidas.index(item.medida_sugerida) + 1  # +1 for placeholder
+                    combo.setCurrentIndex(idx)
+                combo.currentIndexChanged.connect(
+                    lambda idx, row=i: self._on_desglose_medida_changed(row, idx)
+                )
+                self.table_desglose.setCellWidget(r, 3, combo)
+            else:
+                medida_txt = f'{item.medida}"' if item.medida else ("50Kg" if item.categoria == "Cemento" else "—")
+                med_item = QTableWidgetItem(medida_txt)
+                med_item.setTextAlignment(Qt.AlignCenter)
+                self.table_desglose.setItem(r, 3, med_item)
+
+            # Largo
+            largo_txt = f"{item.largo_m:.1f}" if item.largo_m > 0 else "—"
+            largo_item = QTableWidgetItem(largo_txt)
+            largo_item.setTextAlignment(Qt.AlignCenter)
+            self.table_desglose.setItem(r, 4, largo_item)
+
+            # Peso unitario
+            peso_u = QTableWidgetItem(f"{item.peso_unitario_kg:,.2f}")
+            peso_u.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            self.table_desglose.setItem(r, 5, peso_u)
+
+            # Volumen unitario
+            vol_u = QTableWidgetItem(f"{item.vol_unitario_m3:,.6f}")
+            vol_u.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            self.table_desglose.setItem(r, 6, vol_u)
+
+            # Peso total
+            peso_t = QTableWidgetItem(f"{item.peso_total_kg:,.2f}")
+            peso_t.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            peso_t.setForeground(QColor("#f9e2af"))
+            self.table_desglose.setItem(r, 7, peso_t)
+
+            # Estado de confianza
+            conf_text, conf_color = conf_styles.get(item.confianza, ("—", "#64748B"))
+            conf_item = QTableWidgetItem(conf_text)
+            conf_item.setForeground(QColor(conf_color))
+            conf_item.setTextAlignment(Qt.AlignCenter)
+            self.table_desglose.setItem(r, 8, conf_item)
+
+    def _on_desglose_medida_changed(self, item_index: int, combo_index: int):
+        """Cuando el usuario corrige una medida ambigua, recalcula todo."""
+        if combo_index <= 0:  # "— Seleccione —"
+            return
+        resultado = self._vehicle_resultado
+        if not resultado or item_index >= len(resultado.items):
+            return
+
+        item = resultado.items[item_index]
+        medidas = get_medidas_disponibles(item.categoria)
+        if combo_index - 1 >= len(medidas):
+            return
+        nueva_medida = medidas[combo_index - 1]
+
+        # Recalcular con la corrección
+        invoice = getattr(self, "_current_invoice", None)
+        if not invoice:
+            return
+
+        vehiculos_db = get_all_vehiculos(solo_activos=True)
+        cost_map = {
+            "motocarro": 1.0, "nhr": 2.5, "camioneta": 2.5, "turbo": 4.0,
+            "npr": 4.0, "sencillo": 7.0, "dobletroque": 12.0, "c2": 7.0, "c3": 12.0,
+        }
+        for v in vehiculos_db:
+            tipo_lower = v.get("tipo", "").lower()
+            v["costo_viaje"] = 1.0
+            for key, cost in cost_map.items():
+                if key in tipo_lower:
+                    v["costo_viaje"] = cost
+                    break
+
+        assigner = VehicleAssigner(vehiculos_db)
+        correcciones = {item_index: nueva_medida}
+        nuevo_resultado = assigner.recalcular_con_correcciones(resultado, correcciones)
+        self._vehicle_resultado = nuevo_resultado
+
+        # Actualizar UI
+        self.card_peso.set_value(f"{nuevo_resultado.peso_total_kg:,.1f} Kg")
+        self.card_volumen.set_value(f"{nuevo_resultado.vol_total_m3:,.4f} m³")
+
+        if nuevo_resultado.alertas:
+            self._veh_alert_text.setText(" | ".join(nuevo_resultado.alertas))
+            self._veh_alert_frame.setVisible(True)
+        else:
+            self._veh_alert_frame.setVisible(False)
+
+        self._populate_options_table(nuevo_resultado)
+        self._populate_recommendation_panel(nuevo_resultado)
+
+        # Update the changed row in desglose
+        new_item = nuevo_resultado.items[item_index]
+        r = item_index
+        self.table_desglose.setItem(r, 5, QTableWidgetItem(f"{new_item.peso_unitario_kg:,.2f}"))
+        self.table_desglose.setItem(r, 6, QTableWidgetItem(f"{new_item.vol_unitario_m3:,.6f}"))
+        peso_t = QTableWidgetItem(f"{new_item.peso_total_kg:,.2f}")
+        peso_t.setForeground(QColor("#f9e2af"))
+        self.table_desglose.setItem(r, 7, peso_t)
+        conf_item = QTableWidgetItem("✅ OK")
+        conf_item.setForeground(QColor("#10B981"))
+        conf_item.setTextAlignment(Qt.AlignCenter)
+        self.table_desglose.setItem(r, 8, conf_item)
+
+        self.show_toast(f'Medida corregida a {nueva_medida}". Recalculado.', "success")
+
+    def _populate_options_table(self, resultado: ResultadoAsignacion):
+        """Llena la tabla de opciones de transporte."""
+        self.table_vehicles.setRowCount(0)
+
+        for i, op in enumerate(resultado.opciones):
+            r = self.table_vehicles.rowCount()
+            self.table_vehicles.insertRow(r)
+            self.table_vehicles.setRowHeight(r, 36)
+
+            # ★ Recomendado
+            star_item = QTableWidgetItem("⭐" if op.recomendado else "")
+            star_item.setTextAlignment(Qt.AlignCenter)
+            self.table_vehicles.setItem(r, 0, star_item)
+
+            # Vehículo
+            self.table_vehicles.setItem(r, 1, QTableWidgetItem(op.descripcion))
+
+            # Viajes
+            viajes_item = QTableWidgetItem(str(op.num_viajes))
+            viajes_item.setTextAlignment(Qt.AlignCenter)
+            self.table_vehicles.setItem(r, 2, viajes_item)
+
+            # Uso Peso %
+            peso_item = QTableWidgetItem(f"{op.uso_peso_pct:.1f}%")
+            peso_item.setTextAlignment(Qt.AlignCenter)
+            peso_color = "#10B981" if op.uso_peso_pct <= 80 else ("#F59E0B" if op.uso_peso_pct <= 95 else "#EF4444")
+            peso_item.setForeground(QColor(peso_color))
+            self.table_vehicles.setItem(r, 3, peso_item)
+
+            # Uso Vol %
+            vol_item = QTableWidgetItem(f"{op.uso_vol_pct:.1f}%")
+            vol_item.setTextAlignment(Qt.AlignCenter)
+            vol_color = "#10B981" if op.uso_vol_pct <= 80 else ("#F59E0B" if op.uso_vol_pct <= 95 else "#EF4444")
+            vol_item.setForeground(QColor(vol_color))
+            self.table_vehicles.setItem(r, 4, vol_item)
+
+            # Costo relativo
+            cost_item = QTableWidgetItem(f"{op.costo_relativo:.1f}")
+            cost_item.setTextAlignment(Qt.AlignCenter)
+            self.table_vehicles.setItem(r, 5, cost_item)
+
+            # Estado
+            if op.recomendado:
+                estado_txt = "⭐ RECOMENDADO"
+                estado_color = "#10B981"
+            elif op.viable:
+                estado_txt = "✅ VIABLE"
+                estado_color = "#3B82F6"
+            else:
+                estado_txt = "❌ NO VIABLE"
+                estado_color = "#EF4444"
+
+            estado_item = QTableWidgetItem(estado_txt)
+            estado_item.setForeground(QColor(estado_color))
+            estado_item.setTextAlignment(Qt.AlignCenter)
+            self.table_vehicles.setItem(r, 6, estado_item)
+
+            # Highlight recommended row
+            if op.recomendado:
+                for col in range(self.table_vehicles.columnCount()):
+                    cell = self.table_vehicles.item(r, col)
+                    if cell:
+                        f = cell.font()
+                        f.setBold(True)
+                        cell.setFont(f)
+
+    def _populate_recommendation_panel(self, resultado: ResultadoAsignacion):
+        """Actualiza el panel de recomendación lateral."""
+        if resultado.mejor_opcion:
+            op = resultado.mejor_opcion
+            emoji_map = {
+                "motocarro": "🛺", "nhr": "🚐", "camioneta": "🚐",
+                "turbo": "🚛", "npr": "🚛", "sencillo": "🚚",
+                "dobletroque": "🚚", "c2": "🚚", "c3": "🚚",
+            }
+            emoji = "🚛"
+            for key, em in emoji_map.items():
+                if key in op.vehiculo_tipo.lower():
+                    emoji = em
+                    break
+
+            self._veh_rec_emoji.setText(emoji)
+            self._veh_rec_name.setText(op.descripcion)
+            self._veh_rec_name.setStyleSheet("font-size: 16px; font-weight: 800; color: #10B981;")
+
+            detail_lines = [
+                f"Peso: {resultado.peso_total_kg:,.1f} Kg / {op.capacidad_peso_kg:,.0f} Kg",
+                f"Volumen: {resultado.vol_total_m3:,.4f} m³ / {op.capacidad_vol_m3:,.1f} m³",
+            ]
+            if op.num_viajes > 1:
+                detail_lines.append(f"Dividido en {op.num_viajes} viajes")
+            self._veh_rec_detail.setText("\n".join(detail_lines))
+
+            self._bar_peso.setValue(min(100, int(op.uso_peso_pct)))
+            self._bar_vol.setValue(min(100, int(op.uso_vol_pct)))
+        else:
+            self._veh_rec_emoji.setText("❌")
+            self._veh_rec_name.setText("Sin vehículo apto")
+            self._veh_rec_name.setStyleSheet("font-size: 16px; font-weight: 800; color: #EF4444;")
+            self._veh_rec_detail.setText(
+                f"La carga de {resultado.peso_total_kg:,.1f} Kg excede\n"
+                "la capacidad de toda la flota."
+            )
+            self._bar_peso.setValue(100)
+            self._bar_vol.setValue(100)
 
 
     # ----------------------------------------------------------------
@@ -3327,9 +3754,9 @@ class MainWindow(QMainWindow):
         else:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-        # Usamos el modelo entrenado con YOLO11
+        # Usamos el modelo entrenado con YOLO26
         model_path = os.path.join(base_dir, "models", "estacion_bultos_v1.pt")
-        # Fallback a yolo26n básico si no existe (poco probable)
+        # Fallback a yolo26n básico si no existe
         if not os.path.exists(model_path):
             model_path = os.path.join(base_dir, "models", "yolo26n.pt")
 
@@ -3878,7 +4305,7 @@ class MainWindow(QMainWindow):
         try:
             if not hasattr(self, "table_comparison"):
                 return
-            color = "#a6e3a1" if resultado == "CONFORME" else "#f38ba8"
+            color = "#10B981" if resultado == "CONFORME" else "#EF4444"
             emoji = "✅" if resultado == "CONFORME" else "⚠️"
             self.lbl_audit_result.setText(f"{emoji}  {resultado}")
             self.lbl_audit_result.setStyleSheet(
@@ -3895,8 +4322,8 @@ class MainWindow(QMainWindow):
                 self.table_comparison.setItem(r, 1, QTableWidgetItem(str(fac_v)))
                 self.table_comparison.setItem(r, 2, QTableWidgetItem(str(ia_v)))
                 diff_item = QTableWidgetItem(f"{diff:+d}")
-                diff_item.setForeground(QColor("#a6e3a1") if diff == 0
-                                        else QColor("#f9e2af") if diff > 0 else QColor("#f38ba8"))
+                diff_item.setForeground(QColor("#10B981") if diff == 0
+                                        else QColor("#f9e2af") if diff > 0 else QColor("#EF4444"))
                 self.table_comparison.setItem(r, 3, diff_item)
         except Exception as e:
             print(f"[COMPARISON] Error actualizando panel: {e}")
@@ -3913,13 +4340,13 @@ class MainWindow(QMainWindow):
 
             if hasattr(self, "lbl_audit_result"):
                 self.lbl_audit_result.setStyleSheet(
-                    "font-size: 13px; font-weight: 900; color: #f38ba8;"
+                    "font-size: 13px; font-weight: 900; color: #EF4444;"
                     "background: rgba(243,139,168,0.18); border-radius: 6px;"
-                    "border: 2px solid #f38ba8;"
+                    "border: 2px solid #EF4444;"
                 )
                 QTimer.singleShot(600, lambda:
                     self.lbl_audit_result.setStyleSheet(
-                        "font-size: 13px; font-weight: 900; color: #f38ba8;"
+                        "font-size: 13px; font-weight: 900; color: #EF4444;"
                         "background: transparent; border-radius: 6px;"
                     ) if hasattr(self, "lbl_audit_result") else None
                 )
@@ -4158,13 +4585,12 @@ class MainWindow(QMainWindow):
     # ----------------------------------------------------------------
     def _on_vehicle_assigned(self):
         """Registra la confirmación de una asignación vehicular."""
-        # Leer datos actuales del despacho desde las stat cards
-        peso     = getattr(self.card_peso,     "value_label", None)
-        volumen  = getattr(self.card_volumen,  "value_label", None)
-        vehiculo = getattr(self.card_vehiculo, "value_label", None)
-
-        peso_txt     = self.card_peso.value_label.text()     if hasattr(self.card_peso,     "value_label") else "—"
-        volumen_txt  = self.card_volumen.value_label.text()  if hasattr(self.card_volumen,  "value_label") else "—"
+        # Check if we have dynamic results from the assigner engine
+        res = getattr(self, "_vehicle_resultado", None)
+        
+        peso_txt = self.card_peso.value_label.text() if hasattr(self.card_peso, "value_label") else "—"
+        volumen_txt = self.card_volumen.value_label.text() if hasattr(self.card_volumen, "value_label") else "—"
+        
         vehiculo_txt = self.card_vehiculo.value_label.text() if hasattr(self.card_vehiculo, "value_label") else "—"
 
         factura_info = "Sin factura"
@@ -4172,8 +4598,13 @@ class MainWindow(QMainWindow):
         if invoice:
             factura_info = f"Factura {invoice.numero_factura}"
 
-        desc = (f"Vehículo: {vehiculo_txt} | Peso: {peso_txt} | "
-                f"Volumen: {volumen_txt} | {factura_info}")
+        desc = f"Vehículo: {vehiculo_txt} | Peso: {peso_txt} | Volumen: {volumen_txt} | {factura_info}"
+
+        if res and res.mejor_opcion:
+            viajes = f" en {res.mejor_opcion.num_viajes} viaje(s)" if res.mejor_opcion.num_viajes > 1 else ""
+            desc = (f"Asignación{viajes}: {res.mejor_opcion.descripcion} | "
+                    f"Carga: {res.peso_total_kg:,.1f} Kg, {res.vol_total_m3:,.4f} m³ | "
+                    f"Uso Max: {res.mejor_opcion.uso_max_pct:.1f}% | {factura_info}")
 
         app_logger.log_action(self._user, app_logger.ASIGNACION_CREADA, desc)
 
@@ -4210,7 +4641,7 @@ class MainWindow(QMainWindow):
                 
                 diff_str = f"{diff:+d}" if diff != 0 else "0"
                 diff_item = QTableWidgetItem(diff_str)
-                diff_item.setForeground(QColor("#a6e3a1") if diff == 0 else QColor("#f38ba8" if diff < 0 else "#f9e2af"))
+                diff_item.setForeground(QColor("#10B981") if diff == 0 else QColor("#EF4444" if diff < 0 else "#f9e2af"))
                 diff_item.setTextAlignment(Qt.AlignCenter)
                 self.table_history.setItem(r, 3, diff_item)
                 
@@ -4223,22 +4654,23 @@ class MainWindow(QMainWindow):
 
                 # Acciones cell
                 w = QWidget()
+                w.setMinimumWidth(160)
                 l = QHBoxLayout(w)
                 l.setContentsMargins(4, 4, 4, 4)
-                l.setSpacing(8)
+                l.setSpacing(6)
                 
-                btn_pdf = QPushButton("📄")
-                btn_pdf.setToolTip("Exportar a PDF")
-                btn_pdf.setFixedSize(32, 32)
+                btn_pdf = QPushButton("📄 PDF")
+                btn_pdf.setToolTip("Exportar Auditoría a PDF")
                 btn_pdf.setCursor(Qt.PointingHandCursor)
-                btn_pdf.setObjectName("primaryBtn")
+                btn_pdf.setObjectName("secondaryBtn")
+                btn_pdf.setStyleSheet("font-size: 11px; padding: 4px 8px;")
                 btn_pdf.clicked.connect(lambda _, a=audit: self._export_past_audit(a, "PDF"))
                 
-                btn_xls = QPushButton("📊")
-                btn_xls.setToolTip("Exportar a Excel")
-                btn_xls.setFixedSize(32, 32)
+                btn_xls = QPushButton("📊 Excel")
+                btn_xls.setToolTip("Exportar Auditoría a Excel")
                 btn_xls.setCursor(Qt.PointingHandCursor)
-                btn_xls.setObjectName("successBtn")
+                btn_xls.setObjectName("secondaryBtn")
+                btn_xls.setStyleSheet("font-size: 11px; padding: 4px 8px;")
                 btn_xls.clicked.connect(lambda _, a=audit: self._export_past_audit(a, "Excel"))
 
                 l.addStretch()

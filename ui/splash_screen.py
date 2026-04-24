@@ -8,7 +8,7 @@ import os
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QFrame, QApplication, QGraphicsOpacityEffect
+    QFrame, QApplication, QGraphicsOpacityEffect, QGraphicsDropShadowEffect
 )
 from PySide6.QtCore import (
     Qt, QTimer, QPropertyAnimation, QEasingCurve,
@@ -100,7 +100,7 @@ class InitWorker(QThread):
 
             model_path = os.path.join(base_dir, "models", "estacion_bultos_v1.pt")
             
-            # Fallback a yolo26n básico si no existe (poco probable)
+            # Fallback a yolo26n básico si no existe
             if not os.path.exists(model_path):
                 model_path = os.path.join(base_dir, "models", "yolo26n.pt")
 
@@ -169,7 +169,7 @@ class GradientProgressBar(QWidget):
         r     = h / 2
 
         # Fondo
-        painter.setBrush(QColor("#313244"))
+        painter.setBrush(QColor(0, 0, 0, 80))
         painter.setPen(Qt.NoPen)
         bg_path = QPainterPath()
         bg_path.addRoundedRect(0, 0, w, h, r, r)
@@ -180,10 +180,10 @@ class GradientProgressBar(QWidget):
         if fill_w > 0:
             grad = QLinearGradient(self._offset_px, 0, self._offset_px + 100, 0)
             grad.setSpread(QLinearGradient.RepeatSpread)
-            grad.setColorAt(0.0, QColor("#89b4fa"))
-            grad.setColorAt(0.33, QColor("#cba6f7"))
-            grad.setColorAt(0.66, QColor("#74c7ec"))
-            grad.setColorAt(1.0, QColor("#89b4fa"))
+            grad.setColorAt(0.0, QColor("#3B82F6"))
+            grad.setColorAt(0.33, QColor("#8B5CF6"))
+            grad.setColorAt(0.66, QColor("#60A5FA"))
+            grad.setColorAt(1.0, QColor("#3B82F6"))
             
             painter.setBrush(grad)
             fg_path = QPainterPath()
@@ -195,8 +195,10 @@ class GradientProgressBar(QWidget):
 #  Partícula decorativa (círculo flotante)
 # ══════════════════════════════════════════════════════════════
 class FloatingParticle(QWidget):
-    def __init__(self, parent, color="#89b4fa", size=8, x=0, y=0):
+    def __init__(self, parent, color="#3B82F6", size=8, x=0, y=0):
         super().__init__(parent)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
         self._color = QColor(color)
         self._color.setAlpha(60)
         self.resize(size, size)
@@ -289,10 +291,16 @@ class SplashScreen(QWidget):
         outer = QVBoxLayout(self)
         outer.setContentsMargins(20, 20, 20, 20)
 
-        # Card principal con sombra pintada
+        # Card principal con sombra moderna
         self.card = QFrame(self)
         self.card.setObjectName("splashCard")
         self.card.setGeometry(20, 20, self.width() - 40, self.height() - 40)
+
+        shadow = QGraphicsDropShadowEffect(self.card)
+        shadow.setBlurRadius(40)
+        shadow.setOffset(0, 8)
+        shadow.setColor(QColor(0, 0, 0, 150))
+        self.card.setGraphicsEffect(shadow)
 
         layout = QVBoxLayout(self.card)
         layout.setContentsMargins(50, 40, 50, 35)
@@ -311,9 +319,10 @@ class SplashScreen(QWidget):
 
         brand = QLabel("LogiCheck")
         brand.setStyleSheet("""
+            font-family: 'Segoe UI', Inter, sans-serif;
             font-size: 32px;
             font-weight: 900;
-            color: #89b4fa;
+            color: #FFFFFF;
             letter-spacing: 2px;
             background: transparent;
         """)
@@ -321,8 +330,10 @@ class SplashScreen(QWidget):
 
         slogan = QLabel("Sistema de Auditoría Logística")
         slogan.setStyleSheet("""
-            font-size: 12px;
-            color: #6c7086;
+            font-family: 'Segoe UI', Inter, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: #94A3B8;
             letter-spacing: 0.5px;
             background: transparent;
         """)
@@ -335,13 +346,14 @@ class SplashScreen(QWidget):
         if self._load_yolo:
             self._ai_badge = QLabel("🧠 CUDA")
             self._ai_badge.setStyleSheet("""
-                font-size: 10px;
+                font-family: 'Segoe UI', Inter, sans-serif;
+                font-size: 11px;
                 font-weight: 700;
-                color: #a6e3a1;
-                background: rgba(166,227,161,0.12);
-                border: 1px solid rgba(166,227,161,0.35);
+                color: #10B981;
+                background: rgba(16, 185, 129, 0.15);
+                border: 1px solid rgba(16, 185, 129, 0.40);
                 border-radius: 8px;
-                padding: 3px 8px;
+                padding: 4px 10px;
             """)
             logo_row.addWidget(self._ai_badge, alignment=Qt.AlignTop)
 
@@ -351,23 +363,24 @@ class SplashScreen(QWidget):
         # ── Separador ─────────────────────────────────────
         sep = QFrame()
         sep.setFixedHeight(1)
-        sep.setStyleSheet("background: #313244; border: none;")
+        sep.setStyleSheet("background: rgba(255, 255, 255, 25); border: none;")
         layout.addWidget(sep)
 
         layout.addSpacing(28)
 
         # ── Info versión ──────────────────────────────────
         ver_row = QHBoxLayout()
-        ver_lbl = QLabel("v1.0.0  ·  Ferretería Durán")
-        ver_lbl.setStyleSheet("font-size: 11px; color: #45475a; background: transparent;")
+        ver_lbl = QLabel("v1.2.0  ·  Premium Edition")
+        ver_lbl.setStyleSheet("font-family: 'Segoe UI', Inter, sans-serif; font-size: 12px; font-weight: 500; color: #64748B; background: transparent;")
         ver_row.addWidget(ver_lbl)
         ver_row.addStretch()
 
         self.lbl_pct = QLabel("0%")
         self.lbl_pct.setStyleSheet("""
-            font-size: 12px;
-            font-weight: 700;
-            color: #89b4fa;
+            font-family: 'Segoe UI', Inter, sans-serif;
+            font-size: 13px;
+            font-weight: 800;
+            color: #3B82F6;
             background: transparent;
         """)
         ver_row.addWidget(self.lbl_pct)
@@ -384,8 +397,10 @@ class SplashScreen(QWidget):
         # ── Mensaje de estado ─────────────────────────────
         self.lbl_status = QLabel("Inicializando...")
         self.lbl_status.setStyleSheet("""
+            font-family: 'Segoe UI', Inter, sans-serif;
             font-size: 12px;
-            color: #6c7086;
+            font-weight: 500;
+            color: #94A3B8;
             background: transparent;
         """)
         layout.addWidget(self.lbl_status)
@@ -394,13 +409,13 @@ class SplashScreen(QWidget):
 
         # ── Footer con puntos animados ────────────────────
         footer_row = QHBoxLayout()
-        copy_lbl = QLabel("© 2025 · Apulo, Cundinamarca")
-        copy_lbl.setStyleSheet("font-size: 10px; color: #313244; background: transparent;")
+        copy_lbl = QLabel("© 2026 · LogiCheck Auditoría")
+        copy_lbl.setStyleSheet("font-family: 'Segoe UI', Inter, sans-serif; font-size: 11px; color: #475569; background: transparent;")
         footer_row.addWidget(copy_lbl)
         footer_row.addStretch()
 
         self.lbl_dots = QLabel("●  ○  ○")
-        self.lbl_dots.setStyleSheet("font-size: 10px; color: #45475a; background: transparent;")
+        self.lbl_dots.setStyleSheet("font-size: 10px; color: #64748B; background: transparent;")
         footer_row.addWidget(self.lbl_dots)
         layout.addLayout(footer_row)
 
@@ -414,17 +429,16 @@ class SplashScreen(QWidget):
         # ── Estilos ───────────────────────────────────────
         self.setStyleSheet("""
             #splashCard {
-                background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 #1e1e2e, stop:1 #181825);
-                border: 1px solid #313244;
-                border-radius: 18px;
+                background-color: rgba(15, 23, 42, 247);
+                border: 1px solid rgba(255, 255, 255, 30);
+                border-radius: 20px;
             }
         """)
 
     def _add_particles(self):
         """Agrega círculos decorativos flotantes."""
         import random
-        palette = ["#89b4fa", "#cba6f7", "#74c7ec", "#a6e3a1", "#f9e2af"]
+        palette = ["#3B82F6", "#8B5CF6", "#60A5FA", "#10B981", "#34D399"]
         random.seed(42)
         for _ in range(12):
             color = random.choice(palette)
@@ -436,9 +450,9 @@ class SplashScreen(QWidget):
     # ── Animaciones ──────────────────────────────────────────
 
     def _fade_in(self):
-        self._op_effect = QGraphicsOpacityEffect(self)
-        self.setGraphicsEffect(self._op_effect)
-        self._anim_in = QPropertyAnimation(self._op_effect, b"opacity", self)
+        # Usar setWindowOpacity para evitar conflicto con QGraphicsDropShadowEffect
+        self.setWindowOpacity(0.0)
+        self._anim_in = QPropertyAnimation(self, b"windowOpacity", self)
         self._anim_in.setDuration(500)
         self._anim_in.setStartValue(0.0)
         self._anim_in.setEndValue(1.0)
@@ -447,8 +461,8 @@ class SplashScreen(QWidget):
 
     def fade_out_and_close(self):
         self._dots_timer.stop()
-        self._anim_out = QPropertyAnimation(self._op_effect, b"opacity", self)
-        self._anim_out.setDuration(450)
+        self._anim_out = QPropertyAnimation(self, b"windowOpacity", self)
+        self._anim_out.setDuration(400)
         self._anim_out.setStartValue(1.0)
         self._anim_out.setEndValue(0.0)
         self._anim_out.setEasingCurve(QEasingCurve.InOutQuad)
@@ -496,42 +510,25 @@ class SplashScreen(QWidget):
             self._ai_badge.setStyleSheet("""
                 font-size: 10px;
                 font-weight: 700;
-                color: #a6e3a1;
+                color: #10B981;
                 background: rgba(166,227,161,0.20);
-                border: 1px solid #a6e3a1;
+                border: 1px solid #10B981;
                 border-radius: 8px;
                 padding: 3px 8px;
             """)
         elif self._load_yolo and model is None and hasattr(self, "_ai_badge"):
             self._ai_badge.setText("⚠️ IA no disponible")
             self._ai_badge.setStyleSheet("""
+                font-family: 'Segoe UI', Inter, sans-serif;
                 font-size: 10px;
                 font-weight: 700;
-                color: #f9e2af;
-                background: rgba(249,226,175,0.12);
-                border: 1px solid rgba(249,226,175,0.35);
+                color: #FBBF24;
+                background: rgba(251, 191, 36, 0.15);
+                border: 1px solid rgba(251, 191, 36, 0.40);
                 border-radius: 8px;
-                padding: 3px 8px;
+                padding: 4px 10px;
             """)
 
         QTimer.singleShot(400, lambda: (self.fade_out_and_close(), self.ready.emit()))
 
-    # ── Pintado del fondo (sombra suave) ─────────────────────
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        # Sombra difusa (radial sobre fondo transparente)
-        grad = QRadialGradient(
-            self.width() / 2, self.height() / 2,
-            max(self.width(), self.height()) / 1.5
-        )
-        grad.setColorAt(0.0, QColor(0, 0, 0, 80))
-        grad.setColorAt(1.0, QColor(0, 0, 0, 0))
-        painter.setBrush(grad)
-        painter.setPen(Qt.NoPen)
-        painter.drawEllipse(
-            -20, -20,
-            self.width() + 40, self.height() + 40
-        )
+        pass

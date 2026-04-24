@@ -115,10 +115,10 @@ class UserDialog(QDialog):
         self.btn_inspect_role.setToolTip("Ver permisos de este rol")
         self.btn_inspect_role.setStyleSheet("""
             QPushButton { 
-                background: #313244; border-radius: 8px; border: 1px solid #45475a; 
-                font-size: 16px; color: #cdd6f4;
+                background: #1E293B; border-radius: 8px; border: 1px solid #334155; 
+                font-size: 16px; color: #F8FAFC;
             }
-            QPushButton:hover { background: #45475a; border-color: #89b4fa; }
+            QPushButton:hover { background: #334155; border-color: #3B82F6; }
         """)
         self.btn_inspect_role.clicked.connect(self._show_role_info)
         
@@ -147,7 +147,7 @@ class UserDialog(QDialog):
 
         for category, functions in SYSTEM_FUNCTIONS.items():
             cat_label = QLabel(f"<b>{category.upper()}</b>")
-            cat_label.setStyleSheet("color: #89b4fa; font-size: 11px; margin-top: 5px;")
+            cat_label.setStyleSheet("color: #3B82F6; font-size: 11px; margin-top: 5px;")
             self.perm_vbox.addWidget(cat_label)
             
             for key, label in functions.items():
@@ -191,7 +191,7 @@ class UserDialog(QDialog):
         # --- NUEVO: Expiración (Delegación Temporal) ---
         exp_lay = QHBoxLayout()
         self.chk_expire = QCheckBox("Permisos Temporales (Expira el:)")
-        self.chk_expire.setStyleSheet("color: #a6adc8;")
+        self.chk_expire.setStyleSheet("color: #CBD5E1;")
         self.date_expire = QDateTimeEdit(QDateTime.currentDateTime().addDays(7))
         self.date_expire.setCalendarPopup(True)
         self.date_expire.setEnabled(False)
@@ -320,12 +320,12 @@ class UserDialog(QDialog):
         # El tema base se hereda de style.qss, aquí solo detalles específicos del diálogo.
         self.setObjectName("UserDialog")
         self.setStyleSheet("""
-            #dlgTitle { font-size: 17px; font-weight: 800; color: #cdd6f4; }
+            #dlgTitle { font-size: 17px; font-weight: 800; color: #F8FAFC; }
             #dlgOkBtn {
-                background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #89b4fa, stop:1 #74c7ec);
-                color: #11111b; border: none; border-radius: 8px; font-weight: 700;
+                background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #3B82F6, stop:1 #0EA5E9);
+                color: #020617; border: none; border-radius: 8px; font-weight: 700;
             }
-            #dlgOkBtn:hover { background: #b4befe; }
+            #dlgOkBtn:hover { background: #818CF8; }
         """)
 
 
@@ -405,15 +405,15 @@ class ChangePasswordDialog(QDialog):
 
     def _apply_styles(self):
         self.setStyleSheet("""
-            QDialog { background-color: #1e1e2e; border: 1px solid #313244; border-radius: 14px; }
-            #dlgTitle { font-size: 15px; font-weight: 800; color: #cdd6f4; background: transparent; }
-            QLabel { color: #a6adc8; font-size: 13px; background: transparent; }
-            #loginInput { background-color: #11111b; border: 1.5px solid #313244; border-radius: 8px; padding: 0 12px; font-size: 13px; color: #cdd6f4; }
-            #loginInput:focus { border-color: #89b4fa; }
-            #dlgOkBtn { background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #89b4fa, stop:1 #74c7ec); color: #11111b; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; }
-            #dlgOkBtn:hover { background: #b4befe; }
-            #dlgCancelBtn { background: transparent; color: #a6adc8; border: 1.5px solid #45475a; border-radius: 8px; font-size: 13px; font-weight: 600; }
-            #dlgCancelBtn:hover { background: rgba(255,255,255,0.05); color: #cdd6f4; }
+            QDialog { background-color: #0F172A; border: 1px solid #1E293B; border-radius: 14px; }
+            #dlgTitle { font-size: 15px; font-weight: 800; color: #F8FAFC; background: transparent; }
+            QLabel { color: #CBD5E1; font-size: 13px; background: transparent; }
+            #loginInput { background-color: #020617; border: 1.5px solid #1E293B; border-radius: 8px; padding: 0 12px; font-size: 13px; color: #F8FAFC; }
+            #loginInput:focus { border-color: #3B82F6; }
+            #dlgOkBtn { background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 #3B82F6, stop:1 #0EA5E9); color: #020617; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; }
+            #dlgOkBtn:hover { background: #818CF8; }
+            #dlgCancelBtn { background: transparent; color: #CBD5E1; border: 1.5px solid #334155; border-radius: 8px; font-size: 13px; font-weight: 600; }
+            #dlgCancelBtn:hover { background: rgba(255,255,255,0.05); color: #F8FAFC; }
         """)
 
 
@@ -477,10 +477,10 @@ class UsersPage(QWidget):
         stats_row = QHBoxLayout()
         stats_row.setSpacing(15)
 
-        self._card_total   = self._make_stat_card("👤", "0", "Usuarios Totales",  "#89b4fa", card_id="total")
-        self._card_active  = self._make_stat_card("✅", "0", "Usuarios Activos",  "#a6e3a1", card_id="active")
-        self._card_inactive= self._make_stat_card("🚫", "0", "Usuarios Inactivos","#f38ba8", card_id="inactive")
-        self._card_roles   = self._make_stat_card("🎭", "5", "Roles Disponibles", "#cba6f7", card_id="roles")
+        self._card_total   = self._make_stat_card("👤", "0", "Usuarios Totales",  "#3B82F6", card_id="total")
+        self._card_active  = self._make_stat_card("✅", "0", "Usuarios Activos",  "#10B981", card_id="active")
+        self._card_inactive= self._make_stat_card("🚫", "0", "Usuarios Inactivos","#EF4444", card_id="inactive")
+        self._card_roles   = self._make_stat_card("🎭", "5", "Roles Disponibles", "#8B5CF6", card_id="roles")
 
         stats_row.addWidget(self._card_total)
         stats_row.addWidget(self._card_active)
@@ -737,7 +737,7 @@ class UsersPage(QWidget):
         dest_dlg.setObjectName("cloneDialog")
         dest_dlg.setWindowTitle(f"Clonar permisos de {user['username']} a...")
         dest_dlg.setFixedWidth(400)
-        dest_dlg.setStyleSheet("background-color: #1e1e2e;") # Forzar fondo para evitar transparencia
+        dest_dlg.setStyleSheet("background-color: #0F172A;") # Forzar fondo para evitar transparencia
         lay = QVBoxLayout(dest_dlg)
         
         combo = QComboBox()
