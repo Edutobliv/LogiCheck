@@ -6,6 +6,24 @@ from PySide6.QtGui import QImage
 import os
 import sys
 
+from core.counting_engine import CountingEngine, DetectionBox, map_model_class_to_category
+
+
+def _redact_rtsp_url(url: str) -> str:
+    if not url or "://" not in url:
+        return url
+    try:
+        from urllib.parse import urlsplit, urlunsplit
+        parsed = urlsplit(url)
+        netloc = parsed.netloc
+        if "@" in netloc:
+            credentials, host = netloc.rsplit("@", 1)
+            user = credentials.split(":", 1)[0]
+            netloc = f"{user}:***@{host}" if user else f"***@{host}"
+        return urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
+    except Exception:
+        return url.replace(url.split("@", 1)[0], "rtsp://***") if "@" in url else url
+
 # Nota: La integración P2P directa fue removida ya que OpenCV requiere RTSP.
 # El SDK de Dahua no entrega RTSP nativamente sobre P2P sin transcodificación.
 
@@ -66,9 +84,9 @@ class YoloAnalyzerWorker(QThread):
         
         # Crossing detection state
         self.crossing_frames = []
-        self.prev_positions = {} # {track_id: (y_center, frame_idx)}
-        self.currently_outside_ids = set()
-        self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
+        counting_engine = CountingEngine()
+        count_history = {}
+        self.cumulative_counts = dict(counting_engine.counts)
 
         while self._is_running and cap.isOpened():
             ret, frame = cap.read()
@@ -92,66 +110,24 @@ class YoloAnalyzerWorker(QThread):
                     x1, y1, x2, y2 = box
                     cls_name = names[cls_id]
 
-                    # Mapeo flexible
-                    ui_cat = None
-                    if cls_name.lower() in ["bulto", "cemento", "bag"]:
-                        ui_cat = "Cemento"
-                    elif "tuberia" in cls_name.lower() and "presion" in cls_name.lower():
-                        ui_cat = "Tubería Presión"
-                    elif "tuberia" in cls_name.lower() and "sanitaria" in cls_name.lower():
-                        ui_cat = "Tubería Sanitaria"
+                    ui_cat = map_model_class_to_category(cls_name)
                     
                     if ui_cat:
                         frame_boxes.append((int(x1), int(y1), int(x2), int(y2), track_id, ui_cat))
-                        
-                        # Crossing detection
-                        line_y = int(height * self.line_pos)
-                        center_y = (y1 + y2) / 2.0
-                        
-                        self.prev_positions = {k: v for k, v in self.prev_positions.items() if (frame_idx - v[1]) < 15}
-                        if track_id is not None:
-                            if track_id in self.prev_positions:
-                                prev_y, _ = self.prev_positions[track_id]
-                                is_exiting = (prev_y < line_y and center_y >= line_y)
-                                is_entering = (prev_y >= line_y and center_y < line_y)
-                                if is_exiting and track_id not in self.currently_outside_ids:
-                                    if ui_cat in self.cumulative_counts:
-                                        self.cumulative_counts[ui_cat] += 1
-                                        self.crossing_frames.append(frame_idx)
-                                    self.currently_outside_ids.add(track_id)
-                                elif is_entering and track_id in self.currently_outside_ids:
-                                    if ui_cat in self.cumulative_counts:
-                                        self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
-                                        self.crossing_frames.append(frame_idx)
-                                    self.currently_outside_ids.remove(track_id)
-                            self.prev_positions[track_id] = (center_y, frame_idx)
-                        else:
-                            # Proximity fallback for crossing
-                            best_match = None
-                            min_dist = 50
-                            for old_id, old_y in self.prev_positions.items():
-                                if isinstance(old_id, str) and old_id.startswith("proxy_"):
-                                    dist = abs(center_y - old_y)
-                                    if dist < min_dist:
-                                        min_dist = dist
-                                        best_match = old_id
-                            
-                            if best_match:
-                                prev_y = self.prev_positions[best_match]
-                                is_exiting = (prev_y < line_y <= center_y)
-                                is_entering = (prev_y > line_y >= center_y)
-                                if is_exiting and best_match not in self.currently_outside_ids:
-                                    self.cumulative_counts[ui_cat] += 1
-                                    self.crossing_frames.append(frame_idx)
-                                    self.currently_outside_ids.add(best_match)
-                                elif is_entering and best_match in self.currently_outside_ids:
-                                    self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
-                                    self.crossing_frames.append(frame_idx)
-                                    self.currently_outside_ids.remove(best_match)
-                                self.prev_positions[best_match] = (center_y, frame_idx)
-                            else:
-                                proxy_id = f"proxy_{len(self.prev_positions)}_{int((x1+x2)/2)}"
-                                self.prev_positions[proxy_id] = (center_y, frame_idx)
+
+            line_y = int(height * self.line_pos)
+            events = counting_engine.process(
+                [
+                    DetectionBox(x1, y1, x2, y2, track_id, ui_cat)
+                    for x1, y1, x2, y2, track_id, ui_cat in frame_boxes
+                ],
+                frame_idx,
+                line_y,
+            )
+            if events:
+                self.crossing_frames.extend(event.frame_idx for event in events)
+            self.cumulative_counts = dict(counting_engine.counts)
+            count_history[frame_idx] = dict(self.cumulative_counts)
 
             self.tracking_data[frame_idx] = frame_boxes
 
@@ -176,7 +152,7 @@ class YoloAnalyzerWorker(QThread):
             final_data = dict(self.tracking_data)
             print(f"[Analyzer] Finalizado. Frames procesados: {len(final_data)}. Emitiendo...")
             self.progress_updated.emit(100)
-            self.finished_analysis.emit(self.cumulative_counts, {}, final_data, fps, self.crossing_frames)
+            self.finished_analysis.emit(self.cumulative_counts, count_history, final_data, fps, self.crossing_frames)
 
     def stop(self):
         self._is_running = False
@@ -207,9 +183,8 @@ class VideoPlayerWorker(QThread):
         self._frame_idx    = 0
         
         # Incremental Counting per playback session
-        self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
-        self.currently_outside_ids = set()
-        self.prev_positions = {}
+        self.counting_engine = CountingEngine()
+        self.cumulative_counts = dict(self.counting_engine.counts)
 
     def set_speed(self, speed):
         self.speed = speed
@@ -274,9 +249,8 @@ class VideoPlayerWorker(QThread):
                 cap.set(cv2.CAP_PROP_POS_MSEC, target_msec)
                 self._frame_idx = max(0, int(round((target_msec / 1000.0) * fps)))
                 # Reset counting state
-                self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
-                self.currently_outside_ids.clear()
-                self.prev_positions.clear()
+                self.counting_engine.reset()
+                self.cumulative_counts = dict(self.counting_engine.counts)
 
             if self._seek_offset_msec is not None:
                 offset = self._seek_offset_msec
@@ -286,9 +260,8 @@ class VideoPlayerWorker(QThread):
                 cap.set(cv2.CAP_PROP_POS_MSEC, new_msec)
                 self._frame_idx = max(0, int(round((new_msec / 1000.0) * fps)))
                 # Reset counting state
-                self.cumulative_counts = {"Cemento": 0, "Tubería Presión": 0, "Tubería Sanitaria": 0}
-                self.currently_outside_ids.clear()
-                self.prev_positions.clear()
+                self.counting_engine.reset()
+                self.cumulative_counts = dict(self.counting_engine.counts)
 
             if self._step_dir != 0:
                 offset_ms = self._step_dir * base_delay_ms
@@ -320,65 +293,22 @@ class VideoPlayerWorker(QThread):
 
             if lookup in self.tracking_data:
                 current_frame_boxes = self.tracking_data[lookup]
-                self.prev_positions = {k: v for k, v in self.prev_positions.items() if lookup - v[1] < 15}
-                
-                for x1, y1, x2, y2, track_id, ui_cat in current_frame_boxes:
-                    center_y = (y1 + y2) / 2.0
-                    center_x = (x1 + x2) / 2.0
-                    
-                    # 1. Usar track_id real si existe
-                    if track_id is not None:
-                        if track_id in self.prev_positions:
-                            prev_y, _ = self.prev_positions[track_id]
-                            is_exiting = (prev_y < line_y and center_y >= line_y)
-                            is_entering = (prev_y >= line_y and center_y < line_y)
-                            if is_exiting and track_id not in self.currently_outside_ids:
-                                if ui_cat in self.cumulative_counts:
-                                    self.cumulative_counts[ui_cat] += 1
-                                    timestamp = time.strftime("%H:%M:%S")
-                                    self.detection_event.emit(timestamp, f"{ui_cat} despachado (ID:{track_id})")
-                                self.currently_outside_ids.add(track_id)
-                            elif is_entering and track_id in self.currently_outside_ids:
-                                if ui_cat in self.cumulative_counts:
-                                    self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
-                                    timestamp = time.strftime("%H:%M:%S")
-                                    self.detection_event.emit(timestamp, f"{ui_cat} retornado (ID:{track_id})")
-                                self.currently_outside_ids.remove(track_id)
-                        self.prev_positions[track_id] = (center_y, lookup)
-                    else:
-                        # 2. Fallback: Proximidad simple para objetos sin ID
-                        # (Buscamos el objeto más cercano en el frame anterior que no tenga ID real)
-                        best_match = None
-                        min_dist = 50 # pixeles de tolerancia
-                        for old_id, old_y in self.prev_positions.items():
-                            if isinstance(old_id, str) and old_id.startswith("proxy_"):
-                                dist = abs(center_y - old_y)
-                                if dist < min_dist:
-                                    min_dist = dist
-                                    best_match = old_id
-                        
-                        if best_match:
-                            prev_y = self.prev_positions[best_match]
-                            is_exiting = (prev_y < line_y <= center_y)
-                            is_entering = (prev_y > line_y >= center_y)
-                            if is_exiting and best_match not in self.currently_outside_ids:
-                                if ui_cat in self.cumulative_counts:
-                                    self.cumulative_counts[ui_cat] += 1
-                                    timestamp = time.strftime("%H:%M:%S")
-                                    self.detection_event.emit(timestamp, f"{ui_cat} despachado (ID:Proxy)")
-                                self.currently_outside_ids.add(best_match)
-                            elif is_entering and best_match in self.currently_outside_ids:
-                                if ui_cat in self.cumulative_counts:
-                                    self.cumulative_counts[ui_cat] = max(0, self.cumulative_counts[ui_cat] - 1)
-                                    timestamp = time.strftime("%H:%M:%S")
-                                    self.detection_event.emit(timestamp, f"{ui_cat} retornado (ID:Proxy)")
-                                self.currently_outside_ids.remove(best_match)
-                            self.prev_positions[best_match] = (center_y, lookup)
-                        else:
-                            # Nuevo objeto "proxy"
-                            proxy_id = f"proxy_{lookup}_{int(center_x)}"
-                            self.prev_positions[proxy_id] = (center_y, lookup)
-                
+                events = self.counting_engine.process(
+                    [
+                        DetectionBox(x1, y1, x2, y2, track_id, ui_cat)
+                        for x1, y1, x2, y2, track_id, ui_cat in current_frame_boxes
+                    ],
+                    lookup,
+                    line_y,
+                )
+                for event in events:
+                    timestamp = time.strftime("%H:%M:%S")
+                    id_label = event.track_id if not str(event.track_id).startswith("proxy_") else "Proxy"
+                    self.detection_event.emit(
+                        timestamp,
+                        f"{event.category} {event.direction} (ID:{id_label})",
+                    )
+                self.cumulative_counts = dict(self.counting_engine.counts)
 
 
             self.counts_updated.emit(self.cumulative_counts)
@@ -515,7 +445,8 @@ class RtspCameraWorker(QThread):
             return
 
         self.connection_status.emit("connecting")
-        print(f"[RTSP] Conectando a: {self.camera_url}")
+        safe_camera_url = _redact_rtsp_url(self.camera_url)
+        print(f"[RTSP] Conectando a: {safe_camera_url}")
 
         RECONNECT_DELAY_MS = 3000
         MAX_RECONNECT      = 5
@@ -540,13 +471,13 @@ class RtspCameraWorker(QThread):
 
             if not cap.isOpened():
                 reconnect_count += 1
-                print(f"[RTSP] Fallo de conexión (intento {reconnect_count}/{MAX_RECONNECT}) -> {self.camera_url}")
+                print(f"[RTSP] Fallo de conexión (intento {reconnect_count}/{MAX_RECONNECT}) -> {safe_camera_url}")
                 self.connection_status.emit("lost")
                 if reconnect_count >= MAX_RECONNECT:
                     self.error_occurred.emit(
                         f"No se pudo conectar a la cámara después de {MAX_RECONNECT} intentos.\n"
-                        f"Verifique que el Host sea correcto y que el puerto 554 esté abierto.\n"
-                        f"URL actual: {self.camera_url}"
+                        f"Verifique que el Host, las credenciales y el puerto RTSP sean correctos.\n"
+                        f"URL actual: {safe_camera_url}"
                     )
                     break
                 self.msleep(RECONNECT_DELAY_MS)
@@ -608,20 +539,14 @@ class RtspCameraWorker(QThread):
                                   else [None] * len(boxes_xyxy))
                     names = self.model.names
 
-                    self.prev_positions = {k: v for k, v in self.prev_positions.items() if lookup - v[1] < 15}
+                    self.prev_positions = {k: v for k, v in self.prev_positions.items() if frame_local - v[1] < 15}
                     line_y = (zy1 + zy2) / 2.0  # Mitad de la zona para el conteo bidireccional
 
                     for box, track_id, cls_id in zip(boxes_xyxy, track_ids, clss):
                         x1, y1, x2, y2 = box
                         cls_name = names[cls_id]
 
-                        ui_cat = None
-                        if cls_name.lower() in ["bulto", "cemento", "bag"]:
-                            ui_cat = "Cemento"
-                        elif "tuberia" in cls_name.lower() and "presion" in cls_name.lower():
-                            ui_cat = "Tubería Presión"
-                        elif "tuberia" in cls_name.lower() and "sanitaria" in cls_name.lower():
-                            ui_cat = "Tubería Sanitaria"
+                        ui_cat = map_model_class_to_category(cls_name)
 
                         if ui_cat is None:
                             continue
@@ -667,13 +592,14 @@ class RtspCameraWorker(QThread):
                             min_dist = 50 # pixeles de tolerancia
                             for old_id, old_y in self.prev_positions.items():
                                 if isinstance(old_id, str) and old_id.startswith("proxy_"):
-                                    dist = abs(cy - old_y)
+                                    old_center_y = old_y[0] if isinstance(old_y, tuple) else old_y
+                                    dist = abs(cy - old_center_y)
                                     if dist < min_dist:
                                         min_dist = dist
                                         best_match = old_id
                             
                             if best_match:
-                                prev_y = self.prev_positions[best_match]
+                                prev_y = self.prev_positions[best_match][0]
                                 is_exiting = (prev_y < line_y <= cy)
                                 is_entering = (prev_y > line_y >= cy)
                                 if is_exiting and best_match not in self.counted_ids:
@@ -692,7 +618,7 @@ class RtspCameraWorker(QThread):
                                 self.track_persistence[best_match] = self.track_persistence.get(best_match, 0) + 1
                             else:
                                 # Nuevo objeto "proxy"
-                                proxy_id = f"proxy_{lookup}_{int(center_x)}"
+                                proxy_id = f"proxy_{frame_local}_{int(center_x)}"
                                 self.prev_positions[proxy_id] = (cy, frame_local)
                                 self.track_persistence[proxy_id] = 1
 

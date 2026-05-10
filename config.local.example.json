@@ -1,7 +1,7 @@
 {
     "notifications": {
         "whatsapp": {
-            "phone": "",
+            "phone": "57XXXXXXXXXX",
             "apikey": "",
             "url": "https://api.callmebot.com/whatsapp.php"
         },
@@ -19,10 +19,6 @@
         "serial_number": ""
     },
     "ai": {
-        "model_path": ""
-    },
-    "system": {
-        "theme": "dark",
-        "language": "es"
+        "model_path": "models/estacion_bultos_v1.pt"
     }
 }

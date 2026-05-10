@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                                QProgressBar, QStatusBar, QFileDialog, QMessageBox, QListWidget, QListWidgetItem, QSlider,
                                QDialog, QStyle, QStyleOptionSlider)
 from PySide6.QtCore import Qt, QTimer, QPropertyAnimation, QEasingCurve, QSize, Property, QPoint, QVariantAnimation, QSequentialAnimationGroup, QParallelAnimationGroup, QThread, Signal, QEvent
-from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen, QPixmap, QGuiApplication, QImage
+from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QPainterPath, QLinearGradient, QPen, QPixmap, QGuiApplication, QImage, QKeySequence, QShortcut
 import datetime
 import os
 import sys
@@ -38,7 +38,6 @@ from core.vehicle_assigner import (
     PESO_BULTO_CEMENTO_KG,
 )
 from ui.dahua_history_dialog import DahuaHistoryDialog
-
 
 class ScrubThumbnailWidget(QFrame):
     """Miniatura que aparece sobre el slider al hacer scrubbing (tipo YouTube)."""
@@ -345,8 +344,6 @@ class StatCard(GlowCard):
 
 
 
-
-
 class ToastNotification(QFrame):
     """Notificación flotante temporal (Toast) estilo Premium."""
     def __init__(self, message, toast_type="success", parent=None):
@@ -432,6 +429,10 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1100, 700)
         self.showMaximized()
         
+        # Atajo F5 para reiniciar la aplicación rápidamente (hot reload rudimentario)
+        self._refresh_shortcut = QShortcut(QKeySequence("F5"), self)
+        self._refresh_shortcut.activated.connect(self._restart_app)
+
         self._is_dark = True
         self._current_invoice = None  # Stores last InvoiceData
 
@@ -479,6 +480,7 @@ class MainWindow(QMainWindow):
         brand_label = QLabel("LogiCheck")
         brand_label.setObjectName("brandLabel")
         brand_layout.addWidget(brand_label)
+        
         brand_layout.addStretch()
         sidebar_layout.addLayout(brand_layout)
         
@@ -713,6 +715,12 @@ class MainWindow(QMainWindow):
         except Exception:
             self._lbl_gpu.setText("🔵 CPU")
             self._lbl_gpu.setStyleSheet("font-size: 11px; color: #64748B; padding: 0 10px;")
+
+    def _restart_app(self):
+        """Reinicia la aplicación completamente (útil para recargar la interfaz)."""
+        import subprocess
+        subprocess.Popen([sys.executable] + sys.argv)
+        QGuiApplication.quit()
 
     # ----------------------------------------------------------------
     # PAGE BUILDERS
@@ -1384,18 +1392,11 @@ class MainWindow(QMainWindow):
 
         self.btn_cam_connect = QPushButton("📡  Conectar")
         self.btn_cam_connect.setObjectName("successBtn")
-        self.btn_cam_connect.setFixedHeight(34)
+        self.btn_cam_connect.setFixedHeight(40)
+        self.btn_cam_connect.setMinimumWidth(260)
         self.btn_cam_connect.setCursor(Qt.PointingHandCursor)
-        self.btn_cam_connect.clicked.connect(self._on_camera_connect)
+        self.btn_cam_connect.clicked.connect(self._on_cam_action_toggle)
         top_row.addWidget(self.btn_cam_connect)
-
-        self.btn_cam_disconnect = QPushButton("⏹  Desconectar")
-        self.btn_cam_disconnect.setObjectName("dangerBtn")
-        self.btn_cam_disconnect.setFixedHeight(34)
-        self.btn_cam_disconnect.setEnabled(False)
-        self.btn_cam_disconnect.setCursor(Qt.PointingHandCursor)
-        self.btn_cam_disconnect.clicked.connect(self._on_camera_disconnect)
-        top_row.addWidget(self.btn_cam_disconnect)
 
         conn_layout_main.addLayout(top_row)
 
@@ -1722,6 +1723,13 @@ class MainWindow(QMainWindow):
         # Reiniciar buffers de conteo dual
         self._last_dual_counts = [{}, {}]
 
+    def _on_cam_action_toggle(self):
+        """Alterna entre conectar y desconectar la cámara."""
+        if hasattr(self, "_cam_worker") and self._cam_worker and self._cam_worker.isRunning():
+            self._on_camera_disconnect()
+        else:
+            self._on_camera_connect()
+
     def _on_camera_connect(self):
         """Inicia el RtspCameraWorker leyendo la UI y la configuración."""
         host = self.cam_url_input.text().strip() or config.get("cameras.host", "")
@@ -1814,8 +1822,11 @@ class MainWindow(QMainWindow):
             self._cam_worker_alt.start()
 
         # UI
-        self.btn_cam_connect.setEnabled(False)
-        self.btn_cam_disconnect.setEnabled(True)
+        self.btn_cam_connect.setText("⏹  Desconectar")
+        self.btn_cam_connect.setObjectName("dangerBtn")
+        self.btn_cam_connect.style().unpolish(self.btn_cam_connect)
+        self.btn_cam_connect.style().polish(self.btn_cam_connect)
+        self.btn_cam_connect.setEnabled(True)
         self.cam_url_input.setEnabled(False)
         if hasattr(self, "cam_port_input"):
             self.cam_port_input.setEnabled(False)
@@ -1998,8 +2009,11 @@ class MainWindow(QMainWindow):
     # _on_cam_frame_ready defined once below (after _on_cam_connection_status)
 
     def _reset_cam_ui(self):
+        self.btn_cam_connect.setText("📡  Conectar")
+        self.btn_cam_connect.setObjectName("successBtn")
+        self.btn_cam_connect.style().unpolish(self.btn_cam_connect)
+        self.btn_cam_connect.style().polish(self.btn_cam_connect)
         self.btn_cam_connect.setEnabled(True)
-        self.btn_cam_disconnect.setEnabled(False)
         self.btn_cam_pause.setEnabled(False)
         self.btn_cam_reset.setEnabled(False)
         self.btn_cam_snapshot.setEnabled(False)
@@ -2851,7 +2865,6 @@ class MainWindow(QMainWindow):
         if hasattr(self, "btn_cam_connect"):
             can_cam = can_do_action(role, "camera.iniciar")
             self.btn_cam_connect.setVisible(can_cam)
-            self.btn_cam_disconnect.setVisible(can_cam)
 
         # Si el rol no puede ver la primera página activa, ir al Dashboard
         if not can_access_page(role, "Dashboard"):

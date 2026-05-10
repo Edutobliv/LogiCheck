@@ -1,16 +1,21 @@
-# core/auth.py
+﻿# core/auth.py
 # ============================================================
-#  LogiCheck — Autenticación con SQLite
+#  LogiCheck â€” AutenticaciÃ³n con SQLite
 #  Tabla: usuarios (id, username, password_hash, password_salt, role, full_name, active, ...)
-#  Seguridad: SHA-256 + salt único por usuario (compatible con Python stdlib)
+#  Seguridad: SHA-256 + salt Ãºnico por usuario (compatible con Python stdlib)
 # ============================================================
 
 import sqlite3
 import hashlib
 import os
 import secrets
+import hmac
+from datetime import datetime, timedelta
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "logicheck_users.db")
+PBKDF2_ITERATIONS = 310_000
+LOCK_THRESHOLD = 5
+LOCK_MINUTES = 10
 
 
 def _get_conn() -> sqlite3.Connection:
@@ -20,32 +25,50 @@ def _get_conn() -> sqlite3.Connection:
     return conn
 
 
-# ── Hashing seguro (SHA-256 + salt) ─────────────────────────
+# â”€â”€ Hashing seguro (SHA-256 + salt) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _generate_salt() -> str:
-    """Genera un salt criptográficamente seguro de 32 bytes en hex."""
+    """Genera un salt criptogrÃ¡ficamente seguro de 32 bytes en hex."""
     return secrets.token_hex(32)
 
 
 def _hash_password(password: str, salt: str) -> str:
     """
-    Hashea la contraseña usando SHA-256 con salt único.
+    Hashea la contraseÃ±a usando SHA-256 con salt Ãºnico.
     Formato: SHA256(salt + password)
     """
-    salted = (salt + password).encode("utf-8")
-    return hashlib.sha256(salted).hexdigest()
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        PBKDF2_ITERATIONS,
+    ).hex()
+    return f"pbkdf2_sha256${PBKDF2_ITERATIONS}${salt}${digest}"
 
 
 def _verify_password(password: str, stored_hash: str, stored_salt: str) -> bool:
-    """Verifica una contraseña contra su hash y salt almacenados."""
-    # Compatibilidad retroactiva: si no hay salt (BD antigua), verifica sin salt
+    """Verifica una contrasena contra su hash almacenado."""
+    if stored_hash.startswith("pbkdf2_sha256$"):
+        try:
+            _, iterations, salt, digest = stored_hash.split("$", 3)
+            candidate = hashlib.pbkdf2_hmac(
+                "sha256",
+                password.encode("utf-8"),
+                salt.encode("utf-8"),
+                int(iterations),
+            ).hex()
+            return hmac.compare_digest(candidate, digest)
+        except Exception:
+            return False
+
     if not stored_salt:
         old_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
-        return old_hash == stored_hash
-    return _hash_password(password, stored_salt) == stored_hash
+        return hmac.compare_digest(old_hash, stored_hash)
 
+    legacy = hashlib.sha256((stored_salt + password).encode("utf-8")).hexdigest()
+    return hmac.compare_digest(legacy, stored_hash)
 
-# ── Inicialización ───────────────────────────────────────────
+# â”€â”€ InicializaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def init_db():
     """
@@ -61,7 +84,7 @@ def init_db():
         if count == 0:
             _seed_default_users(conn)
 
-    # Migrar contraseñas antiguas (sin salt) al nuevo sistema
+    # Migrar contraseÃ±as antiguas (sin salt) al nuevo sistema
     _migrate_passwords_to_salted()
 
 
@@ -69,10 +92,10 @@ def _seed_default_users(conn: sqlite3.Connection):
     """Siembra los usuarios por defecto con el nuevo sistema de hash+salt."""
     _seed_users = [
         ("admin",   "admin123",   "admin",      "Administrador del Sistema"),
-        ("juan",    "factura123", "op_factura",  "Juan García - Op. Factura"),
+        ("juan",    "factura123", "op_factura",  "Juan GarcÃ­a - Op. Factura"),
         ("carlos",  "video123",   "op_video",    "Carlos Ruiz - Op. Video"),
-        ("gerente", "gerente123", "gerente",     "Ana Martínez - Gerente"),
-        ("dueno",   "dueno123",   "dueno",       "Don Durán - Dueño"),
+        ("gerente", "gerente123", "gerente",     "Ana MartÃ­nez - Gerente"),
+        ("dueno",   "dueno123",   "dueno",       "Don DurÃ¡n - DueÃ±o"),
     ]
     for username, password, role, full_name in _seed_users:
         salt = _generate_salt()
@@ -87,10 +110,10 @@ def _seed_default_users(conn: sqlite3.Connection):
 
 def _migrate_passwords_to_salted():
     """
-    Migración one-time: convierte hashes sin salt al nuevo sistema.
-    Detecta usuarios con salt vacío y les genera un salt placeholder.
-    NOTA: No podemos re-hashear sin la contraseña original, por lo que
-    marcamos la siguiente vez que inicien sesión para actualizar.
+    MigraciÃ³n one-time: convierte hashes sin salt al nuevo sistema.
+    Detecta usuarios con salt vacÃ­o y les genera un salt placeholder.
+    NOTA: No podemos re-hashear sin la contraseÃ±a original, por lo que
+    marcamos la siguiente vez que inicien sesiÃ³n para actualizar.
     """
     with _get_conn() as conn:
         users_no_salt = conn.execute(
@@ -98,35 +121,44 @@ def _migrate_passwords_to_salted():
         ).fetchall()
         if users_no_salt:
             print(f"[AUTH] {len(users_no_salt)} usuarios con hash sin salt detectados. "
-                  "Se actualizarán al próximo inicio de sesión.")
+                  "Se actualizarÃ¡n al prÃ³ximo inicio de sesiÃ³n.")
 
 
-# ── Autenticación ────────────────────────────────────────────
+# â”€â”€ AutenticaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def authenticate(username: str, password: str) -> dict | None:
     """
-    Verifica usuario y contraseña.
-    Si el usuario tiene hash antiguo (sin salt), lo actualiza al nuevo sistema.
-    Retorna dict con datos del usuario si es válido, None si falla.
+    Verifica usuario y contrasena.
+    Migra hashes heredados a PBKDF2 y bloquea temporalmente intentos repetidos.
     """
+    clean_username = username.strip().lower()
     with _get_conn() as conn:
-        cursor = conn.execute(
+        row = conn.execute(
             "SELECT * FROM usuarios WHERE username = ? AND active = 1",
-            (username.strip().lower(),)
-        )
-        row = cursor.fetchone()
+            (clean_username,)
+        ).fetchone()
 
     if row is None:
         return None
+
+    locked_until = row["locked_until"] if "locked_until" in row.keys() else None
+    if locked_until:
+        try:
+            if datetime.fromisoformat(locked_until) > datetime.now():
+                return None
+        except ValueError:
+            pass
 
     stored_hash = row["password_hash"]
     stored_salt = row["password_salt"] or ""
 
     if not _verify_password(password, stored_hash, stored_salt):
+        _register_failed_login(row["id"], row["failed_login_count"] if "failed_login_count" in row.keys() else 0)
         return None
 
-    # Actualizar hash al nuevo sistema si venía sin salt
-    if not stored_salt:
+    _clear_login_failures(row["id"])
+
+    if not stored_hash.startswith("pbkdf2_sha256$"):
         _upgrade_password_hash(row["id"], password)
 
     return {
@@ -138,7 +170,6 @@ def authenticate(username: str, password: str) -> dict | None:
         "expires_at": row["permissions_expire_at"],
     }
 
-
 def _upgrade_password_hash(user_id: int, plain_password: str):
     """Actualiza un hash sin salt al nuevo sistema (salt + SHA256)."""
     new_salt = _generate_salt()
@@ -149,10 +180,32 @@ def _upgrade_password_hash(user_id: int, plain_password: str):
             (new_hash, new_salt, user_id)
         )
         conn.commit()
-    print(f"[AUTH] Contraseña del usuario ID={user_id} actualizada a hash+salt.")
+    print(f"[AUTH] ContraseÃ±a del usuario ID={user_id} actualizada a hash+salt.")
 
 
-# ── CRUD de Usuarios ─────────────────────────────────────────
+def _register_failed_login(user_id: int, current_count: int):
+    next_count = int(current_count or 0) + 1
+    locked_until = None
+    if next_count >= LOCK_THRESHOLD:
+        locked_until = (datetime.now() + timedelta(minutes=LOCK_MINUTES)).isoformat(timespec="seconds")
+    with _get_conn() as conn:
+        conn.execute(
+            "UPDATE usuarios SET failed_login_count = ?, locked_until = ? WHERE id = ?",
+            (next_count, locked_until, user_id),
+        )
+        conn.commit()
+
+
+def _clear_login_failures(user_id: int):
+    with _get_conn() as conn:
+        conn.execute(
+            "UPDATE usuarios SET failed_login_count = 0, locked_until = NULL WHERE id = ?",
+            (user_id,),
+        )
+        conn.commit()
+
+
+# â”€â”€ CRUD de Usuarios â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def get_all_users() -> list[dict]:
     """Retorna todos los usuarios (activos e inactivos)."""
@@ -193,7 +246,7 @@ def update_user(user_id: int, full_name: str, role: str) -> bool:
 
 
 def change_password(user_id: int, new_password: str) -> bool:
-    """Cambia la contraseña de un usuario (genera nuevo salt)."""
+    """Cambia la contraseÃ±a de un usuario (genera nuevo salt)."""
     new_salt = _generate_salt()
     new_hash = _hash_password(new_password, new_salt)
     with _get_conn() as conn:
@@ -206,7 +259,7 @@ def change_password(user_id: int, new_password: str) -> bool:
 
 
 def deactivate_user(user_id: int) -> bool:
-    """Desactiva un usuario (no lo elimina físicamente)."""
+    """Desactiva un usuario (no lo elimina fÃ­sicamente)."""
     with _get_conn() as conn:
         conn.execute("UPDATE usuarios SET active = 0 WHERE id = ?", (user_id,))
         conn.commit()
@@ -221,12 +274,12 @@ def reactivate_user(user_id: int) -> bool:
     return True
 
 
-# ── Gestión de Permisos ───────────────────────────────────────
+# â”€â”€ GestiÃ³n de Permisos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def update_user_permissions(user_id: int, overrides: str | None,
                              expire_at: str | None, modified_by: int) -> bool:
     """
-    Actualiza los overrides de permisos y la fecha de expiración.
+    Actualiza los overrides de permisos y la fecha de expiraciÃ³n.
     overrides: string JSON o None
     expire_at: string ISO date o None
     """

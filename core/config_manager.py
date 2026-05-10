@@ -1,11 +1,12 @@
 # core/config_manager.py
 # ============================================================
-#  LogiCheck — Gestión de Configuración Persistente
+#  LogiCheck - Gestion de configuracion persistente
 # ============================================================
 
 import json
 import os
 import threading
+
 
 class ConfigManager:
     _instance = None
@@ -19,11 +20,11 @@ class ConfigManager:
             return cls._instance
 
     def __init__(self):
-        if self._initialized: return
-        self._config_path = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-            "config.json"
-        )
+        if self._initialized:
+            return
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self._config_path = os.path.join(root, "config.json")
+        self._local_config_path = os.path.join(root, "config.local.json")
         self._data = self._get_default_config()
         self.load()
         self._initialized = True
@@ -32,44 +33,61 @@ class ConfigManager:
         return {
             "notifications": {
                 "whatsapp": {
-                    "phone": "573152587012",
-                    "apikey": "7002133",
-                    "url": "https://api.callmebot.com/whatsapp.php"
+                    "phone": "",
+                    "apikey": "",
+                    "url": "https://api.callmebot.com/whatsapp.php",
                 },
                 "telegram": {
-                    "token": "8684027766:AAEMGl4j3WFUlYoMoIStgVUn35D8rVheRgk",
-                    "chat_id": "8517822043"
-                }
+                    "token": "",
+                    "chat_id": "",
+                },
             },
             "cameras": {
-                "default_user": "Samuel",
-                "default_pass": "Samuel123.",
-                "default_port": 554
+                "host": "",
+                "default_user": "",
+                "default_pass": "",
+                "default_port": 554,
+                "mode": "local",
+                "serial_number": "",
+            },
+            "ai": {
+                "model_path": "",
             },
             "system": {
                 "theme": "dark",
-                "language": "es"
-            }
+                "language": "es",
+            },
         }
 
     def load(self):
-        """Carga la configuración desde el archivo JSON."""
-        if os.path.exists(self._config_path):
+        """Carga defaults seguros, config.json, config.local.json y variables de entorno."""
+        self._data = self._get_default_config()
+        for path in (self._config_path, self._local_config_path):
+            if not os.path.exists(path):
+                continue
             try:
-                with open(self._config_path, "r", encoding="utf-8") as f:
+                with open(path, "r", encoding="utf-8") as f:
                     loaded_data = json.load(f)
-                    # Merge con default para asegurar que nuevas keys existan
-                    self._data = self._merge_dicts(self._get_default_config(), loaded_data)
+                self._data = self._merge_dicts(self._data, loaded_data)
             except Exception as e:
-                print(f"[CONFIG] Error cargando config: {e}")
+                print(f"[CONFIG] Error cargando {path}: {e}")
+        self._apply_env_overrides()
 
     def save(self):
-        """Guarda la configuración actual en el archivo JSON."""
+        """Guarda valores locales en config.local.json para no versionar secretos."""
         try:
-            with open(self._config_path, "w", encoding="utf-8") as f:
+            with open(self._local_config_path, "w", encoding="utf-8") as f:
                 json.dump(self._data, f, indent=4, ensure_ascii=False)
         except Exception as e:
-            print(f"[CONFIG] Error guardando config: {e}")
+            print(f"[CONFIG] Error guardando config local: {e}")
+
+    def save_defaults(self):
+        """Reescribe config.json solo con valores seguros de ejemplo."""
+        try:
+            with open(self._config_path, "w", encoding="utf-8") as f:
+                json.dump(self._get_default_config(), f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"[CONFIG] Error guardando defaults: {e}")
 
     def _merge_dicts(self, default, loaded):
         """Actualiza recursivamente el dict default con los valores del dict loaded."""
@@ -92,15 +110,34 @@ class ConfigManager:
         return current
 
     def set(self, key_path, value):
-        """Establece un valor usando un path y guarda automáticamente."""
+        """Establece un valor usando un path y guarda automaticamente."""
+        self._set_in_memory(key_path, value)
+        self.save()
+
+    def _set_in_memory(self, key_path, value):
         keys = key_path.split(".")
         current = self._data
         for k in keys[:-1]:
-            if k not in current:
+            if k not in current or not isinstance(current[k], dict):
                 current[k] = {}
             current = current[k]
         current[keys[-1]] = value
-        self.save()
 
-# Singleton instance
+    def _apply_env_overrides(self):
+        env_map = {
+            "LOGICHECK_TG_TOKEN": "notifications.telegram.token",
+            "LOGICHECK_TG_CHAT_ID": "notifications.telegram.chat_id",
+            "LOGICHECK_WA_PHONE": "notifications.whatsapp.phone",
+            "LOGICHECK_WA_APIKEY": "notifications.whatsapp.apikey",
+            "LOGICHECK_CAMERA_HOST": "cameras.host",
+            "LOGICHECK_CAMERA_USER": "cameras.default_user",
+            "LOGICHECK_CAMERA_PASS": "cameras.default_pass",
+            "LOGICHECK_MODEL_PATH": "ai.model_path",
+        }
+        for env_name, key_path in env_map.items():
+            value = os.environ.get(env_name)
+            if value:
+                self._set_in_memory(key_path, value)
+
+
 config = ConfigManager()

@@ -10,11 +10,11 @@ class LogiNotifier:
 
     @property
     def wa_phone(self):
-        return config.get("notifications.whatsapp.phone", "573152587012")
+        return config.get("notifications.whatsapp.phone", "")
 
     @property
     def wa_apikey(self):
-        return config.get("notifications.whatsapp.apikey", "7002133")
+        return config.get("notifications.whatsapp.apikey", "")
 
     @property
     def wa_url(self):
@@ -34,6 +34,9 @@ class LogiNotifier:
         return f"https://api.telegram.org/bot{token}" if token else ""
 
     def _send_wa_sync(self, text: str):
+        if not self.wa_phone or not self.wa_apikey:
+            app_logger.log_action({"username": "SISTEMA", "role": "sistema"}, "WHATSAPP_NO_CONFIG", "Credenciales de WhatsApp vacias")
+            return
         try:
             params = {
                 "phone": self.wa_phone,
@@ -47,13 +50,15 @@ class LogiNotifier:
             app_logger.log_action({"username": "SISTEMA", "role": "sistema"}, "WHATSAPP_ERROR", str(e))
 
     def _send_tg_sync(self, text: str, photo_path: str = None):
-        if not self.tg_chat_id: return
+        if not self.tg_token or not self.tg_chat_id:
+            app_logger.log_action({"username": "SISTEMA", "role": "sistema"}, "TELEGRAM_NO_CONFIG", "Credenciales de Telegram vacias")
+            return
         try:
             if photo_path:
                 url = f"{self.tg_base_url}/sendPhoto"
-                files = {'photo': open(photo_path, 'rb')}
                 data = {'chat_id': self.tg_chat_id, 'caption': text, 'parse_mode': 'HTML'}
-                response = requests.post(url, data=data, files=files, timeout=15)
+                with open(photo_path, 'rb') as photo:
+                    response = requests.post(url, data=data, files={'photo': photo}, timeout=15)
             else:
                 url = f"{self.tg_base_url}/sendMessage"
                 data = {'chat_id': self.tg_chat_id, 'text': text, 'parse_mode': 'HTML'}

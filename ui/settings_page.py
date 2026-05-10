@@ -404,7 +404,7 @@ class SettingsPage(QWidget):
         self._inputs["cam_host"] = self.inp_host
 
         self.inp_user = QLineEdit()
-        self.inp_user.setPlaceholderText("Samuel")
+        self.inp_user.setPlaceholderText("usuario RTSP")
         self._inputs["cam_user"] = self.inp_user
         
         self.inp_pass = QLineEdit()
@@ -412,13 +412,19 @@ class SettingsPage(QWidget):
         self._inputs["cam_pass"] = self.inp_pass
 
         self.inp_port = QLineEdit()
-        self.inp_port.setText("443")
+        self.inp_port.setText("554")
         self._inputs["cam_port"] = self.inp_port
+
+        self.inp_model_path = QLineEdit()
+        self.inp_model_path.setObjectName("loginInput")
+        self.inp_model_path.setPlaceholderText("models/estacion_bultos_v1.pt")
+        self._inputs["ai_model_path"] = self.inp_model_path
 
         self.form_lay.addRow("Host (IP o Dominio):", self.inp_host)
         self.form_lay.addRow("Usuario:", self.inp_user)
         self.form_lay.addRow("Contraseña:", self.inp_pass)
         self.form_lay.addRow("Puerto RTSP:", self.inp_port)
+        self.form_lay.addRow("Modelo IA:", self.inp_model_path)
 
         # Info de seguridad 
         self.lbl_mode_info = QLabel("💡 Usando el puerto 443 para garantizar conexión en redes restringidas.")
@@ -496,9 +502,10 @@ class SettingsPage(QWidget):
         
         # Carga de cámaras (Simplificado)
         self._inputs["cam_host"].setText(config.get("cameras.host", ""))
-        self._inputs["cam_user"].setText(config.get("cameras.default_user", "Samuel"))
-        self._inputs["cam_pass"].setText(config.get("cameras.default_pass", "Samuel123."))
-        self._inputs["cam_port"].setText(str(config.get("cameras.default_port", 443)))
+        self._inputs["cam_user"].setText(config.get("cameras.default_user", ""))
+        self._inputs["cam_pass"].setText(config.get("cameras.default_pass", ""))
+        self._inputs["cam_port"].setText(str(config.get("cameras.default_port", 554)))
+        self._inputs["ai_model_path"].setText(config.get("ai.model_path", ""))
 
     def _save_settings(self):
         config.set("notifications.telegram.token", self._inputs["tg_token"].text().strip())
@@ -510,7 +517,8 @@ class SettingsPage(QWidget):
         config.set("cameras.host", self._inputs["cam_host"].text().strip())
         config.set("cameras.default_user", self._inputs["cam_user"].text().strip())
         config.set("cameras.default_pass", self._inputs["cam_pass"].text().strip())
-        config.set("cameras.default_port", int(self._inputs["cam_port"].text().strip() or "443"))
+        config.set("cameras.default_port", int(self._inputs["cam_port"].text().strip() or "554"))
+        config.set("ai.model_path", self._inputs["ai_model_path"].text().strip())
         config.save()
 
         app_logger.log_action(self._user, "CONFIG_ACTUALIZADA", "El usuario completó el asistente de configuración")

@@ -20,6 +20,7 @@ import re
 import unicodedata
 from difflib import SequenceMatcher
 from typing import Optional
+from decimal import Decimal, InvalidOperation
 
 try:
     import fitz  # PyMuPDF
@@ -73,6 +74,36 @@ _NORMALIZED_KEYWORDS: dict[str, list[str]] = {
 # Umbral de similitud fuzzy — calibrado para facturas Siigo Nube
 # 0.72 = tolera ~3 caracteres erróneos en palabras de 10 letras
 FUZZY_THRESHOLD = 0.72
+
+
+def _parse_quantity(value: str) -> int:
+    """
+    Convierte cantidades de factura a entero tolerando formatos comunes:
+    10, 10.0, 10,0, 1.000 y 1,000.
+    """
+    text = str(value).strip().replace(" ", "")
+    if not text:
+        return 0
+
+    if "," in text and "." in text:
+        # El ultimo separador suele ser el decimal.
+        if text.rfind(",") > text.rfind("."):
+            text = text.replace(".", "").replace(",", ".")
+        else:
+            text = text.replace(",", "")
+    elif "," in text:
+        left, right = text.rsplit(",", 1)
+        text = left + "." + right if len(right) <= 2 else text.replace(",", "")
+    elif "." in text:
+        left, right = text.rsplit(".", 1)
+        if len(right) == 3 and left.isdigit():
+            text = text.replace(".", "")
+
+    try:
+        qty = Decimal(text)
+    except InvalidOperation:
+        return 0
+    return int(qty.to_integral_value())
 
 
 def _get_yolo_category(descripcion: str) -> Optional[str]:
@@ -177,8 +208,8 @@ class InvoiceData:
         for it in self.yolo_items:
             if it.categoria == categoria:
                 try:
-                    total += int(it.cantidad)
-                except ValueError:
+                    total += _parse_quantity(it.cantidad)
+                except Exception:
                     pass
         return total
 

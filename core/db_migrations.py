@@ -22,7 +22,7 @@ def _get_conn() -> sqlite3.Connection:
 
 
 # ── Versión actual del esquema ───────────────────────────────
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
@@ -318,6 +318,15 @@ def _migration_7_expand_catalogs(conn: sqlite3.Connection):
 
 
 # ── Registro de todas las migraciones ────────────────────────
+def _migration_8_login_hardening(conn: sqlite3.Connection):
+    """v8: Agrega columnas para bloqueo temporal por intentos fallidos."""
+    col_names = [r[1] for r in conn.execute("PRAGMA table_info(usuarios)").fetchall()]
+    if "failed_login_count" not in col_names:
+        conn.execute("ALTER TABLE usuarios ADD COLUMN failed_login_count INTEGER NOT NULL DEFAULT 0")
+    if "locked_until" not in col_names:
+        conn.execute("ALTER TABLE usuarios ADD COLUMN locked_until TEXT")
+
+
 MIGRATIONS = [
     (1, _migration_1_create_schema_version),
     (2, _migration_2_create_base_tables),
@@ -326,6 +335,7 @@ MIGRATIONS = [
     (5, _migration_5_add_user_id_to_auditorias),
     (6, _migration_6_advanced_features),
     (7, _migration_7_expand_catalogs),
+    (8, _migration_8_login_hardening),
 ]
 
 

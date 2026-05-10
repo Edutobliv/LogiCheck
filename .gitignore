@@ -22,15 +22,17 @@ build/
 *.onnx
 
 # Project specific
-training/dataset/
-training/raw_frames/
-training/runs/
+config.local.json
+.env
+training/
 captures/
 stitch_screenshots/
 Facturas/
 TESIS/
 resources/Entrenamiento/
 resources/Videos/
+tools/
+vehicle_road_counter/
 
 # OS
 .DS_Store

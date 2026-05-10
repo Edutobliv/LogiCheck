@@ -87,22 +87,11 @@ class InitWorker(QThread):
             self.progress.emit(72, "Importando librerías neuronales (PyTorch)...")
             from ultralytics import YOLO
             import torch
+            from core.model_resolver import resolve_model_path
 
             # Determinar ruta del modelo
             self.progress.emit(76, "Localizando modelo IA en disco...")
-            if getattr(sys, 'frozen', False):
-                base_dir = os.path.dirname(sys.executable)
-                internal = os.path.join(base_dir, "_internal")
-                if os.path.exists(internal):
-                    base_dir = internal
-            else:
-                base_dir = _BASE
-
-            model_path = os.path.join(base_dir, "models", "estacion_bultos_v1.pt")
-            
-            # Fallback a yolo26n básico si no existe
-            if not os.path.exists(model_path):
-                model_path = os.path.join(base_dir, "models", "yolo26n.pt")
+            model_path = resolve_model_path(required=True).path
 
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
